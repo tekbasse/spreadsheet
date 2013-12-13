@@ -85,7 +85,7 @@ set p_ples_count 0
 
 while { ($project == 1 && $p_ples_bal < $p_ples_amount_target ) || ( $project == 0 && $ples_bal < $ples_amount_target) } {
 
-    set ple_seed [expr { (rand() * 100.) } ]
+    set ple_seed [expr { [random ] * 100.) } ]
     set count 0
     # We have area under curve, let's find interval ie. ple
     while { $ple_seed > $area($count) } {
