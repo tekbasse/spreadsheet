@@ -5,6 +5,37 @@ ad_library {
     @cs-id $Id:
 }
 
+
+ad_proc -public qss_tid_scalars_to_array {
+    table_id 
+    array_name
+    {scalars_unfiltered ""}
+    {scalars_required ""}
+} {
+    Saves scalars in a 2 column table to an array array_name, where array indexes are the scalars in the first column, and the value for each scalar is same row in second column. table_id is a reference to a qss_simple table.
+} {
+    upvar $array_name tid_arr
+    # load table_id
+    # extract each name-value pair, saving into array
+}
+
+ad_proc -public qss_tid_columns_to_array_of_lists {
+    table_id 
+    array_name
+    {columns_unfiltered ""}
+    {columns_required ""}
+} {
+    Saves columns in lists where the first row of each column is row_name; 
+    row_name is an index in the passed array
+    elements of list are the ordered set from same column in subsequent rows.
+    table_id is a reference to a qss_simple table.
+} {
+    upvar $array_name tid_arr
+    # load table_id
+    # extract each name-value pair, saving into array
+}
+
+
 ad_proc -public qss_table_create { 
     cells_list_of_lists
     name
@@ -388,4 +419,5 @@ ad_proc -public qss_table_trash {
     }
     return $delete_p
 }
+
 
