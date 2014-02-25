@@ -11,12 +11,40 @@ ad_proc -public qss_tid_scalars_to_array {
     array_name
     {scalars_unfiltered ""}
     {scalars_required ""}
+    {instance_id ""}
+    {user_id ""}
 } {
-    Saves scalars in a 2 column table to an array array_name, where array indexes are the scalars in the first column, and the value for each scalar is same row in second column. table_id is a reference to a qss_simple table.
+    Saves scalars in a 2 column table to an array array_name, where array indexes are the scalars in the first column, and the value for each scalar is same row in second column. table_id is a reference to a qss_simple table. Also, returns the name/value pairs in a list.
 } {
     upvar $array_name tid_arr
+
+    set names_values_list [list ]
     # load table_id
+    set tid_lists [qss_table_read $table_id $instance_id $user_id]
     # extract each name-value pair, saving into array
+    set titles_list [lindex $tid_lists 0]
+    set index 0
+    foreach title $titles_list {
+        if { [regexp -nocase -- {name[s]?} $title] } {
+            set name_idx $index
+        }
+        if { [regexp -nocase -- {value[s]?} $title] } {
+            set value_idx $index
+        }
+        incr index
+    }
+    if { [info exists value_idx] && [info exists name_idx] } {
+        foreach row_list [lrange $tid_lists 1 end] {
+            set name [lindex $row_list $name_idx]
+            set value [lindex $row_list $value_idx]
+            regsub -nocase -all -- {[^a-z0-9_]+} $name {_} name
+            if { $name ne "" } {
+                lappend names_values_list $name $value
+                set tid_arr($name) $value
+            }
+        }
+    } 
+    return $names_values_list
 }
 
 ad_proc -public qss_tid_columns_to_array_of_lists {
@@ -24,6 +52,8 @@ ad_proc -public qss_tid_columns_to_array_of_lists {
     array_name
     {columns_unfiltered ""}
     {columns_required ""}
+    {instance_id ""}
+    {user_id ""}
 } {
     Saves columns in lists where the first row of each column is row_name; 
     row_name is an index in the passed array
@@ -32,7 +62,24 @@ ad_proc -public qss_tid_columns_to_array_of_lists {
 } {
     upvar $array_name tid_arr
     # load table_id
-    # extract each name-value pair, saving into array
+    set tid_lists [qss_table_read $table_id $instance_id $user_id]
+    # extract each column name
+    set titles_orig_list [lindex $tids_lists 0]
+    # filter column names
+    set titles_list [list ]
+    set ignore_idx_list [list ]
+    set index 0
+    foreach title $titles_orig_list {
+        if { ![regsub -nocase -all -- {[^a-z0-9_]+} $title {_} title2 ] } {
+            set title2 $title
+        }
+        lappend titles_list $title2
+        if { $title2 eq "" } {
+            lappend ignore_idx_list $index
+        }
+        incr index
+    }
+    # Use the titles_list to get the values, ignoring the columns in $ignore_id_list
 }
 
 
