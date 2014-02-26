@@ -5,6 +5,44 @@ ad_library {
     @cs-id $Id:
 }
 
+ad_proc -public qss_tid_from_name {
+    table_name
+    {instance_id ""}
+    {user_id ""}
+} {
+    Returns the table_id (tid) when given a table name. If the table name contains a search glob, returns the newest tid of the name matching the glob.
+} {
+    if { $instance_id eq "" } {
+        # set instance_id package_id
+        set instance_id [ad_conn package_id]
+    }
+    if { $user_id eq "" } {
+        set user_id [ad_conn user_id]
+        set untrusted_user_id [ad_conn untrusted_user_id]
+    }
+    # check permissions
+    set read_p [permission::permission_p -party_id $user_id -object_id $instance_id -privilege read]
+    set return_tid ""
+
+    if { $read_p } {
+	if { [regexp -- {[\?\*]} $table_name ] } {
+	    regsub -nocase -all -- {[^a-z0-9_\?\*]} $table_name {_} table_name
+	    set return_list_of_lists [db_list_of_lists simple_table_stats_sby_lm_1 { select id, name from qss_simple_table where trashed <> '1' and instance_id = :instance_id order by last_modified } ] 
+	    # convert return_lists_of_lists to return_list
+	    set return_list [lindex $return_list_of_lists 0]
+	    set tid_idx [lsearch -nocase $return_list $table_name]
+	    if { $tid_idx > -1 } {
+		set return_tid [lindex $return_list $tid_idx]
+	    }
+	} else {
+	    # no glob in table_name
+	    set return_tid [db_read simple_table_stats_tid_read { select id from qss_simple_table where name = :table_name and trashed <> '1' and instance_id = :instance_id order by last_modified } ] 
+	    
+	}
+    }
+    return $return_tid
+}
+
 
 ad_proc -public qss_tid_scalars_to_array {
     table_id 
