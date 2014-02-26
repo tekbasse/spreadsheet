@@ -14,10 +14,22 @@ ad_proc -public qss_tid_scalars_to_array {
     {instance_id ""}
     {user_id ""}
 } {
-    Saves scalars in a 2 column table to an array array_name, where array indexes are the scalars in the first column, and the value for each scalar is same row in second column. table_id is a reference to a qss_simple table. Also, returns the name/value pairs in a list.
+    Saves scalars in a 2 column table to an array array_name, 
+    where array indexes are the scalars in the 'name' column, and 
+    the value for each scalar is same row in 'value' column. 
+    table_id is a reference to a qss_simple table. 
+    Also, returns the name/value pairs in a list. 
+    If scalars_required are not included, 
+    includes these indexes and sets values to empty string.
 } {
     upvar $array_name tid_arr
 
+    if { $columns_unfiltered ne "" && [llength $columns_unfiltered] == 1 } {
+        set columns_unfiltered [split $columns_unfiltered]
+    }
+    if { $columns_required ne "" && [llength $columns_required] == 1 } {
+        set columns_required [split $columns_required]
+    }
     set names_values_list [list ]
     # load table_id
     set tid_lists [qss_table_read $table_id $instance_id $user_id]
@@ -38,10 +50,21 @@ ad_proc -public qss_tid_scalars_to_array {
             set name [lindex $row_list $name_idx]
             set value [lindex $row_list $value_idx]
             regsub -nocase -all -- {[^a-z0-9_]+} $name {_} name
-            if { $name ne "" } {
+            set scalar_idx [lsearch $scalars_unfiltered $name]
+            if { $name ne "" && $scalar_idx > -1 } {
                 lappend names_values_list $name $value
+                set scalars_unfiltered [lreplace $scalars_unfiltered $scalar_idx $scalar_idx]
+                set scalar_idx [lsearch $scalars_required $name]
+                if { $scalar_idx > -1 } {
+                    set scalars_required [lreplace $scalars_required $scalar_idx $scalar_idx]
+                }
                 set tid_arr($name) $value
             }
+        }
+        # create blank defaults for missing, required name/value pairs.
+        foreach scalar $scalars_required {
+            set tid_arr($scalar) ""
+            lappend names_values_list $scalar ""
         }
     } 
     return $names_values_list
@@ -56,12 +79,20 @@ ad_proc -public qss_tid_columns_to_array_of_lists {
     {user_id ""}
 } {
     Saves columns in lists where the first row of each column is a row_name; 
-    row_name is an index in the passed array. row_name is in the list columns_unfiltered.
-    elements of list are the ordered set from same column in subsequent rows. 
-    table_id is a reference to a qss_simple table. If row_names don't exist for all elements of columns_required,
+    row_name is an index in the passed array. 
+    row_name is in the list columns_unfiltered.
+    Elements of list are the ordered set from same column in subsequent rows. 
+    table_id is a reference to a qss_simple table. 
+    If row_names don't exist for all elements of columns_required,
     no values are saved to array_name.
 } {
     upvar $array_name tid_arr
+    if { $columns_unfiltered ne "" && [llength $columns_unfiltered] == 1 } {
+        set columns_unfiltered [split $columns_unfiltered]
+    }
+    if { $columns_required ne "" && [llength $columns_required] == 1 } {
+        set columns_required [split $columns_required]
+    }
     set success 0
     # load table_id
     set tid_lists [qss_table_read $table_id $instance_id $user_id]
