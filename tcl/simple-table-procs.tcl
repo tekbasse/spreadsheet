@@ -55,31 +55,49 @@ ad_proc -public qss_tid_columns_to_array_of_lists {
     {instance_id ""}
     {user_id ""}
 } {
-    Saves columns in lists where the first row of each column is row_name; 
-    row_name is an index in the passed array
-    elements of list are the ordered set from same column in subsequent rows.
-    table_id is a reference to a qss_simple table.
+    Saves columns in lists where the first row of each column is a row_name; 
+    row_name is an index in the passed array. row_name is in the list columns_unfiltered.
+    elements of list are the ordered set from same column in subsequent rows. 
+    table_id is a reference to a qss_simple table. If row_names don't exist for all elements of columns_required,
+    no values are saved to array_name.
 } {
     upvar $array_name tid_arr
+    set success 0
     # load table_id
     set tid_lists [qss_table_read $table_id $instance_id $user_id]
     # extract each column name
     set titles_orig_list [lindex $tids_lists 0]
     # filter column names
     set titles_list [list ]
-    set ignore_idx_list [list ]
-    set index 0
     foreach title $titles_orig_list {
+        # Get values of column, one column at a time
         if { ![regsub -nocase -all -- {[^a-z0-9_]+} $title {_} title2 ] } {
             set title2 $title
         }
         lappend titles_list $title2
-        if { $title2 eq "" } {
-            lappend ignore_idx_list $index
+        set column_nbr [lsearch $columns_required $title2]
+        if { $column_nbr > -1 } {
+            set columns_required [lreplace $columns_required $column_nbr $column_nbr]
         }
-        incr index
     }
-    # Use the titles_list to get the values, ignoring the columns in $ignore_id_list
+    if { [llength $columns_required ] == 0 } {
+        set index 0
+        foreach title $titles_orig_list {
+            set column_nbr [lsearch $columns_unfiltered $title2]
+            if { $title ne "" && $column_nbr > -1 } {
+                # Once a column has been used, don't overwrite it with another of same
+                set columns_unfiltered [lreplace $columns_unfiltered $column_nbr $column_nbr]
+                set arr_list [list ]
+                foreach row_list [lrange $tid_lists 1 end] {
+                    lappend arr_list [lindex $row_list $index]
+                }
+                set tid_arr($title2) $arr_list
+            }
+            incr index
+        }
+        set success 1
+    }
+    return $success
 }
 
 
