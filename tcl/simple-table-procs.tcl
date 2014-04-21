@@ -375,6 +375,8 @@ ad_proc -public qss_table_read {
             # following based on "0000" format used in create/write cell_rc r0001c0001
             set row [string range $cell_rc 1 4]
             set column [string range $cell_rc 6 9]
+            # remove left side zeros
+            regsub {^[0]+} $column {} column
 #            ns_log Notice "qss_table_read: cell ${cell_rc} ($row,$column) value ${cell_value}"     
             # build row list
             if { $row eq $prev_row } {
