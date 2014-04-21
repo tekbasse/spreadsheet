@@ -10,7 +10,7 @@ ad_proc -public qss_tid_from_name {
     {instance_id ""}
     {user_id ""}
 } {
-    Returns the table_id (tid) when given a table name. If the table name contains a search glob, returns the newest tid of the name matching the glob.
+    Returns the table_id (tid) of the most recent table_id of table name. If the table name contains a search glob, returns the newest tid of the name matching the glob.
 } {
     if { $instance_id eq "" } {
         # set instance_id package_id
@@ -25,20 +25,20 @@ ad_proc -public qss_tid_from_name {
     set return_tid ""
 
     if { $read_p } {
-	if { [regexp -- {[\?\*]} $table_name ] } {
-	    regsub -nocase -all -- {[^a-z0-9_\?\*]} $table_name {_} table_name
-	    set return_list_of_lists [db_list_of_lists simple_table_stats_sby_lm_1 { select id, name from qss_simple_table where trashed <> '1' and instance_id = :instance_id order by last_modified } ] 
-	    # convert return_lists_of_lists to return_list
-	    set return_list [lindex $return_list_of_lists 0]
-	    set tid_idx [lsearch -nocase $return_list $table_name]
-	    if { $tid_idx > -1 } {
-		set return_tid [lindex $return_list $tid_idx]
-	    }
-	} else {
-	    # no glob in table_name
-	    set return_tid [db_read simple_table_stats_tid_read { select id from qss_simple_table where name = :table_name and trashed <> '1' and instance_id = :instance_id order by last_modified } ] 
-	    
-	}
+        if { [regexp -- {[\?\*]} $table_name ] } {
+            regsub -nocase -all -- {[^a-z0-9_\?\*]} $table_name {_} table_name
+            set return_list_of_lists [db_list_of_lists simple_table_stats_sby_lm_1 { select id, name from qss_simple_table where trashed <> '1' and instance_id = :instance_id order by last_modified } ] 
+            # convert return_lists_of_lists to return_list
+            set return_list [lindex $return_list_of_lists 0]
+            set tid_idx [lsearch -nocase $return_list $table_name]
+            if { $tid_idx > -1 } {
+                set return_tid [lindex $return_list $tid_idx]
+            }
+        } else {
+            # no glob in table_name
+            set return_tid [db_read simple_table_stats_tid_read { select id from qss_simple_table where name = :table_name and trashed <> '1' and instance_id = :instance_id order by last_modified } ] 
+            
+        }
     }
     return $return_tid
 }
