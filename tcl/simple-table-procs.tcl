@@ -429,7 +429,7 @@ ad_proc -public qss_table_write {
         
             db_transaction {
                 db_dml simple_table_update { update qss_simple_table
-                    set name =:name,title =:title,comments=:comments, last_modified=now()
+                    set name =:name,title =:title,comments=:comments, flags=:flags, last_modified=now()
                     where id = :table_id and instance_id=:instance_id and user_id=:user_id }
                 
                 # get list of cell_rc referencs in this table. We need to track updates, and delete any remaining ones.
