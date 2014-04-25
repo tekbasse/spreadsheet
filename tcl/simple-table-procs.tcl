@@ -229,10 +229,11 @@ ad_proc -public qss_table_create {
             if { $template_id eq "" } {
                 set template_id $table_id
             }
+            set nowts [dt_systime -gmt 1]
             db_transaction {
                 db_dml simple_table_create { insert into qss_simple_table
                     (id,template_id,name,title,comments,instance_id,user_id,flags,last_modified,created)
-                    values (:table_id,:template_id,:name,:title,:comments,:instance_id,:user_id,:flags,now(),now()) }
+                    values (:table_id,:template_id,:name,:title,:comments,:instance_id,:user_id,:flags,:nowts,:nowts) }
                 set row 0
                 set cells 0
                 foreach row_list $cells_list_of_lists {
@@ -254,7 +255,7 @@ ad_proc -public qss_table_create {
                 }
 ns_log Notice "qss_table_create: total $row rows, $cells cells"
                 db_dml simple_table_update_rc { update qss_simple_table
-                    set row_count =:row,cell_count =:cells, last_modified=now()
+                    set row_count =:row,cell_count =:cells, last_modified=:nowts
                     where id = :table_id }
 
             } on_error {
@@ -426,10 +427,10 @@ ad_proc -public qss_table_write {
     if { $write_p } {
         set table_exists_p [db_0or1row simple_table_get_id {select user_id as creator_id from qss_simple_table where id = :table_id } ]
         if { $table_exists_p } {
-        
+            set nowts [dt_systime -gmt 1]
             db_transaction {
                 db_dml simple_table_update { update qss_simple_table
-                    set name =:name,title =:title,comments=:comments, flags=:flags, last_modified=now()
+                    set name =:name,title =:title,comments=:comments, flags=:flags, last_modified=:nowts
                     where id = :table_id and instance_id=:instance_id and user_id=:user_id }
                 
                 # get list of cell_rc referencs in this table. We need to track updates, and delete any remaining ones.
@@ -463,8 +464,9 @@ ad_proc -public qss_table_write {
                         }
                     }
                 }
+                set nowts [dt_systime -gmt 1]
                 db_dml simple_table_update_rc { update qss_simple_table
-                    set row_count =:row,cell_count =:cells, last_modified=now()
+                    set row_count =:row,cell_count =:cells, last_modified=:nowts
                     where id = :table_id }
 
                 # delete remaining cells in cells_list from qss_simple_cells
