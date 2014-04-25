@@ -231,8 +231,8 @@ ad_proc -public qss_table_create {
             }
             db_transaction {
                 db_dml simple_table_create { insert into qss_simple_table
-                    (id,template_id,name,title,comments,instance_id,user_id)
-                    values (:table_id,:template_id,:name,:title,:comments,:instance_id,:user_id) }
+                    (id,template_id,name,title,comments,instance_id,user_id,flags,last_modified,created)
+                    values (:table_id,:template_id,:name,:title,:comments,:instance_id,:user_id,:flags,now(),now()) }
                 set row 0
                 set cells 0
                 foreach row_list $cells_list_of_lists {
@@ -254,7 +254,7 @@ ad_proc -public qss_table_create {
                 }
 ns_log Notice "qss_table_create: total $row rows, $cells cells"
                 db_dml simple_table_update_rc { update qss_simple_table
-                    set row_count =:row,cell_count =:cells
+                    set row_count =:row,cell_count =:cells, last_modified=now()
                     where id = :table_id }
 
             } on_error {
@@ -429,7 +429,7 @@ ad_proc -public qss_table_write {
         
             db_transaction {
                 db_dml simple_table_update { update qss_simple_table
-                    set name =:name,title =:title,comments=:comments 
+                    set name =:name,title =:title,comments=:comments, last_modified=now()
                     where id = :table_id and instance_id=:instance_id and user_id=:user_id }
                 
                 # get list of cell_rc referencs in this table. We need to track updates, and delete any remaining ones.
@@ -464,7 +464,7 @@ ad_proc -public qss_table_write {
                     }
                 }
                 db_dml simple_table_update_rc { update qss_simple_table
-                    set row_count =:row,cell_count =:cells
+                    set row_count =:row,cell_count =:cells, last_modified=now()
                     where id = :table_id }
 
                 # delete remaining cells in cells_list from qss_simple_cells
