@@ -366,29 +366,39 @@ ad_proc -public qss_table_read {
 
         set cells_data_lists [db_list_of_lists qss_simple_cells_table_read { select cell_rc, cell_value from qss_simple_cells
             where table_id =:table_id order by cell_rc } ]
-
-        set prev_row "0001"
-        set row_list [list ]
-        set column_max 0
+        set cells2_data_lists [list ]
+        set col_ref_list [list ]
+        # filter row, column references
         foreach cell_list $cells_data_lists {
             set cell_rc [lindex $cell_list 0]
             set cell_value [lindex $cell_list 1]
 
             # following based on "0000" format used in create/write cell_rc r0001c0001
             set row [string range $cell_rc 1 4]
+            regsub {^[0]+} $row {} row
             set column [string range $cell_rc 6 9]
-            if { $column > $column_max } {
-                set column_max $column
-            }
-            # remove left side zeros
             regsub {^[0]+} $column {} column
+            set row_list [list $row $column $cell_value]
+            lappend cells2_data_lists $row_list
+            lappend col_ref_list $column
+        }
+        # determine max referenced column
+        set column_max [f::lmax $col_ref_list]
+
+        set prev_row 1
+        set row_list [list ]
+        foreach cell_list $cells2_data_lists {
+            set row [lindex $cell_list 0]
+            set column [lindex $cell_list 1]
+            set cell_value [lindex $cell_list 2]
 #            ns_log Notice "qss_table_read: cell ${cell_rc} ($row,$column) value ${cell_value}"     
+
             # build row list
             if { $row eq $prev_row } {
                 # add cell to same row.  column_next is column to fill as represented by cell column number 1...n
                 set column_next [expr { [llength $row_list ] + 1 } ]
                 set cols_to_add [expr { $column - $column_next } ]
-#ns_log Notice "qss_table_read.387: row $row column $column column_next $column_next cols_to_add $cols_to_add"
+                
                 # add blank cells, if needed
                 for {set i 0} {$i < $cols_to_add} {incr i } {
                     lappend row_list ""
@@ -398,18 +408,20 @@ ad_proc -public qss_table_read {
                 # check for any blank orphan cells to add
                 set column_next [expr { [llength $row_list ] + 1 } ]
                 set cols_to_add [expr { $column_max - $column_next + 1 } ]
-#ns_log Notice "qss_table_read.405: row $row column $column column_next $column_next cols_to_add $cols_to_add"
+
                 # add blank cells, if needed
                 for {set i 0} {$i < $cols_to_add} {incr i } {
                     lappend row_list ""
                 }
+
                 # row finished, add row_list to cells_list_of_lists
                 lappend cells_list_of_lists $row_list
+
                 # start new row
                 set row_list [list ]
                 set column_next [expr { [llength $row_list ] + 1 } ]
                 set cols_to_add [expr { $column - $column_next } ]
-#ns_log Notice "qss_table_read.400: row $row column $column column_next $column_next cols_to_add $cols_to_add"
+
                 # add blank cells, if needed
                 for {set i 0} {$i < $cols_to_add} {incr i } {
                     lappend row_list ""
@@ -418,10 +430,10 @@ ad_proc -public qss_table_read {
             }
             set prev_row $row
         }
-        # check for any blank orphan cells to add
+
+        # check for any blank orphan cells at end of row that need adding
         set column_next [expr { [llength $row_list ] + 1 } ]
         set cols_to_add [expr { $column_max - $column_next + 1 } ]
-#        ns_log Notice "qss_table_read.425: row $row column $column column_next $column_next cols_to_add $cols_to_add"
         # add blank cells, if needed
         for {set i 0} {$i < $cols_to_add} {incr i } {
             lappend row_list ""
