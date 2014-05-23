@@ -27,16 +27,25 @@ ad_proc -public qss_tid_from_name {
     if { $read_p } {
         if { [regexp -- {[\?\*]} $table_name ] } {
             regsub -nocase -all -- {[^a-z0-9_\?\*]} $table_name {_} table_name
-            set return_list_of_lists [db_list_of_lists simple_table_stats_sby_lm_1 { select id, name from qss_simple_table where trashed <> '1' and instance_id = :instance_id order by last_modified } ] 
-            # convert return_lists_of_lists to return_list
-            set return_list [lindex $return_list_of_lists 0]
+
+            set return_list_of_lists [db_list_of_lists simple_table_stats_sby_lm_1 { select id, name, last_modified from qss_simple_table where ( trashed is null or trashed = '0' ) and instance_id = :instance_id order by last_modified} ] 
+            # create a list of names
+ns_log Notice "qss_tid_from_name.33: table_name '$table_name' return_list_of_lists $return_list_of_lists"
+            set names_list [list ]
+            foreach lol $return_list_of_lists {
+                lappend names_list [lindex $lol 1]
+            }
+            # find most recent matching name
             set tid_idx [lsearch -nocase $return_list $table_name]
-            if { $tid_idx > -1 } {
-                set return_tid [lindex $return_list $tid_idx]
+ns_log Notice "qss_tid_from_name.40: tid_idx $tid_idx"
+            if { [llength $tid_idx_list ] > 0 } {
+                # set idx to first matching. 
+                set return_tid [lindex [lindex $return_list_of_lists $tid_idx] 0]
             }
         } else {
             # no glob in table_name
-            set return_tid [db_string simple_table_stats_tid_read { select id from qss_simple_table where name = :table_name and trashed <> '1' and instance_id = :instance_id order by last_modified } -default "" ] 
+            set return_tid [db_string simple_table_stats_tid_read { select id, last_modified from qss_simple_table where name =:table_name and ( trashed is null or trashed = '0' ) and instance_id = :instance_id order by last_modified desc limit 1 } -default "" ] 
+            ns_log Notice "qss_tid_from_name.48: table_name '$table_name' return_tid '$return_tid'"
         }
     }
     return $return_tid
