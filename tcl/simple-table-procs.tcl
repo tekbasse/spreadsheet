@@ -36,8 +36,7 @@ ad_proc -public qss_tid_from_name {
             }
         } else {
             # no glob in table_name
-            set return_tid [db_read simple_table_stats_tid_read { select id from qss_simple_table where name = :table_name and trashed <> '1' and instance_id = :instance_id order by last_modified } ] 
-            
+            set return_tid [db_string simple_table_stats_tid_read { select id from qss_simple_table where name = :table_name and trashed <> '1' and instance_id = :instance_id order by last_modified } -default "" ] 
         }
     }
     return $return_tid
