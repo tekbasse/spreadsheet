@@ -301,7 +301,9 @@ ad_proc -public qss_table_stats {
         set return_list_of_lists [db_list_of_lists simple_table_stats { select name, title, comments, cell_count, row_count, template_id, flags, trashed, popularity, last_modified, created, user_id from qss_simple_table where id = :table_id and instance_id = :instance_id } ] 
         # convert return_lists_of_lists to return_list
         set return_list [lindex $return_list_of_lists 0]
-        
+        if { [lindex $return_list 7 ] eq "" } {
+            set return_list [lreplace $return_list 7 7 "0"]
+        }
     } else {
         set return_list [list ]
     }
