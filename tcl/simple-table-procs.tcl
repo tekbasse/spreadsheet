@@ -596,17 +596,31 @@ ad_proc -public qss_table_trash {
         set user_id [ad_conn user_id]
         set untrusted_user_id [ad_conn untrusted_user_id]
     }
-    set delete_p [permission::permission_p -party_id $user_id -object_id $instance_id -privilege delete]
-    if { $delete_p } {
+
+    set write_p [permission::permission_p -party_id $user_id -object_id $instance_id -privilege write]
+    set allowed_p $write_p
+    if { $write_p } {
         if { $trash_p } {
-            db_dml simple_table_trash_tog { update qss_simple_table set trashed = '1'
-                where id=:table_id and instance_id =:instance_id and user_id=:user_id }
+            db_dml simple_table_trash_togc { update qss_simple_table set trashed = '1'
+                where id=:table_id and instance_id =:instance_id }
         } else {
-            db_dml simple_table_trash_tog { update qss_simple_table set trashed = '0'
-                where id=:table_id and instance_id =:instance_id and user_id=:user_id }
+            db_dml simple_table_trash_togc { update qss_simple_table set trashed = '0'
+                where id=:table_id and instance_id =:instance_id }
+        }
+    } else {
+        set create_p [permission::permission_p -party_id $user_id -object_id $instance_id -privilege create]
+        set allowed_p $create_p
+        if { $create_p } {
+            if { $trash_p } {
+                db_dml simple_table_trash_togw { update qss_simple_table set trashed = '1'
+                    where id=:table_id and instance_id =:instance_id and user_id=:user_id }
+            } else {
+                db_dml simple_table_trash_togw { update qss_simple_table set trashed = '0'
+                    where id=:table_id and instance_id =:instance_id and user_id=:user_id }
+            }
         }
     }
-    return $delete_p
+    return $allowed_p
 }
 
 
