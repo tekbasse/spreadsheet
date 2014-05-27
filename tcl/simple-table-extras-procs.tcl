@@ -27,6 +27,13 @@ ad_proc -public qss_table_split {
     set create_p [permission::permission_p -party_id $user_id -object_id $instance_id -privilege create]
     if { $create_p & $column_name ne "" } {
         # read table_tid
+        set table_stats_list [qss_table_stats $table_id $instance_id $user_id]
+        # name, title, comments, cell_count, row_count, template_id, flags, trashed, popularity, time last_modified, time created, user_id.
+        set table_base_name [lindex $table_stats_list 0]
+        set table_title [lindex $table_stats_list 1]
+        set table_template_id [lindex $table_stats_list 5]
+        set table_flags [lindex $table_stats_list 6]
+        set table_comments "Split from '${table_title}' (${table_base_name})"
         set table_lists [qss_table_read $table_id $instance_id $user_id ]
         # identify column_name_idx
         set title_row [lindex $table_lists 0]
@@ -41,11 +48,32 @@ ad_proc -public qss_table_split {
                 set col_val [lindex $row_list $column_name_idx]
                 if { $col_val <> $col_val_prev } {
                     # if value changes, create save table_name old_column_value, start collecting new
-
-                    ns_log Notice "qss_table_split: new table_id $table_id"
+                    set suffix "-"
+                    append suffix $col_val
+                    set name $table_base_name
+                    append name $suffix
+                    append title $suffix
+                    set comments $table_comments
+                    append comments " @ ${column_name}: ${col_val}"
+                    set table_id [qss_table_create $p_table_lists $name $title $comments $table_template_id $table_flags $instance_id $user_id]
+                    ns_log Notice "qss_table_split.59: new table_id $table_id"
+                    set p_table_lists [list ]
+                    lappend p_table_lists $title_row
                 } else {
                     # add row to existing partial table
                     lappend p_table_lists $row_list
+                }
+                if { [llength $p_table_lists] > 1 } {
+                    # save final split
+                    set suffix "-"
+                    append suffix $col_val
+                    set name $table_base_name
+                    append name $suffix
+                    append title $suffix
+                    set comments $table_comments
+                    append comments " @ ${column_name}: ${col_val}"
+                    set table_id [qss_table_create $p_table_lists $name $title $comments $table_template_id $table_flags $instance_id $user_id]
+                    ns_log Notice "qss_table_split.76: new table_id $table_id"
                 }
             }
         }
