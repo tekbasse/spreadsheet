@@ -44,37 +44,43 @@ ad_proc -public qss_table_split {
             set col_val_prev [lindex $row_list $column_name_idx]
             set p_table_lists [list ]
             lappend p_table_lists $title_row
+            lappend p_table_lists $row_list
+            set title $table_title
+            set name $table_base_name
+            set suffix "-"
+            append suffix $col_val_prev
+            append name $suffix
+            append title $suffix
+            set comments $table_comments
+            append comments " @ ${column_name}: ${col_val_prev}"
             foreach row_list [lrange $table_lists 2 end] {
                 set col_val [lindex $row_list $column_name_idx]
-                if { $col_val <> $col_val_prev } {
+                if { $col_val ne $col_val_prev } {
                     # if value changes, create save table_name old_column_value, start collecting new
-                    set suffix "-"
-                    append suffix $col_val
-                    set name $table_base_name
-                    append name $suffix
-                    append title $suffix
-                    set comments $table_comments
-                    append comments " @ ${column_name}: ${col_val}"
                     set table_id [qss_table_create $p_table_lists $name $title $comments $table_template_id $table_flags $instance_id $user_id]
                     ns_log Notice "qss_table_split.59: new table_id $table_id"
                     set p_table_lists [list ]
                     lappend p_table_lists $title_row
-                } else {
-                    # add row to existing partial table
                     lappend p_table_lists $row_list
-                }
-                if { [llength $p_table_lists] > 1 } {
-                    # save final split
+                    set title $table_title
+                    set name $table_base_name
                     set suffix "-"
                     append suffix $col_val
-                    set name $table_base_name
                     append name $suffix
                     append title $suffix
                     set comments $table_comments
                     append comments " @ ${column_name}: ${col_val}"
-                    set table_id [qss_table_create $p_table_lists $name $title $comments $table_template_id $table_flags $instance_id $user_id]
-                    ns_log Notice "qss_table_split.76: new table_id $table_id"
+                } else {
+                    # add row to existing partial table
+                    lappend p_table_lists $row_list
+
                 }
+                set col_val_prev $col_val
+            }
+            if { [llength $p_table_lists] > 1 } {
+                # save final split
+                set table_id [qss_table_create $p_table_lists $name $title $comments $table_template_id $table_flags $instance_id $user_id]
+                ns_log Notice "qss_table_split.76: new table_id $table_id"
             }
         }
     }
