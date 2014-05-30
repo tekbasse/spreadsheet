@@ -70,11 +70,11 @@ ad_proc -public qss_tid_scalars_to_array {
 } {
     upvar $array_name tid_arr
 
-    if { $columns_unfiltered ne "" && [llength $columns_unfiltered] == 1 } {
-        set columns_unfiltered [split $columns_unfiltered]
+    if { $scalars_unfiltered ne "" && [llength $scalars_unfiltered] == 1 } {
+        set scalars_unfiltered [split $scalars_unfiltered]
     }
-    if { $columns_required ne "" && [llength $columns_required] == 1 } {
-        set columns_required [split $columns_required]
+    if { $scalars_required ne "" && [llength $scalars_required] == 1 } {
+        set scalars_required [split $scalars_required]
     }
     set names_values_list [list ]
     # load table_id
@@ -143,7 +143,7 @@ ad_proc -public qss_tid_columns_to_array_of_lists {
     # load table_id
     set tid_lists [qss_table_read $table_id $instance_id $user_id]
     # extract each column name
-    set titles_orig_list [lindex $tids_lists 0]
+    set titles_orig_list [lindex $tid_lists 0]
     # filter column names
     set titles_list [list ]
     foreach title $titles_orig_list {
