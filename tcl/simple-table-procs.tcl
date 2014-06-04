@@ -134,10 +134,14 @@ ad_proc -public qss_tid_columns_to_array_of_lists {
 } {
     upvar $array_name tid_arr
     if { $columns_unfiltered ne "" && [llength $columns_unfiltered] == 1 } {
-        set columns_unfiltered [split $columns_unfiltered]
+        set columns_unfiltered_list [split $columns_unfiltered]
+    } else {
+        set columns_unfiltered_list $columns_unfiltered
     }
     if { $columns_required ne "" && [llength $columns_required] == 1 } {
-        set columns_required [split $columns_required]
+        set columns_required_list [split $columns_required]
+    } else {
+        set columns_required_list $columns_required
     }
     set success 0
     # load table_id
@@ -149,28 +153,50 @@ ad_proc -public qss_tid_columns_to_array_of_lists {
     foreach title $titles_orig_list {
         # Get values of column, one column at a time
         if { ![regsub -nocase -all -- {[^a-z0-9_]+} $title {_} title2 ] } {
+            # assign title2 if regsub doesn't assign it
             set title2 $title
-        }
+        } 
         lappend titles_list $title2
-        set column_nbr [lsearch $columns_required $title2]
-        if { $column_nbr > -1 } {
-            set columns_required [lreplace $columns_required $column_nbr $column_nbr]
+        set column_idx [lsearch $columns_required_list $title2]
+        if { $column_idx > -1 } {
+            # required column found, remove from list
+            set columns_required_list [lreplace $columns_required_list $column_idx $column_idx]
         }
     }
-    if { [llength $columns_required ] == 0 } {
-        set index 0
-        foreach title $titles_orig_list {
-            set column_nbr [lsearch $columns_unfiltered $title2]
-            if { $title ne "" && $column_nbr > -1 } {
-                # Once a column has been used, don't overwrite it with another of same
-                set columns_unfiltered [lreplace $columns_unfiltered $column_nbr $column_nbr]
-                set arr_list [list ]
-                foreach row_list [lrange $tid_lists 1 end] {
-                    lappend arr_list [lindex $row_list $index]
+    if { [llength $columns_required_list ] == 0 } {
+        # all required columns exist, if any
+        
+        # convert tid_lists to list arrays (larr)
+        # columns_unfiltered ne "" ?
+        if { $columns_unfiltered ne "" } {
+            # only return list of specified columns
+            
+            foreach title $titles_list {
+                set column_idx [lsearch -exact $columns_unfiltered_list $title]
+                if { $column_idx > -1 } {
+                    set arr_list [list ]
+                    foreach row_list [lrange $tid_lists 1 end] {
+                        lappend arr_list [lindex $row_list $column_idx]
+                    }
+                    set tid_arr($title) $arr_list
                 }
-                set tid_arr($title2) $arr_list
             }
-            incr index
+            
+        } else {
+            # return all columns with unblank titles
+            
+            set index 0
+            foreach title $titles_list {
+                if { $title ne "" } {
+                    set  arr_list [list ]
+                    foreach row_list [lrange $tid_lists 1 end] {
+                        lappend arr_list [lindex $row_list $index]
+                    }
+                    set tid_arr($title) $arr_list
+                }
+                incr index
+            }
+            
         }
         set success 1
     }
