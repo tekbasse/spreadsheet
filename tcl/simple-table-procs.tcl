@@ -163,6 +163,7 @@ ad_proc -public qss_tid_columns_to_array_of_lists {
             set columns_required_list [lreplace $columns_required_list $column_idx $column_idx]
         }
     }
+    ns_log Notice "qss_tid_columns_to_array_of_lists.166: titles_list '$titles_list'"
     if { [llength $columns_required_list ] == 0 } {
         # all required columns exist, if any
         
@@ -172,29 +173,30 @@ ad_proc -public qss_tid_columns_to_array_of_lists {
             # only return list of specified columns
             
             foreach title $titles_list {
-                set column_idx [lsearch -exact $columns_unfiltered_list $title]
+                set column_idx [lsearch -exact $titles_orig_list $title]
                 if { $column_idx > -1 } {
                     set arr_list [list ]
                     foreach row_list [lrange $tid_lists 1 end] {
                         lappend arr_list [lindex $row_list $column_idx]
                     }
                     set tid_arr($title) $arr_list
+                    ns_log Notice "qss_tid_columns_to_array_of_lists.182: tid_arr($title) '$tid_arr($title)'"
                 }
             }
             
         } else {
             # return all columns with unblank titles
             
-            set index 0
             foreach title $titles_list {
                 if { $title ne "" } {
+                    set column_idx [lsearch -exact $titles_orig_list $title]
                     set  arr_list [list ]
                     foreach row_list [lrange $tid_lists 1 end] {
-                        lappend arr_list [lindex $row_list $index]
+                        lappend arr_list [lindex $row_list $column_idx]
                     }
                     set tid_arr($title) $arr_list
+                    ns_log Notice "qss_tid_columns_to_array_of_lists.197: tid_arr($title) '$tid_arr($title)'"
                 }
-                incr index
             }
             
         }
