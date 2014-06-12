@@ -5,6 +5,24 @@ ad_library {
     @cs-id $Id:
 }
 
+ad_proc -public qss_tables_are_equiv_p {
+    table_1_lists
+    table_2_lists
+} {
+    Returns 1 if columns and data between tables are equivalent, but maybe differ in column order. Otherwise returns 0.
+} {
+    set equiv_p 0
+    set titles_1_list [lsort [lindex $table_1_lists 0]]
+    set titles_2_list [lsort [lindex $table_2_lists 0]]
+    if { $titles_1_list eq $titles_2_list } {
+        # check row data in order, column by column
+        foreach column $titles_1_list {
+
+        }
+    }
+    return $equiv_p
+}
+
 ad_proc -public qss_table_split { 
     table_id
     column_name
