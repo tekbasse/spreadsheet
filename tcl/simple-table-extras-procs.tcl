@@ -11,13 +11,33 @@ ad_proc -public qss_tables_are_equiv_p {
 } {
     Returns 1 if columns and data between tables are equivalent, but maybe differ in column order. Otherwise returns 0.
 } {
-    set equiv_p 0
-    set titles_1_list [lsort [lindex $table_1_lists 0]]
-    set titles_2_list [lsort [lindex $table_2_lists 0]]
-    if { $titles_1_list eq $titles_2_list } {
-        # check row data in order, column by column
-        foreach column $titles_1_list {
-
+    if { $table_1_lists eq $table_2_lists } {
+        set equiv_p 1
+    } else {
+        set equiv_p 0
+        set titles_1_list [lsort [lindex $table_1_lists 0]]
+        set titles_2_list [lsort [lindex $table_2_lists 0]]
+        if { $titles_1_list eq $titles_2_list } {
+            # check row data in order, column by column
+            set table_1_rows [llength $table_1_rows]
+            set table_2_rows [llength $table_2_rows]
+            set equiv_p [expr { $table_1_rows == $table_2_rows } ]
+            set col_idx 0
+            set col_count [llength $titles_1_list]
+            set column [lindex $titles_1_list $col_idx]
+            while { $equiv_p == 1 && $col_idx < $col_count } {
+                set t1_idx [lsearch -exact $table_1_lists $column]
+                set t2_idx [lsearch -exact $table_2_lists $column]
+                set row_num 1
+                while { $equiv_p == 1 && $row_num < $table_1_rows } {
+                    set t1_val [lindex [lindex $table_1_lists $row_num] $t1_idx]
+                    set t2_val [lindex [lindex $table_2_lists $row_num] $t2_idx]
+                    set equiv_p [expr { ( $t1_val eq $t2_val )  } ]
+                    incr row_num
+                }
+                incr col_idx
+                set column [lindex $titles_1_list $col_idx]
+            }
         }
     }
     return $equiv_p
