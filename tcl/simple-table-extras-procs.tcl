@@ -19,8 +19,8 @@ ad_proc -public qss_tables_are_equiv_p {
         set titles_2_list [lsort [lindex $table_2_lists 0]]
         if { $titles_1_list eq $titles_2_list } {
             # check row data in order, column by column
-            set table_1_rows [llength $table_1_rows]
-            set table_2_rows [llength $table_2_rows]
+            set table_1_rows [llength $table_1_lists]
+            set table_2_rows [llength $table_2_lists]
             set equiv_p [expr { $table_1_rows == $table_2_rows } ]
             set col_idx 0
             set col_count [llength $titles_1_list]
