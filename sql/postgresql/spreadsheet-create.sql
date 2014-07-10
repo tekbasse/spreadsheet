@@ -115,6 +115,15 @@ CREATE TABLE qss_composites (
 
 CREATE TABLE qss_cells (
     id integer not null primary key,
+    -- It is not efficient to use an sql sequence for so many entries.
+    -- Cannot use: row_nbr * col_nbr * ( 0 - ( row_nbr > col_nbr ) )
+    -- because inserted cells would cause id collisions
+    -- use sheet.cell_count + 1
+    -- for partial views or edits
+    -- reference the id as well as last_modified in seconds
+    -- so that edits reach same cell and changes do not overwrite
+    -- other changes made since last_modified 
+
     sheet_id integer not null,
     --  should be a value from qss_sheets.sheet_id
 
@@ -131,11 +140,6 @@ CREATE TABLE qss_cells (
     cell_value varchar(1025),
     -- returned by function or user input value
     -- cell_row = 0 is default value for other cells in same column
-
-    cell_value_sq varchar(80),
-    -- square of cell_value, used frequently in statistics
-    -- values in this column are calculated when
-    -- cell_row = 0 and cell_value is a number 
 
     cell_type varchar(8),
     -- type validation, proc and attributes
@@ -162,11 +166,6 @@ CREATE TABLE qss_cells (
     -- this value is to be automatically generated and show this
     -- cells order of calculation based on calculation dependencies
     -- for example, calc_depth = max (calc_depth of all dependent cells) + 1
-
-    cell_name varchar(40),
-    -- usually blank, an alternate reference to RC format
-    -- unique to a sheet
-    -- if cell_row is 0 then this is a column_name
 
     cell_title varchar(80),
     -- a label when displaying cell as a single value
