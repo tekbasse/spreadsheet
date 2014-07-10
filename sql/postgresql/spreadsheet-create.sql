@@ -20,34 +20,36 @@ SELECT nextval ('qss_id_seq');
 
 CREATE TABLE qss_sheets (
     id integer not null primary key,
-
+    template_id integer,
     instance_id integer,
     -- object_id of mounted instance (context_id)
 
     user_id integer,
     -- user_id of user that created spreadsheet
 
-    sheet_type varchar(8),
+    flags varchar(12),
     -- to differentiate between data for aggregating and 
     -- complex sheets (with references to multiple sheets for example).
 
-    name_abbrev varchar(40),
+    name varchar(40),
     -- no spaces, single word reference that can be used in urls, filenames etc
 
     style_ref varchar(300),
     --  might be an absolute ref to a css page, or extended to other style references
 
-    sheet_title varchar(80),
-    sheet_description text,
+    title varchar(80),
+    description text,
     orientation varchar(2) default 'RC',
     -- rc = row reference, column reference
 
     row_count integer,
     -- use value if not null
-
-    column_count integer,
+    cell_count integer,
     -- use value if not null
 
+    trashed varchar(1),
+    popularity integer,
+    
     last_calculated timestamptz,
     -- should be the max(qss_cells.last_calculated) for a sheet_id
 
@@ -56,7 +58,7 @@ CREATE TABLE qss_sheets (
     last_modified_by integer,
     -- user_id of user that last modified spreadsheet
 
-    sheet_status varchar(8)
+    status varchar(8)
     -- value will likely be one of
     -- ready      values have been calculated and no active processes working
     -- working    the spreadsheet is in a recalculating process
