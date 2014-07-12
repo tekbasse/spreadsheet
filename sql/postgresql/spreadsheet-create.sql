@@ -47,7 +47,7 @@ CREATE TABLE qss_sheets (
     cell_count integer,
     -- use value if not null
 
-    trashed varchar(1),
+    trashed varchar(1) default '0',
     popularity integer,
     
     last_calculated timestamptz,
@@ -65,6 +65,9 @@ CREATE TABLE qss_sheets (
     -- recalc     values have expired, spreadsheet needs to be recalculated 
 );
 
+-- qss_composites is deprecated
+-- use a regular sheet and set type/flags to p1 to show it's a 1 row table with column names just like PRETTI p1 type
+-- This reduces the need to create a separate API for composites
 CREATE TABLE qss_composites (
     id integer not null primary key,
 

@@ -26,15 +26,18 @@ namespace eval spreadsheet {}
 # qss_table_delete 
 # qss_table_trash 
 
+# spreadsheet::read_as_lists <-- equivalent to qss_table_read
+# spreadsheet::read <--> qss_tids_columns_to_array_of_lists
 
 #    set spreadsheet_id [db_nextval qss_id_seq]
+
 
 ad_proc -public spreadsheet::id_from_name {
     sheet_name
     {instance_id ""}
     {user_id ""}
 } {
-    Returns the sheet_id (sid) of the most recent sheet_id of sheet name. If the sheet name contains a search glob, returns the newest tid of the name matching the glob.
+    Returns the sheet_id (sid) of the most recent sheet_id of sheet name. If the sheet name contains a search glob, returns the newest id of the name matching the glob.
 } {
     if { $instance_id eq "" } {
         # set instance_id package_id
@@ -46,39 +49,102 @@ ad_proc -public spreadsheet::id_from_name {
     }
     # check permissions
     set read_p [permission::permission_p -party_id $user_id -object_id $instance_id -privilege read]
-    set return_tid ""
+    set return_id ""
 
     if { $read_p } {
         if { [regexp -- {[\?\*]} $sheet_name ] } {
             regsub -nocase -all -- {[^a-z0-9_\?\*]} $sheet_name {_} sheet_name
 
-            set return_list_of_lists [db_list_of_lists simple_sheet_stats_sby_lm_1 { select id, name, last_modified from qss_simple_sheet where ( trashed is null or trashed = '0' ) and instance_id = :instance_id order by last_modified} ] 
+            set return_list_of_lists [db_list_of_lists spreadsheet_stats_sby_lm_1 { select id, name, last_modified from qss_sheets where ( trashed is null or trashed = '0' ) and instance_id = :instance_id order by last_modified} ] 
             # create a list of names
-            #ns_log Notice "qss_tid_from_name.33: sheet_name '$sheet_name' return_list_of_lists $return_list_of_lists"
+            #ns_log Notice "spreadsheet::id_from_name.33: sheet_name '$sheet_name' return_list_of_lists $return_list_of_lists"
             set names_list [list ]
             foreach lol $return_list_of_lists {
                 lappend names_list [lindex $lol 1]
             }
             # find most recent matching name
-            set tid_idx [lsearch -nocase $return_list $sheet_name]
-            #ns_log Notice "qss_tid_from_name.40: tid_idx $tid_idx"
-            if { [llength $tid_idx_list ] > 0 } {
+            set id_idx [lsearch -nocase $return_list $sheet_name]
+            #ns_log Notice "spreadsheet::id_from_name.40: id_idx $id_idx"
+            if { [llength $id_idx_list ] > 0 } {
                 # set idx to first matching. 
-                set return_tid [lindex [lindex $return_list_of_lists $tid_idx] 0]
+                set return_id [lindex [lindex $return_list_of_lists $id_idx] 0]
             }
         } else {
             # no glob in sheet_name
-            set return_tid [db_string simple_sheet_stats_tid_read { select id, last_modified from qss_simple_sheet where name =:sheet_name and ( trashed is null or trashed = '0' ) and instance_id = :instance_id order by last_modified desc limit 1 } -default "" ] 
-            #ns_log Notice "qss_tid_from_name.48: sheet_name '$sheet_name' return_tid '$return_tid'"
+            set return_id [db_string spreadsheet_stats_id_read { select id, last_modified from qss_sheets where name =:sheet_name and ( trashed is null or trashed = '0' ) and instance_id = :instance_id order by last_modified desc limit 1 } -default "" ] 
+            #ns_log Notice "spreadsheet::id_from_name.48: sheet_name '$sheet_name' return_id '$return_id'"
         }
     }
-    return $return_tid
+    return $return_id
 }
 
 
+ad_proc -public spreadsheet::scalars_to_array {
+    id 
+    array_name
+    {scalars_unfiltered ""}
+    {scalars_required ""}
+    {instance_id ""}
+    {user_id ""}
+} {
+    Saves scalars in a 2 row table to an array array_name, 
+    where array indexes are the scalars in the row 0 'name' column, and 
+    the value for each scalar is row 1 in column. 
+    id is a reference to a qss_sheets table. 
+    Also, returns the name/value pairs in a list. 
+    If any scalars_required are not included, 
+    includes these indexes and sets values to empty string.
+} {
+    upvar $array_name id_arr
+
+    if { $scalars_unfiltered ne "" && [llength $scalars_unfiltered] == 1 } {
+        set scalars_unfiltered [split $scalars_unfiltered]
+    }
+    if { $scalars_required ne "" && [llength $scalars_required] == 1 } {
+        set scalars_required [split $scalars_required]
+    }
+    set names_values_list [list ]
+    # load table_id
+    set id_lists [spreadsheet::read_as_lists $id $instance_id $user_id]
+    # extract each name-value pair, saving into array
+    set titles_list [lindex $id_lists 0]
+    set index 0
+    foreach title $titles_list {
+        if { [regexp -nocase -- {name[s]?} $title] } {
+            set name_idx $index
+        }
+        if { [regexp -nocase -- {value[s]?} $title] } {
+            set value_idx $index
+        }
+        incr index
+    }
+    if { [info exists value_idx] && [info exists name_idx] } {
+        foreach row_list [lrange $id_lists 1 end] {
+            set name [lindex $row_list $name_idx]
+            set value [lindex $row_list $value_idx]
+            regsub -nocase -all -- {[^a-z0-9_]+} $name {_} name
+            set scalar_idx [lsearch $scalars_unfiltered $name]
+            if { $name ne "" && $scalar_idx > -1 } {
+                lappend names_values_list $name $value
+                set scalars_unfiltered [lreplace $scalars_unfiltered $scalar_idx $scalar_idx]
+                set scalar_idx [lsearch $scalars_required $name]
+                if { $scalar_idx > -1 } {
+                    set scalars_required [lreplace $scalars_required $scalar_idx $scalar_idx]
+                }
+                set id_arr($name) $value
+            }
+        }
+        # create blank defaults for missing, required name/value pairs.
+        foreach scalar $scalars_required {
+            set id_arr($scalar) ""
+            lappend names_values_list $scalar ""
+        }
+    } 
+    return $names_values_list
+}
 
 
-ad_proc -public spreadsheet::create { 
+ad_proc -public spreadsheet::create.old { 
     id
     name_abbrev
     sheet_title
@@ -87,8 +153,6 @@ ad_proc -public spreadsheet::create {
     {orientation "RC"}
 } {
     creates spreadsheet
-    Orientation RC means fixed columns, variable number of rows.
-    Orientation CR means fixed rows, variable number of columns.
 } {
     # if id exists, assume it's a double click or bad info, ignore
     set success 0
@@ -105,6 +169,118 @@ ad_proc -public spreadsheet::create {
     } 
     return $success
 }
+
+ad_proc -public spreadsheet::create { 
+    array_name
+    name
+    title
+    comments
+    {template_id ""}
+    {flags ""}
+    {instance_id ""}
+    {user_id ""}
+} {
+    Creates spreadsheet. returns id, or 0 if error. instance_id is usually package_id
+} {
+
+#code.  Be sure to check permissions
+
+CREATE TABLE qss_sheets (
+#       id integer not null primary key,
+#       template_id integer,
+#       instance_id integer,
+#       user_id integer,
+#       flags varchar(12),
+#       name varchar(40),
+#       style_ref varchar(300),
+#       title varchar(80),
+#       description text,
+#       orientation varchar(2) default 'RC',
+#       row_count integer,
+#       cell_count integer,
+#       trashed varchar(1) default '0',
+#       popularity integer,
+#       last_calculated timestamptz,
+#       last_modified timestamptz,
+#       last_modified_by integer,
+#       status varchar(8)
+#   );
+#   CREATE TABLE qss_cells (
+#       id integer not null primary key,
+#       sheet_id integer not null,
+#       cell_row integer not null,
+#       cell_column integer not null,
+#       cell_name varchar(40),
+#       cell_value varchar(1025),
+#       cell_type varchar(8),
+#       cell_format varchar(80),
+#       cell_proc varchar(1025),
+#       cell_calc_depth integer not null default '0',
+#       cell_title varchar(80),
+#       last_calculated timestamptz,
+#       last_modified timestamptz,
+#       last_modified_by integer
+#   );
+
+    if { $instance_id eq "" } {
+        # set instance_id package_id
+        set instance_id [ad_conn package_id]
+    }
+    if { $user_id eq "" } {
+        set user_id [ad_conn user_id]
+        set untrusted_user_id [ad_conn untrusted_user_id]
+    }
+    set create_p [permission::permission_p -party_id $user_id -object_id $instance_id -privilege create]
+    ns_log Notice "spreadsheet::create: create_p $create_p with raw rows cells_list_of_lists [llength $cells_list_of_lists]"
+    if { $create_p } {
+        set id [db_nextval qss_id_seq]
+        ns_log Notice "spreadsheet::create: new id $id"
+        set sheet_exists_p [db_0or1row simple_sheet_get_id {select name from qss_simple_sheet where id = :id } ]
+        if { !$sheet_exists_p } {
+            if { $template_id eq "" } {
+                set template_id $id
+            }
+            set nowts [dt_systime -gmt 1]
+            db_transaction {
+                db_dml simple_sheet_create { insert into qss_simple_sheet
+                    (id,template_id,name,title,comments,instance_id,user_id,flags,last_modified,created)
+                    values (:id,:template_id,:name,:title,:comments,:instance_id,:user_id,:flags,:nowts,:nowts) }
+                set row 0
+                set cells 0
+                foreach row_list $cells_list_of_lists {
+                    incr row
+                    set column 0
+                    foreach cell_value $row_list {
+                        incr column
+                        incr cells
+                        set cell_rc "r[string range "0000" 0 [expr { 3 - [string length $row] } ] ]${row}c[string range "0000" 0 [expr { 3 - [string length $column] } ] ]${column}"
+                        # if cell_value has length of zero, then don't insert
+                        if { [string length $cell_value] > 0 } {
+#ns_log Notice "spreadsheet::create: cell_rc $cell_rc cell_value $cell_value"
+                            db_dml qss_simple_cells_create { insert into qss_simple_cells
+                                (id,cell_rc,cell_value)
+                                values (:id,:cell_rc,:cell_value)
+                            }
+                        }
+                    }
+                }
+ns_log Notice "spreadsheet::create: total $row rows, $cells cells"
+                db_dml simple_sheet_update_rc { update qss_simple_sheet
+                    set row_count =:row,cell_count =:cells, last_modified=:nowts
+                    where id = :id }
+
+            } on_error {
+                set id 0
+                ns_log Error "spreadsheet::create: general psql error during db_dml"
+            }
+        } else {
+            set id 0
+            ns_log Warning "spreadsheet::create: sheet already exists for id $id"
+        }
+    }
+    return $id
+}
+
 
 ad_proc -public spreadsheet::list { 
     package_id
