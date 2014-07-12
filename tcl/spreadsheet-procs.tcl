@@ -1,6 +1,6 @@
 ad_library {
 
-    routines for accessing and managing spreadsheets
+    API for spreadsheets
     @creation-date 25 August 2010
     @cs-id $Id:
 }
@@ -8,85 +8,74 @@ ad_library {
 
 # orientation defaults to RC (row column reference and format, where rows within a column are the same data type)
 # for CR orientation, switch the references so a column ref is a row reference and a row ref is a column ref.
-# this could get confusing...  All internal should orient at RC. if CR orientation, just display by switching axis
+# this could get confusing...  
+# All internal should orient at RC to handle column titles. 
+# If CR orientation, just display by switching axis
 # user input would then be converted before passing to procs.
 
 namespace eval spreadsheet {}
 
-ad_proc -public spreadsheet::new_id { 
+# qss_tid_from_name 
+# qss_tid_scalars_to_array 
+# qss_tid_columns_to_array_of_lists 
+# qss_table_create  
+# qss_table_stats  
+# qss_tables  
+# qss_table_read  
+# qss_table_write 
+# qss_table_delete 
+# qss_table_trash 
+
+
+#    set spreadsheet_id [db_nextval qss_id_seq]
+
+ad_proc -public spreadsheet::id_from_name {
+    sheet_name
+    {instance_id ""}
+    {user_id ""}
 } {
-    gets new spreadsheet id
+    Returns the sheet_id (sid) of the most recent sheet_id of sheet name. If the sheet name contains a search glob, returns the newest tid of the name matching the glob.
 } {
-    set spreadsheet_id [db_nextval qss_id_seq]
-    return $spreadsheet_id
+    if { $instance_id eq "" } {
+        # set instance_id package_id
+        set instance_id [ad_conn package_id]
+    }
+    if { $user_id eq "" } {
+        set user_id [ad_conn user_id]
+        set untrusted_user_id [ad_conn untrusted_user_id]
+    }
+    # check permissions
+    set read_p [permission::permission_p -party_id $user_id -object_id $instance_id -privilege read]
+    set return_tid ""
+
+    if { $read_p } {
+        if { [regexp -- {[\?\*]} $sheet_name ] } {
+            regsub -nocase -all -- {[^a-z0-9_\?\*]} $sheet_name {_} sheet_name
+
+            set return_list_of_lists [db_list_of_lists simple_sheet_stats_sby_lm_1 { select id, name, last_modified from qss_simple_sheet where ( trashed is null or trashed = '0' ) and instance_id = :instance_id order by last_modified} ] 
+            # create a list of names
+            #ns_log Notice "qss_tid_from_name.33: sheet_name '$sheet_name' return_list_of_lists $return_list_of_lists"
+            set names_list [list ]
+            foreach lol $return_list_of_lists {
+                lappend names_list [lindex $lol 1]
+            }
+            # find most recent matching name
+            set tid_idx [lsearch -nocase $return_list $sheet_name]
+            #ns_log Notice "qss_tid_from_name.40: tid_idx $tid_idx"
+            if { [llength $tid_idx_list ] > 0 } {
+                # set idx to first matching. 
+                set return_tid [lindex [lindex $return_list_of_lists $tid_idx] 0]
+            }
+        } else {
+            # no glob in sheet_name
+            set return_tid [db_string simple_sheet_stats_tid_read { select id, last_modified from qss_simple_sheet where name =:sheet_name and ( trashed is null or trashed = '0' ) and instance_id = :instance_id order by last_modified desc limit 1 } -default "" ] 
+            #ns_log Notice "qss_tid_from_name.48: sheet_name '$sheet_name' return_tid '$return_tid'"
+        }
+    }
+    return $return_tid
 }
 
-ad_proc -private spreadsheet::status_q { 
-    sheet_id
-} {
-    gets spreadsheet status
-} {
-    db_0or1row get_spreadsheet_status "select sheet_status from qss_sheets where id = :sheet_id"
-    if { ![info exists sheet_status] } {
-        set sheet_status ""
-    }
-    return $sheet_status
-}
 
-ad_proc -private spreadsheet::cell_id_from_other { 
-    sheet_id
-    instance_id
-    {orientation "RC"}
-    {cell_row ""}
-    {cell_column ""}
-    {cell_name ""}
-    {cell_title ""}
-} {
-    gets cell_id from indirect references
-} {
-    if { [spreadsheet::exists_for_rwd_q $sheet_id $instance_id] } {
-        if { $orientation eq "RC" } {
-            db_0or1row get_cell_id_from_rc_ref "select cell_id from qss_cells where sheet_id = :sheet_id and (
-                  (cell_name = :cell_name ) or
-                  (cell_row = :cell_row and cell_column=:cell_column) or
-                  (cell_row = :cell_row and cell_column in 
-                      ( select cell_column from qss_cells where sheet_id = :sheet_id and cell_row = '0' and cell_name = :cell_name unique) )"
-        } 
-    }
-    if { ![info exists cell_id] } {
-        set cell_id ""
-    }
-    return $cell_id
-}
-
-
-ad_proc -private spreadsheet::id_from_cell_id { 
-    sheet_id
-} {
-    gets spreadsheet_id from cell_id
-} {
-    db_0or1row get_spreadsheet_id_from_cell_id "select sheet_id from qss_cells where id = :id"
-    if { ![info exists sheet_id] } {
-        set sheet_id ""
-    }
-    return $sheet_id
-}
-
-
-ad_proc -private spreadsheet::exists_for_rwd_q { 
-    sheet_id
-    instance_id
-} {
-    returns 1 if sheet_id exists. This is handy for reads, writes, and deletes. Use status_q instead if you want to check for the existence of the id only.
-} {
-    db_0or1row spreadsheet_exists_q "select sheet_status from qss_sheets where id = :sheet_id and instance_id = :instance_id"
-    if { ![info exists sheet_status] } {
-        set exists_p 0
-    } else {
-        set exists_p 1
-    }
-    return $exists_p
-}
 
 
 ad_proc -public spreadsheet::create { 
@@ -301,4 +290,16 @@ ad_proc -public spreadsheet::list {
     id, name_abbrev, sheet_title,row_count,column_count,last_calculated,last_modified,status
 } {
 
+}
+
+ad_proc -private spreadsheet::status_q { 
+    sheet_id
+} {
+    gets spreadsheet status
+} {
+    db_0or1row get_spreadsheet_status "select sheet_status from qss_sheets where id = :sheet_id"
+    if { ![info exists sheet_status] } {
+        set sheet_status ""
+    }
+    return $sheet_status
 }
