@@ -15,23 +15,9 @@ ad_library {
 
 namespace eval spreadsheet {}
 
-# qss_tid_from_name 
-# qss_tid_scalars_to_array 
-# qss_tid_columns_to_array_of_lists 
-# qss_table_create  
-# qss_table_stats  
-# qss_tables  
-# qss_table_read  
-# qss_table_write 
-# qss_table_delete 
-# qss_table_trash 
-
-# spreadsheet::read_as_lists <-- equivalent to qss_table_read
-# spreadsheet::read <--> qss_tids_columns_to_array_of_lists
-
 #    set spreadsheet_id [db_nextval qss_id_seq]
 
-
+# qss_tid_from_name 
 ad_proc -public spreadsheet::id_from_name {
     sheet_name
     {instance_id ""}
@@ -79,9 +65,17 @@ ad_proc -public spreadsheet::id_from_name {
 }
 
 
+# qss_tid_scalars_to_array 
+# qss_tid_columns_to_array_of_lists 
+# spreadsheet::read_as_lists <-- equivalent to qss_table_read
+# spreadsheet::read <--> qss_tids_columns_to_array_of_lists
+
+
+# also xref id key {array_name "xref_larr"} row_nbr 
+
 ad_proc -public spreadsheet::xref_1row {
     id 
-    array_name
+    {array_name ""}
     {row_nbr "1"}
     {scalars_unfiltered ""}
     {scalars_required ""}
@@ -98,6 +92,10 @@ ad_proc -public spreadsheet::xref_1row {
     If any scalars_required are not included, 
     includes these indexes and sets values to empty string.
 } {
+    if { $array_name eq "" } {
+        set array_name xref_arr
+    }
+
     upvar $array_name id_arr
 
     if { $scalars_unfiltered ne "" && [llength $scalars_unfiltered] == 1 } {
@@ -172,6 +170,10 @@ ad_proc -public spreadsheet::create.old {
     } 
     return $success
 }
+
+
+# qss_table_create  
+
 
 ad_proc -public spreadsheet::create { 
     array_name
@@ -302,6 +304,8 @@ ad_proc -public spreadsheet::list.old {
     } 
 }
 
+# qss_table_stats  
+
 ad_proc -public spreadsheet::stats { 
     id
     {instance_id ""}
@@ -350,7 +354,19 @@ ad_proc -public spreadsheet::attributes.old {
     }
 }
 
-ad_proc -public spreadsheet::ids{ 
+
+ad_proc -public spreadsheet::list.old {
+} {
+    returns list_of_lists of available spreadsheets
+    each list item contains:
+    id, name_abbrev, sheet_title,row_count,column_count,last_calculated,last_modified,status
+} {
+
+}
+
+# qss_tables  
+
+ad_proc -public spreadsheet::ids { 
     {instance_id ""}
     {user_id ""}
     {template_id ""}
@@ -393,6 +409,8 @@ ad_proc -public spreadsheet::ids{
     }
     return $return_list
 } 
+
+# qss_table_read  
 
 ad_proc -public spreadsheet::read { 
     id
@@ -525,6 +543,8 @@ ad_proc -public spreadsheet::cells_read.old {
     return $table
 }
 
+# qss_table_write 
+
 ad_proc -public spreadsheet::cells_write {
     sheet_id
     list_of_lists
@@ -612,6 +632,8 @@ ad_proc -public spreadsheet::cells_write {
     return $success
 }
 
+# qss_table_delete 
+
 ad_proc -public spreadsheet::delete {
     spreadsheet_id
 } {
@@ -639,14 +661,54 @@ ad_proc -public spreadsheet::delete {
     return $success
 } 
 
-ad_proc -public spreadsheet::list {
-} {
-    returns list_of_lists of available spreadsheets
-    each list item contains:
-    id, name_abbrev, sheet_title,row_count,column_count,last_calculated,last_modified,status
-} {
+# qss_table_trash 
 
+ad_proc -public spreadsheet::trash {
+    {trash_p "1"}
+    {id ""}
+    {instance_id ""}
+    {user_id ""}
+} {
+    id can be a list of id's. Trashes/untrashes id (subject to permission check).
+    set trash_p to 1 (default) to trash table. Set trash_p to '0' to untrash. 
+    Returns 1 if successful, otherwise returns 0
+} {
+    if { $instance_id eq "" } {
+        # set instance_id package_id
+        set instance_id [ad_conn package_id]
+    }
+    if { $user_id eq "" } {
+        set user_id [ad_conn user_id]
+        set untrusted_user_id [ad_conn untrusted_user_id]
+    }
+
+    set write_p [permission::permission_p -party_id $user_id -object_id $instance_id -privilege write]
+    set allowed_p $write_p
+    if { $write_p } {
+        if { $trash_p } {
+            db_dml simple_table_trash_togc { update qss_sheets set trashed = '1'
+                where id=:table_id and instance_id =:instance_id }
+        } else {
+            db_dml simple_table_trash_togc { update qss_sheets set trashed = '0'
+                where id=:table_id and instance_id =:instance_id }
+        }
+    } else {
+        set create_p [permission::permission_p -party_id $user_id -object_id $instance_id -privilege create]
+        set allowed_p $create_p
+        if { $create_p } {
+            if { $trash_p } {
+                db_dml simple_table_trash_togw { update qss_sheets set trashed = '1'
+                    where id=:table_id and instance_id =:instance_id and user_id=:user_id }
+            } else {
+                db_dml simple_table_trash_togw { update qss_sheets set trashed = '0'
+                    where id=:table_id and instance_id =:instance_id and user_id=:user_id }
+            }
+        }
+    }
+    return $allowed_p
 }
+
+
 
 ad_proc -private spreadsheet::status_q { 
     sheet_id
