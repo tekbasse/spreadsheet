@@ -79,14 +79,17 @@ ad_proc -public spreadsheet::id_from_name {
 }
 
 
-ad_proc -public spreadsheet::scalars_to_array {
+ad_proc -public spreadsheet::xref_1row {
     id 
     array_name
+    {row_nbr "1"}
     {scalars_unfiltered ""}
     {scalars_required ""}
     {instance_id ""}
     {user_id ""}
 } {
+    Similar to spreadsheet::read except that since there's only 1 row, values are not wrapped in a list.
+
     Saves scalars in a 2 row table to an array array_name, 
     where array indexes are the scalars in the row 0 'name' column, and 
     the value for each scalar is row 1 in column. 
@@ -185,7 +188,7 @@ ad_proc -public spreadsheet::create {
 
 #code.  Be sure to check permissions
 
-CREATE TABLE qss_sheets (
+#   CREATE TABLE qss_sheets (
 #       id integer not null primary key,
 #       template_id integer,
 #       instance_id integer,
@@ -235,14 +238,14 @@ CREATE TABLE qss_sheets (
     if { $create_p } {
         set id [db_nextval qss_id_seq]
         ns_log Notice "spreadsheet::create: new id $id"
-        set sheet_exists_p [db_0or1row simple_sheet_get_id {select name from qss_simple_sheet where id = :id } ]
+        set sheet_exists_p [db_0or1row sheet_get_id {select name from qss_sheets where id = :id } ]
         if { !$sheet_exists_p } {
             if { $template_id eq "" } {
                 set template_id $id
             }
             set nowts [dt_systime -gmt 1]
             db_transaction {
-                db_dml simple_sheet_create { insert into qss_simple_sheet
+                db_dml sheet_create { insert into qss_sheets
                     (id,template_id,name,title,comments,instance_id,user_id,flags,last_modified,created)
                     values (:id,:template_id,:name,:title,:comments,:instance_id,:user_id,:flags,:nowts,:nowts) }
                 set row 0
@@ -265,7 +268,7 @@ CREATE TABLE qss_sheets (
                     }
                 }
 ns_log Notice "spreadsheet::create: total $row rows, $cells cells"
-                db_dml simple_sheet_update_rc { update qss_simple_sheet
+                db_dml sheet_update_rc { update qss_sheets
                     set row_count =:row,cell_count =:cells, last_modified=:nowts
                     where id = :id }
 
@@ -282,7 +285,8 @@ ns_log Notice "spreadsheet::create: total $row rows, $cells cells"
 }
 
 
-ad_proc -public spreadsheet::list { 
+
+ad_proc -public spreadsheet::list.old { 
     package_id
     {user_id "0"}
 } {
@@ -298,7 +302,40 @@ ad_proc -public spreadsheet::list {
     } 
 }
 
-ad_proc -public spreadsheet::attributes { 
+ad_proc -public spreadsheet::stats { 
+    id
+    {instance_id ""}
+    {user_id ""}
+} {
+    Returns table stats as a list: name, title, comments, cell_count, row_count, template_id, flags, trashed, popularity, time last_modified, time created, user_id.
+    Columns not listed, as those might vary.
+} {
+    if { $instance_id eq "" } {
+        # set instance_id package_id
+        set instance_id [ad_conn package_id]
+    }
+    if { $user_id eq "" } {
+        set user_id [ad_conn user_id]
+        set untrusted_user_id [ad_conn untrusted_user_id]
+    }
+    # check permissions
+    set read_p [permission::permission_p -party_id $user_id -object_id $instance_id -privilege read]
+
+    if { $read_p } {
+        set return_list_of_lists [db_list_of_lists qss_sheet_stats_read { select name, title, comments, cell_count, row_count, template_id, flags, trashed, popularity, last_modified, created, user_id from qss_sheets where id = :table_id and instance_id = :instance_id } ] 
+        # convert return_lists_of_lists to return_list
+        set return_list [lindex $return_list_of_lists 0]
+        if { [lindex $return_list 7 ] eq "" } {
+            set return_list [lreplace $return_list 7 7 "0"]
+        }
+    } else {
+        set return_list [list ]
+    }
+    return $return_list
+}
+
+
+ad_proc -public spreadsheet::attributes.old { 
     sheet_id
 } {
     returns attributes of a sheet in list format: {id name_abbrev sheet_title last_modified by_user orientation row_count column_count last_calculated last_modified sheet_status} 
@@ -313,7 +350,150 @@ ad_proc -public spreadsheet::attributes {
     }
 }
 
-ad_proc -public spreadsheet::cells_read { 
+ad_proc -public spreadsheet::ids{ 
+    {instance_id ""}
+    {user_id ""}
+    {template_id ""}
+} {
+    Returns a list of table_ids available. If table_id is included, the results are scoped to tables with same template. If user_id is included, the results are scoped to the user.
+} {
+    if { $instance_id eq "" } {
+        # set instance_id package_id
+        set instance_id [ad_conn package_id]
+    }
+    if { $user_id eq "" } {
+        set party_id [ad_conn user_id]
+        set untrusted_user_id [ad_conn untrusted_user_id]
+    } else {
+        set party_id $user_id
+    }
+    set read_p [permission::permission_p -party_id $party_id -object_id $instance_id -privilege read]
+
+    if { $read_p } {
+        if { $template_id eq "" } {
+            if { $user_id ne "" } {
+                set return_list [db_list spreadsheets_user_list { select id from qss_sheets where instance_id = :instance_id and user_id = :user_id } ]
+            } else {
+                set return_list [db_list spreadsheets_list { select id from qss_sheets where instance_id = :instance_id } ]
+            }
+        } else {
+            set has_template [db_0or1row spreadsheet_template "select template_id as db_template_id from qss_sheets where template_id= :template_id"]
+            if { $has_template && [info exists db_template_id] && $template_id > 0 } {
+                if { $user_id ne "" } {
+                    set return_list [db_list spreadsheets_t_u_list { select id from qss_sheets where instance_id = :instance_id and user_id = :user_id and template_id = :template_id } ]
+                } else {
+                    set return_list [db_list spreadsheets_list { select id from qss_sheets where instance_id = :instance_id and template_id = :template_id } ]
+                }
+            } else {
+                set return_list [list ]
+            }
+        }
+    } else {
+        set return_list [list ]
+    }
+    return $return_list
+} 
+
+ad_proc -public spreadsheet::read { 
+    id
+    {instance_id ""}
+    {user_id ""}
+    
+} {
+    Reads spreadsheet with id. Returns sheet as list_of_lists of cells.
+} {
+    if { $instance_id eq "" } {
+        # set instance_id package_id
+        set instance_id [ad_conn package_id]
+    }
+    if { $user_id eq "" } {
+        set user_id [ad_conn user_id]
+        set untrusted_user_id [ad_conn untrusted_user_id]
+    }
+    set read_p [permission::permission_p -party_id $user_id -object_id $instance_id -privilege read]
+    set cells_list_of_lists [list ]
+    if { $read_p } {
+
+        set cells_data_lists [db_list_of_lists qss_sheet_read_cells { select cell_rc, cell_value from qss_simple_cells
+            where table_id =:table_id order by cell_rc } ]
+        set cells2_data_lists [list ]
+        set col_ref_list [list ]
+        # filter row, column references
+        foreach cell_list $cells_data_lists {
+            set cell_rc [lindex $cell_list 0]
+            set cell_value [lindex $cell_list 1]
+
+            # following based on "0000" format used in create/write cell_rc r0001c0001
+            set row [string range $cell_rc 1 4]
+            regsub {^[0]+} $row {} row
+            set column [string range $cell_rc 6 9]
+            regsub {^[0]+} $column {} column
+            set row_list [list $row $column $cell_value]
+            lappend cells2_data_lists $row_list
+            lappend col_ref_list $column
+        }
+        # determine max referenced column
+        set column_max [f::lmax $col_ref_list]
+
+        set prev_row 1
+        set row_list [list ]
+        foreach cell_list $cells2_data_lists {
+            set row [lindex $cell_list 0]
+            set column [lindex $cell_list 1]
+            set cell_value [lindex $cell_list 2]
+#            ns_log Notice "spreadsheet::read: cell ${cell_rc} ($row,$column) value ${cell_value}"     
+
+            # build row list
+            if { $row eq $prev_row } {
+                # add cell to same row.  column_next is column to fill as represented by cell column number 1...n
+                set column_next [expr { [llength $row_list ] + 1 } ]
+                set cols_to_add [expr { $column - $column_next } ]
+                
+                # add blank cells, if needed
+                for {set i 0} {$i < $cols_to_add} {incr i } {
+                    lappend row_list ""
+                }
+                lappend row_list $cell_value
+            } else {
+                # check for any blank orphan cells to add
+                set column_next [expr { [llength $row_list ] + 1 } ]
+                set cols_to_add [expr { $column_max - $column_next + 1 } ]
+
+                # add blank cells, if needed
+                for {set i 0} {$i < $cols_to_add} {incr i } {
+                    lappend row_list ""
+                }
+
+                # row finished, add row_list to cells_list_of_lists
+                lappend cells_list_of_lists $row_list
+
+                # start new row
+                set row_list [list ]
+                set column_next [expr { [llength $row_list ] + 1 } ]
+                set cols_to_add [expr { $column - $column_next } ]
+
+                # add blank cells, if needed
+                for {set i 0} {$i < $cols_to_add} {incr i } {
+                    lappend row_list ""
+                }
+                lappend row_list $cell_value
+            }
+            set prev_row $row
+        }
+
+        # check for any blank orphan cells at end of row that need adding
+        set column_next [expr { [llength $row_list ] + 1 } ]
+        set cols_to_add [expr { $column_max - $column_next + 1 } ]
+        # add blank cells, if needed
+        for {set i 0} {$i < $cols_to_add} {incr i } {
+            lappend row_list ""
+        }
+        lappend cells_list_of_lists $row_list
+    }
+    return $cells_list_of_lists
+}
+
+ad_proc -public spreadsheet::cells_read.old { 
     sheet_id
     {start ""}
     {count ""}
