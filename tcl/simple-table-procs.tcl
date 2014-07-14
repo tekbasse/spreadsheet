@@ -201,6 +201,9 @@ ad_proc -public qss_tid_columns_to_array_of_lists {
             
         }
         set success 1
+    } else {
+        set success 0
+        ns_log Notice "qss_tid_columns_to_array_of_lists.206: not all columns_required_list '${columns_required_list}' exist in table_id '${table_id}'"
     }
     return $success
 }

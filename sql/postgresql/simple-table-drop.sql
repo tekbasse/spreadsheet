@@ -4,7 +4,7 @@
 -- @for OpenACS.org
 -- @cvs-id
 --
-DROP index qss_simple_cells_idx;
+DROP index qss_simple_cells_table_id_idx;
 DROP TABLE qss_simple_cells;
 
 DROP index qss_simple_table_id_idx;
