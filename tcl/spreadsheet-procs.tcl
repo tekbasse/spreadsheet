@@ -1,7 +1,9 @@
 ad_library {
 
-    API for spreadsheets
+    API for spreadsheets package
+    @author (c) Benjamin Brink
     @creation-date 25 August 2010
+    @license: See spreadsheet/LICENSE.html
     @cs-id $Id:
 }
 
@@ -15,9 +17,8 @@ ad_library {
 
 namespace eval spreadsheet {}
 
-#    set spreadsheet_id [db_nextval qss_id_seq]
 
-# qss_tid_from_name 
+# compare with  simple-table-procs.tcl:qss_tid_from_name 
 ad_proc -public spreadsheet::id_from_name {
     sheet_name
     {instance_id ""}
@@ -105,7 +106,7 @@ ad_proc -public spreadsheet::xref_1row {
         set scalars_required [split $scalars_required]
     }
     set names_values_list [list ]
-    # load table_id
+    # load sheet_id
     set id_lists [spreadsheet::read_as_lists $id $instance_id $user_id]
     # extract each name-value pair, saving into array
     set titles_list [lindex $id_lists 0]
@@ -145,33 +146,6 @@ ad_proc -public spreadsheet::xref_1row {
 }
 
 
-ad_proc -public spreadsheet::create.old { 
-    id
-    name_abbrev
-    sheet_title
-    style_ref
-    sheet_description
-    {orientation "RC"}
-} {
-    creates spreadsheet
-} {
-    # if id exists, assume it's a double click or bad info, ignore
-    set success 0
-    if { [spreadsheet::status_q $id] eq "" } {
-        set package_id [ad_conn package_id]
-        set user_id [ad_conn user_id]
-        set create_p [permission::permission_p -party_id $user_id -object_id $package_id -privilege create]
-        if { $create_p } { 
-            db_dml create_new_sheet {insert into qss_sheets 
-           (id, instance_id, name_abbrev, style_ref, sheet_description, orientation,row_count,column_count,last_calclated,last_modified, last_modified_by) 
-            values (:id, :package_id, :name_abbrev, :style_ref, :sheet_description, :orientation, '0', '0', now(), now(), :user_id ) }
-        }
-        set success $create_p
-    } 
-    return $success
-}
-
-
 # qss_table_create  
 
 
@@ -179,7 +153,9 @@ ad_proc -public spreadsheet::create {
     array_name
     name
     title
-    comments
+    style_ref
+    {orientation "RC"}
+    description
     {template_id ""}
     {flags ""}
     {instance_id ""}
