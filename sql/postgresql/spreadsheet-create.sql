@@ -1,6 +1,8 @@
 -- spreadsheet-create.sql
 --
--- @author Benjamin Brink
+-- @author (c) OABenjamin Brink
+-- @creation-date 25 August 2010
+-- @license: See spreadsheet/LICENSE.html
 -- @for OpenACS.org
 -- @cvs-id
 --
