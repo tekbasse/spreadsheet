@@ -15,6 +15,43 @@ ad_library {
 # If CR orientation, just display by switching axis
 # user input would then be converted before passing to procs.
 
+#   CREATE TABLE qss_sheets (
+#       id integer not null primary key,
+#       template_id integer,
+#       instance_id integer,
+#       user_id integer,
+#       flags varchar(12), (basic type:/setlist/sheet) where list is 1 row of named columns, set is 1 column of data
+#       name varchar(40),
+#       style_ref varchar(300),
+#       title varchar(80),
+#       description text,
+#       orientation varchar(2) default 'RC',
+#       row_count integer,
+#       cell_count integer,
+#       trashed varchar(1) default '0',
+#       popularity integer,
+#       last_calculated timestamptz,
+#       last_modified timestamptz,
+#       last_modified_by integer,
+#       status varchar(8)
+#   );
+#   CREATE TABLE qss_cells (
+#       id integer not null primary key,
+#       sheet_id integer not null,
+#       cell_row integer not null,
+#       cell_column integer not null,
+#       cell_name varchar(40),
+#       cell_value varchar(1025),
+#       cell_type varchar(8),
+#       cell_format varchar(80),
+#       cell_proc varchar(1025),
+#       cell_calc_depth integer not null default '0',
+#       cell_title varchar(80),
+#       last_calculated timestamptz,
+#       last_modified timestamptz,
+#       last_modified_by integer
+#   );
+
 namespace eval spreadsheet {}
 
 
@@ -153,9 +190,9 @@ ad_proc -public spreadsheet::create {
     array_name
     name
     title
-    style_ref
+    {style_ref ""}
     {orientation "RC"}
-    description
+    {description ""}
     {template_id ""}
     {flags ""}
     {instance_id ""}
@@ -163,45 +200,6 @@ ad_proc -public spreadsheet::create {
 } {
     Creates spreadsheet. returns id, or 0 if error. instance_id is usually package_id
 } {
-
-#code.  Be sure to check permissions
-
-#   CREATE TABLE qss_sheets (
-#       id integer not null primary key,
-#       template_id integer,
-#       instance_id integer,
-#       user_id integer,
-#       flags varchar(12),
-#       name varchar(40),
-#       style_ref varchar(300),
-#       title varchar(80),
-#       description text,
-#       orientation varchar(2) default 'RC',
-#       row_count integer,
-#       cell_count integer,
-#       trashed varchar(1) default '0',
-#       popularity integer,
-#       last_calculated timestamptz,
-#       last_modified timestamptz,
-#       last_modified_by integer,
-#       status varchar(8)
-#   );
-#   CREATE TABLE qss_cells (
-#       id integer not null primary key,
-#       sheet_id integer not null,
-#       cell_row integer not null,
-#       cell_column integer not null,
-#       cell_name varchar(40),
-#       cell_value varchar(1025),
-#       cell_type varchar(8),
-#       cell_format varchar(80),
-#       cell_proc varchar(1025),
-#       cell_calc_depth integer not null default '0',
-#       cell_title varchar(80),
-#       last_calculated timestamptz,
-#       last_modified timestamptz,
-#       last_modified_by integer
-#   );
 
     if { $instance_id eq "" } {
         # set instance_id package_id
@@ -226,6 +224,8 @@ ad_proc -public spreadsheet::create {
                 db_dml sheet_create { insert into qss_sheets
                     (id,template_id,name,title,comments,instance_id,user_id,flags,last_modified,created)
                     values (:id,:template_id,:name,:title,:comments,:instance_id,:user_id,:flags,:nowts,:nowts) }
+                
+#### following needs to identify column first, then step through rows, extracting data from array_name
                 set row 0
                 set cells 0
                 foreach row_list $cells_list_of_lists {
@@ -234,51 +234,37 @@ ad_proc -public spreadsheet::create {
                     foreach cell_value $row_list {
                         incr column
                         incr cells
-                        set cell_rc "r[string range "0000" 0 [expr { 3 - [string length $row] } ] ]${row}c[string range "0000" 0 [expr { 3 - [string length $column] } ] ]${column}"
+                        #                        set cell_rc "r[string range "0000" 0 [expr { 3 - [string length $row] } ] ]${row}c[string range "0000" 0 [expr { 3 - [string length $column] } ] ]${column}"
                         # if cell_value has length of zero, then don't insert
-                        if { [string length $cell_value] > 0 } {
-#ns_log Notice "spreadsheet::create: cell_rc $cell_rc cell_value $cell_value"
-                            db_dml qss_simple_cells_create { insert into qss_simple_cells
-                                (id,cell_rc,cell_value)
+                        if { $cell_value ne "" || $cell_proc ne ""  } {
+                            #ns_log Notice "spreadsheet::create: cell_rc $cell_rc cell_value $cell_value"
+                            db_dml qss_cells_create { insert into qss_cells
+                                (id,sheet_id,cell_row,cell_column,cell_name,cell_value,cell_proc,cell_type,cell_format,calc_depth,cell_title,last_calc,last_mod,last_mod_by)
                                 values (:id,:cell_rc,:cell_value)
                             }
                         }
                     }
-                }
-ns_log Notice "spreadsheet::create: total $row rows, $cells cells"
-                db_dml sheet_update_rc { update qss_sheets
-                    set row_count =:row,cell_count =:cells, last_modified=:nowts
-                    where id = :id }
-
-            } on_error {
-                set id 0
-                ns_log Error "spreadsheet::create: general psql error during db_dml"
             }
-        } else {
+
+### end cell insertion loops
+
+            ns_log Notice "spreadsheet::create: total $row rows, $cells cells"
+            db_dml sheet_update_rc { update qss_sheets
+                set row_count =:row,cell_count =:cells, last_modified=:nowts
+                where id = :id }
+            
+        } on_error {
             set id 0
-            ns_log Warning "spreadsheet::create: sheet already exists for id $id"
+            ns_log Error "spreadsheet::create: general psql error during db_dml"
         }
-    }
-    return $id
-}
-
-
-
-ad_proc -public spreadsheet::list.old { 
-    package_id
-    {user_id "0"}
-} {
-    returns list of lists of existing sheets: {id name_abbrev sheet_title last_modified by_user} 
-    If user_id is passed, results are sheets that the user has created or modified within package_id.
-} {
-    if { $user_id eq 0 } {
-        set table [db_list_of_lists get_list_of_spreadsheets {select id, name_abbrev, sheet_title, last_modified, by_user from qss_sheets where instance_id = :package_id order by sheet_title } ]
     } else {
-        set table [db_list_of_lists get_list_of_spreadsheets_for_user_id {select id, name_abbrev, sheet_title, last_modified, by_user
-            from qss_sheets where ( instance_id = :package_id and user_id = :user_id ) or instance_id in 
-              ( select instance_id from qss_cells where sheet_id in ( select id from qss_sheets where instance_id = :package_id unique ) and last_modified_by = :user_id ) order by sheet_title } ]
-    } 
+        set id 0
+        ns_log Warning "spreadsheet::create: sheet already exists for id $id"
+    }
 }
+return $id
+}
+
 
 # qss_table_stats  
 
@@ -287,7 +273,7 @@ ad_proc -public spreadsheet::stats {
     {instance_id ""}
     {user_id ""}
 } {
-    Returns table stats as a list: name, title, comments, cell_count, row_count, template_id, flags, trashed, popularity, time last_modified, time created, user_id.
+    Returns table stats as a list: name, title, comments, cell_count, row_count, template_id, flags, trashed, popularity, time last_modified, time created, user_id, style_ref, last_mod_user_id, status (ie. process state: ready, working, recalc) 
     Columns not listed, as those might vary.
 } {
     if { $instance_id eq "" } {
@@ -302,7 +288,7 @@ ad_proc -public spreadsheet::stats {
     set read_p [permission::permission_p -party_id $user_id -object_id $instance_id -privilege read]
 
     if { $read_p } {
-        set return_list_of_lists [db_list_of_lists qss_sheet_stats_read { select name, title, comments, cell_count, row_count, template_id, flags, trashed, popularity, last_modified, created, user_id from qss_sheets where id = :table_id and instance_id = :instance_id } ] 
+        set return_list_of_lists [db_list_of_lists qss_sheet_stats_read { select name, title, comments, cell_count, row_count, template_id, flags, trashed, popularity, last_modified, created, user_id, style_ref, last_modified_by, status from qss_sheets where id = :table_id and instance_id = :instance_id } ] 
         # convert return_lists_of_lists to return_list
         set return_list [lindex $return_list_of_lists 0]
         if { [lindex $return_list 7 ] eq "" } {
@@ -314,31 +300,6 @@ ad_proc -public spreadsheet::stats {
     return $return_list
 }
 
-
-ad_proc -public spreadsheet::attributes.old { 
-    sheet_id
-} {
-    returns attributes of a sheet in list format: {id name_abbrev sheet_title last_modified by_user orientation row_count column_count last_calculated last_modified sheet_status} 
-} {
-    set package_id [ad_conn package_id]
-    set user_id [ad_conn user_id]
-    set read_p [permission::permission_p -party_id $user_id -object_id $package_id -privilege read]
-    if { $read_p && [spreadsheet::exists_for_rwd_q $sheet_id $package_id] } {
-        set sheet_list [db_list get_spreadsheet_attributes {select id, name_abbrev, sheet_title, last_modified, by_user, orientation, row_count, column_count, last_calculated, last_modified, sheet_status from qss_sheets where instance_id = :package_id and id = :sheet_id } ]
-    } else {
-        set sheet_list [list ]
-    }
-}
-
-
-ad_proc -public spreadsheet::list.old {
-} {
-    returns list_of_lists of available spreadsheets
-    each list item contains:
-    id, name_abbrev, sheet_title,row_count,column_count,last_calculated,last_modified,status
-} {
-
-}
 
 # qss_tables  
 
@@ -390,12 +351,19 @@ ad_proc -public spreadsheet::ids {
 
 ad_proc -public spreadsheet::read { 
     id
+    array_name
     {instance_id ""}
-    {user_id ""}
-    
+    {user_id ""}    
+    {start_row ""}
+    {row_count ""}
+    {column_names_list ""}
 } {
-    Reads spreadsheet with id. Returns sheet as list_of_lists of cells.
+    Reads spreadsheet with id. Returns sheet as an array of column indexes, where each index is a list representing a column.
+    Can read just part of a sheet, can also read a selection of named columns.
 } {
+    # in short, array_name refers to an array_larr()
+    upvar 1 $array_name p_larr
+
     if { $instance_id eq "" } {
         # set instance_id package_id
         set instance_id [ad_conn package_id]
@@ -408,7 +376,8 @@ ad_proc -public spreadsheet::read {
     set cells_list_of_lists [list ]
     if { $read_p } {
 
-        set cells_data_lists [db_list_of_lists qss_sheet_read_cells { select cell_rc, cell_value from qss_simple_cells
+#### rework this to insert into array_name
+        set cells_data_lists [db_list_of_lists qss_sheet_read_cells { select cell_rc, cell_value from qss_cells
             where table_id =:table_id order by cell_rc } ]
         set cells2_data_lists [list ]
         set col_ref_list [list ]
