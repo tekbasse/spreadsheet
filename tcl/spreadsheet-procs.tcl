@@ -108,7 +108,6 @@ ad_proc -public spreadsheet::id_from_name {
 # spreadsheet::read <--> qss_tids_columns_to_array_of_lists
 
 
-
 # also xref id key {array_name "xref_larr"} row_nbr 
 ad_proc -public spreadsheet::xref_1row {
     id 
@@ -331,7 +330,7 @@ ad_proc -public spreadsheet::read {
     set cells_list_of_lists [list ]
     if { $read_p } {
 
-#### rework this to insert into array_name
+#### rework this to insert into array_name and offsets
         set cells_data_lists [db_list_of_lists qss_sheet_read_cells { select cell_rc, cell_value from qss_cells
             where table_id =:table_id order by cell_rc } ]
         set cells2_data_lists [list ]
@@ -411,37 +410,6 @@ ad_proc -public spreadsheet::read {
     return $cells_list_of_lists
 }
 
-ad_proc -public spreadsheet::cells_read.old { 
-    sheet_id
-    {start ""}
-    {count ""}
-} {
-    reads spreadsheet, returns list_of_lists, each cell is an element in the list
-    If orientation is RC, cells are sorted first by row.
-    If orientation is CR, cells are sorted first by column.
-    first element contains header references
-} {
-    if { [ad_var_type_check_number_p $start] && $start > 0 && [ad_var_type_check_number_p $count] && $count > 0 } {
-        set page_start $start
-        set page_size $count
-    }
-    set package_id [ad_conn package_id]
-    set user_id [ad_conn user_id]
-    set read_p [permission::permission_p -party_id $user_id -object_id $package_id -privilege read]
-    # if orientation is RC, start is start_row, count is num_of_rows
-    # if orientation is CR, start is start_col, count is num_of_columns
-    if { $read_p && [spreadsheet::exists_for_rwd_q $sheet_id $package_id] } {
-        if { [info exists $page_start] } {
-            set table [db_list_of_lists get_all_cells_of_sheet {select id, cell_row, cell_column, cell_value, cell_value_sq, cell_format, cell_proc, cell_calc_depth, cell_name, cell_title from qss_cells where sheet_id = :sheet_id} limit :page_size offest :page_start ]
-        } else {
-            set table [db_list_of_lists get_all_cells_of_sheet {select id, cell_row, cell_column, cell_value, cell_value_sq, cell_format, cell_proc, cell_calc_depth, cell_name, cell_title from qss_cells where sheet_id = :sheet_id} ]
-        }
-    } else {
-        set table [list ]
-    }        
-    set table [linsert $table 0 [list id cell_row cell_column cell_value cell_value_sq cell_format cell_proc cell_calc_depth cell_name cell_title]
-    return $table
-}
 
 # qss_table_write 
 
@@ -458,6 +426,8 @@ ad_proc -public spreadsheet::cells_write {
     id (positive integer) replaces existing id if it exists.
     other attrributes: cell_format cell_proc cell_name cell_title
 } {
+    #### if spreadsheet::status_q is not idle, create a new revision.
+    #### do that anyway? yes, except add a param to control revisioning. May not want it for large sheets.
     set success 0
     set package_id [ad_conn package_id]
     set user_id [ad_conn user_id]
