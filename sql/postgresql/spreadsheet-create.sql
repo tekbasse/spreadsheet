@@ -1,6 +1,6 @@
 -- spreadsheet-create.sql
 --
--- @author (c) OABenjamin Brink
+-- @author (c) Benjamin Brink
 -- @creation-date 25 August 2010
 -- @license: See spreadsheet/LICENSE.html
 -- @for OpenACS.org
@@ -73,58 +73,6 @@ create index qss_sheets_instance_id_idx on qss_sheets (instance_id);
 create index qss_sheets_user_id_idx on qss_sheets (user_id);
 create index qss_sheets_trashed_idx on qss_sheets (trashed);
 
--- qss_composites is deprecated
--- use a regular sheet and set type/flags to p1 to show it's a 1 row table with column names just like PRETTI p1 type
--- This reduces the need to create a separate API for composites
- -- CREATE TABLE qss_composites (
- --     id integer not null primary key,
- -- 
- --     sheet_id integer not null,
- --     -- should be a value from qss_sheets.sheet_id
- --     -- any external functions referencing only this sheet_id should
- --     -- include copies of function here for caching calculations
- -- 
- --     cell_name varchar(40),
- --     -- usually blank, an alternate reference to RC format
- --     -- unique to a sheet
- -- 
- --     cell_title varchar(80),
- --     -- a label when displaying cell as a single value
- -- 
- -- 
- --     cell_value varchar(1025),
- --     -- returned by function or user input value
- -- 
- --     cell_type varchar(8),
- --     -- type validation, proc and attributes
- -- 
- --     cell_format varchar(80),
- --     -- formatting, css style class
- -- 
- --     cell_proc varchar(1025),
- --     -- contains a function, most commonly an aggregate of associated sheet_id
- --     -- we are calling this a proc because theoretically
- --     -- an admin could define a macro-like proc that returns
- --     -- a value after executing some task, for example, retrieving
- --     -- a value from a url on the net.
- --     -- See ecommerce templating for a similar implementation
- -- 
- --     cell_calc_depth integer not null default '0',
- --     -- this value is to be automatically generated and show this
- --     -- cells order of calculation based on calculation dependencies
- --     -- for example, calc_depth = max (calc_depth of all dependent cells) + 1
- -- 
- --     last_calculated timestamptz,
- --     -- handy for checking when cell value dependencies have changed
- -- 
- --     last_modified timestamptz,
- --     -- data entry (cell value) last changed
- --     last_modified_by integer
- --     -- user that last modified cell
- -- 
- -- ); 
-
-
 
 CREATE TABLE qss_cells (
     id integer not null primary key,
@@ -196,3 +144,8 @@ CREATE TABLE qss_cells (
 
 create index qss_cells_id_idx on qss_cells (id);
 create index qss_cells_sheet_id_idx on qss_cells (sheet_id);
+
+
+-- qss_composites is deprecated
+-- use a regular sheet and set type/flags to p1 to show it's a 1 row table with column names just like PRETTI p1 type
+-- This reduces the need to create a separate API for composites

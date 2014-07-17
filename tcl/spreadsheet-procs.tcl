@@ -54,7 +54,6 @@ ad_library {
 
 namespace eval spreadsheet {}
 
-
 # compare with  simple-table-procs.tcl:qss_tid_from_name 
 ad_proc -public spreadsheet::id_from_name {
     sheet_name
@@ -109,8 +108,8 @@ ad_proc -public spreadsheet::id_from_name {
 # spreadsheet::read <--> qss_tids_columns_to_array_of_lists
 
 
-# also xref id key {array_name "xref_larr"} row_nbr 
 
+# also xref id key {array_name "xref_larr"} row_nbr 
 ad_proc -public spreadsheet::xref_1row {
     id 
     {array_name ""}
@@ -133,53 +132,9 @@ ad_proc -public spreadsheet::xref_1row {
     if { $array_name eq "" } {
         set array_name xref_arr
     }
-
     upvar $array_name id_arr
 
-    if { $scalars_unfiltered ne "" && [llength $scalars_unfiltered] == 1 } {
-        set scalars_unfiltered [split $scalars_unfiltered]
-    }
-    if { $scalars_required ne "" && [llength $scalars_required] == 1 } {
-        set scalars_required [split $scalars_required]
-    }
-    set names_values_list [list ]
-    # load sheet_id
-    set id_lists [spreadsheet::read_as_lists $id $instance_id $user_id]
-    # extract each name-value pair, saving into array
-    set titles_list [lindex $id_lists 0]
-    set index 0
-    foreach title $titles_list {
-        if { [regexp -nocase -- {name[s]?} $title] } {
-            set name_idx $index
-        }
-        if { [regexp -nocase -- {value[s]?} $title] } {
-            set value_idx $index
-        }
-        incr index
-    }
-    if { [info exists value_idx] && [info exists name_idx] } {
-        foreach row_list [lrange $id_lists 1 end] {
-            set name [lindex $row_list $name_idx]
-            set value [lindex $row_list $value_idx]
-            regsub -nocase -all -- {[^a-z0-9_]+} $name {_} name
-            set scalar_idx [lsearch $scalars_unfiltered $name]
-            if { $name ne "" && $scalar_idx > -1 } {
-                lappend names_values_list $name $value
-                set scalars_unfiltered [lreplace $scalars_unfiltered $scalar_idx $scalar_idx]
-                set scalar_idx [lsearch $scalars_required $name]
-                if { $scalar_idx > -1 } {
-                    set scalars_required [lreplace $scalars_required $scalar_idx $scalar_idx]
-                }
-                set id_arr($name) $value
-            }
-        }
-        # create blank defaults for missing, required name/value pairs.
-        foreach scalar $scalars_required {
-            set id_arr($scalar) ""
-            lappend names_values_list $scalar ""
-        }
-    } 
-    return $names_values_list
+    #### call spreadsheet::read
 }
 
 
