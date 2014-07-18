@@ -141,9 +141,9 @@ ad_proc -public spreadsheet::xref_1row {
 
 
 ad_proc -public spreadsheet::create { 
-    array_name
     name
     title
+    {array_name ""}
     {style_ref ""}
     {orientation "RC"}
     {description ""}
@@ -154,7 +154,10 @@ ad_proc -public spreadsheet::create {
 } {
     Creates spreadsheet. returns id, or 0 if error. instance_id is usually package_id
 } {
-
+    if { $array_name eq "" } {
+        set array_name "xref_arr" 
+    }
+    upvar 1 $array_name p_larr
     if { $instance_id eq "" } {
         # set instance_id package_id
         set instance_id [ad_conn package_id]
@@ -180,9 +183,12 @@ ad_proc -public spreadsheet::create {
                     values (:id,:template_id,:name,:title,:comments,:instance_id,:user_id,:flags,:nowts,:nowts) }
                 
 #### following needs to identify column first, then step through rows, extracting data from array_name
+#### How to identify cell attributes in an array_name? by appending standard suffixes to array_name..
+ #### ${array_name}_larr for cell values, ${array_name}_nam_larr for cell_name etc etc.
+                set column_names_list [array names p_larr]
                 set row 0
                 set cells 0
-                foreach row_list $cells_list_of_lists {
+                foreach row_list $column_names_list {
                     incr row
                     set column 0
                     foreach cell_value $row_list {
