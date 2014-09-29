@@ -5,7 +5,7 @@ table tr td {
  border-color: #00ff00;
 }
 </style>
-<a href="full_table_of_data_v2">reset sort</a>
+<a href="table-sort-demo1">reset sort</a>
 
 @table2_html;noquote@
 
