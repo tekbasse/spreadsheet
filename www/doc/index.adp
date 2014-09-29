@@ -10,13 +10,21 @@
 <h3>
 introduction
 </h3>
-<pre>
+<p>
 Spreadsheet provides procedures for building and using tables and 
-spreadsheets in OpenACS. It is an OpenACS package that allows convenient 
-building and interpreting of web-based sheets via tcl in a web page.
-
-Standard spreadsheets are not yet supported.
-
+spreadsheets in OpenACS. This package allows convenient 
+building and interpreting of web-based table data via tcl in a web page.
+</p><p>
+This package provides two different API implementations:
+</p>
+<ul><li>
+Simple Table - stores and retrieves static tables as delimited text.
+Most any delimiter is automatically handled on input. Delimiters can
+be forced if necessary. Sheets have built-in revisioning and permissions.
+</li><li>
+Standard spreadsheets - stores and retrieves sheets with formula 
+and calculation values stored for each cell. (Not yet implemented)
+</li></ul>
 </pre>
 <h3>license</h3>
 <pre>
@@ -52,5 +60,5 @@ each cell is separated by a common or specified delimiter.
 Can manipulate Tcl list of lists for easy generation of reports.
 </li><li>
 There are procedures for importing, rotating, and exporting tables
- in various formats for easy use in tcl code.
+ in various formats for easy use in tcl.
 </li></ul>
