@@ -14,9 +14,11 @@ ad_proc -public qss_tid_from_name {
 } {
     if { $instance_id eq "" } {
         # set instance_id package_id
+        ns_log Notice "qss_tid_from_name.17: no instance_id supplied."
         set instance_id [ad_conn package_id]
     }
     if { $user_id eq "" } {
+        ns_log Notice "qss_tid_from_name.21: no user_id supplied."
         set user_id [ad_conn user_id]
         set untrusted_user_id [ad_conn untrusted_user_id]
     }
@@ -395,9 +397,11 @@ ad_proc -public qss_table_read {
 } {
     if { $instance_id eq "" } {
         # set instance_id package_id
+        ns_log Notice "qss_table_read.398: no instance_id supplied."
         set instance_id [ad_conn package_id]
     }
     if { $user_id eq "" } {
+        ns_log Notice "qss_table_read.402: no user_id supplied."
         set user_id [ad_conn user_id]
         set untrusted_user_id [ad_conn untrusted_user_id]
     }
