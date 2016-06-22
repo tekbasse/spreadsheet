@@ -32,9 +32,9 @@ Copyright (c) 2014 Benjamin Brink
 po box 20, Marylhurst, OR 97036-0020 usa
 email: tekbasse@yahoo.com
 
-Finance Package is open source and published under the GNU General Public License, 
+Spreadsheet Package is open source and published under the GNU General Public License, 
 consistent with the OpenACS system license: http://www.gnu.org/licenses/gpl.html
-A local copy is available at accounts-finance/www/doc/<a href="LICENSE.html">LICENSE.html</a>
+A local copy is available at spreadsheet/www/doc/<a href="LICENSE.html">LICENSE.html</a>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
