@@ -210,27 +210,62 @@ create index qss_cells_sheet_id_idx on qss_cells (sheet_id);
 -- have procedures and services useful for table-integrated
 -- publishing.
 
--- This began in the 1990s as Table Integrated Publishing System
+-- This began in the 1990s as Table Integrated Publishing System (tips)
 -- for Ole Olesen of Olesen-Hunter Elevator using Excel macro language..
-CREATE TABLE qss_tips_data_types (
+CREATE TABLE qss_tips_data_types (       
        instance_id integer,
-       type_name varchar(40),
-       max_length integer,
+       type_name   varchar(40),
+       max_length  integer,
        -- Name of procedure to validate info.
        -- Validation does not necessarily consider empty case.
-       validation_proc varchar(40),
+       -- validation procedure name (referenced by tcl switch)
+       valida_proc varchar(40),
        -- If abbreviation required for display etc, use this proc
        -- for text format
        abbrev_proc varchar(40),
        -- for text format
        format_proc varchar(40),
        -- for html/css formatting
-       if not div, then span
-       css_div_p integer,
-       -- if not class, then style
-       css_class_p integer,
+       -- if not div, then span. Block=div
+       css_block_p varchar(1),
+       -- if not for element class, then element style
+       -- as in <div class="css_format">
+       -- or maybe both. varchar allows for this.
+       css_class_p varchar(1),
        css_abbrev varchar(120),
        css_format varchar(120),
        -- mainly for any saas requirements
        xml_format varchar(120)
-)
+);
+
+create index qss_tips_data_types_instance_id_idx on qss_tips_data_types (instance_id);
+
+-- define a table
+CREATE TABLE qss_tips_table_defs (
+     instance_id integer,
+     id          integer,
+     label       varchar(40),
+     name        varchar(40)
+     flags       varchar(12),
+     trashed_p   varchar(1)     
+);
+
+-- define fields for a table
+CREATE TABLE qss_tips_field_defs (
+     instance_id integer,
+     id          integer not null,
+     table_id    integer not null,
+     label       varchar(40),
+     name        varchar(40),
+     default_val text
+);
+
+CREATE TABLE qss_tips_data (
+    instance_id integer,
+    table_id integer not null,
+    row_nbr  integer not null,
+    -- from qss_tips_field_defs
+    field_id integer,
+    field_value text
+);
+
