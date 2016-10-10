@@ -204,3 +204,33 @@ create index qss_cells_sheet_id_idx on qss_cells (sheet_id);
 -- qss_composites is deprecated
 -- use a regular sheet and set type/flags to p1 to show it's a 1 row table with column names just like PRETTI p1 type
 -- This reduces the need to create a separate API for composites
+
+-- spreadsheets are sometimes used as quasi-databases.
+-- spreadsheets package seems like an appropriate place to
+-- have procedures and services useful for table-integrated
+-- publishing.
+
+-- This began in the 1990s as Table Integrated Publishing System
+-- for Ole Olesen of Olesen-Hunter Elevator using Excel macro language..
+CREATE TABLE qss_tips_data_types (
+       instance_id integer,
+       type_name varchar(40),
+       max_length integer,
+       -- Name of procedure to validate info.
+       -- Validation does not necessarily consider empty case.
+       validation_proc varchar(40),
+       -- If abbreviation required for display etc, use this proc
+       -- for text format
+       abbrev_proc varchar(40),
+       -- for text format
+       format_proc varchar(40),
+       -- for html/css formatting
+       if not div, then span
+       css_div_p integer,
+       -- if not class, then style
+       css_class_p integer,
+       css_abbrev varchar(120),
+       css_format varchar(120),
+       -- mainly for any saas requirements
+       xml_format varchar(120)
+)
