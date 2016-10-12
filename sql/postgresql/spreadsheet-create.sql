@@ -239,6 +239,7 @@ CREATE TABLE qss_tips_data_types (
 );
 
 create index qss_tips_data_types_instance_id_idx on qss_tips_data_types (instance_id);
+create index qss_tips_data_types_type_name_idx on qss_tips_data_types (type_name);
 
 -- define a table
 CREATE TABLE qss_tips_table_defs (
@@ -250,6 +251,10 @@ CREATE TABLE qss_tips_table_defs (
      trashed_p   varchar(1)     
 );
 
+create qss_tips_table_defs_instance_id_idx on qss_tips_table_defs (instance_id);
+create qss_tips_table_defs_id_idx on qss_tips_table_defs (id);
+create qss_tips_table_defs_label_idx on qss_tips_table_defs (label);
+
 -- define fields for a table
 CREATE TABLE qss_tips_field_defs (
      instance_id integer,
@@ -257,15 +262,35 @@ CREATE TABLE qss_tips_field_defs (
      table_id    integer not null,
      label       varchar(40),
      name        varchar(40),
-     default_val text
+     -- qss_tips_field_values.fv is getting indexed
+     default_val varchar(1025)
 );
 
-CREATE TABLE qss_tips_data (
+create qss_tips_field_defs_instance_id_idx on qss_tips_field_defs (instance_id);
+create qss_tips_field_defs_id_idx on qss_tips_field_defs (id);
+create qss_tips_field_defs_table_id on qss_tips_field_defs (table_id);
+
+
+
+-- for this to work reasonably,
+-- queries should avoid sort
+-- by using a matrix to collect data
+-- and put into a list_of_lists
+-- using an ordered table_list set of keys
+-- or by putting into an array for single row
+-- queries
+CREATE TABLE qss_tips_field_values (
     instance_id integer,
-    table_id integer not null,
-    row_nbr  integer not null,
+    table_id    integer not null,
+    row_nbr     integer not null,
     -- from qss_tips_field_defs
-    field_id integer,
-    field_value text
+    field_id    integer,
+    -- fv is field value
+    -- This is indexed, so limiting to 1025 length instead of text.
+    fv          varchar(1025)
 );
 
+create qss_tips_field_values_instance_id_idx on qss_tips_field_values (instance_id);
+create qss_tips_field_values_table_id_idx on qss_tips_field_values (table_id);
+create qss_tips_field_values_row_nbr_idx on qss_tips_field_values (row_nbr);
+create qss_tips_field_values_field_fv_idx on qss_tips_field_values (fv);
