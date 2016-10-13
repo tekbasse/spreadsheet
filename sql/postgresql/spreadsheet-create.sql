@@ -292,7 +292,7 @@ create index qss_tips_field_defs_table_id on qss_tips_field_defs (table_id);
 CREATE TABLE qss_tips_field_values (
     instance_id integer,
     table_id    integer not null,
-    row_nbr     integer not null,
+    row_id      integer not null,
     -- from qss_tips_field_defs.id
     field_id    integer,
     -- field value is put in one of these following fields
