@@ -251,14 +251,14 @@ CREATE TABLE qss_tips_table_defs (
      instance_id integer,
      id          integer DEFAULT nextval ( 'qss_tips_id_seq' ),
      label       varchar(40),
-     name        varchar(40)
+     name        varchar(40),
      flags       varchar(12),
-     trashed_p   varchar(1)     
+     trashed_p   varchar(1)
 );
 
-create qss_tips_table_defs_instance_id_idx on qss_tips_table_defs (instance_id);
-create qss_tips_table_defs_id_idx on qss_tips_table_defs (id);
-create qss_tips_table_defs_label_idx on qss_tips_table_defs (label);
+create index qss_tips_table_defs_instance_id_idx on qss_tips_table_defs (instance_id);
+create index qss_tips_table_defs_id_idx on qss_tips_table_defs (id);
+create index qss_tips_table_defs_label_idx on qss_tips_table_defs (label);
 
 -- define fields for a table
 CREATE TABLE qss_tips_field_defs (
@@ -270,15 +270,15 @@ CREATE TABLE qss_tips_field_defs (
      -- qss_tips_field_values.fv is getting indexed
      default_val varchar(1025),
      -- qss_tips_data_types.type_name
-     tdt_ data_type varchar(40),
+     tdt_data_type varchar(40),
      -- ref that points to qss_tips_field_values. f_vc1k, f_nbr or f_txt
      -- one of vc1k ,nbr or default to txt
      field_type  varchar(5)
 );
 
-create qss_tips_field_defs_instance_id_idx on qss_tips_field_defs (instance_id);
-create qss_tips_field_defs_id_idx on qss_tips_field_defs (id);
-create qss_tips_field_defs_table_id on qss_tips_field_defs (table_id);
+create index qss_tips_field_defs_instance_id_idx on qss_tips_field_defs (instance_id);
+create index qss_tips_field_defs_id_idx on qss_tips_field_defs (id);
+create index qss_tips_field_defs_table_id on qss_tips_field_defs (table_id);
 
 
 
@@ -307,7 +307,7 @@ CREATE TABLE qss_tips_field_values (
     f_txt       text
 );
 
-create qss_tips_field_values_instance_id_idx on qss_tips_field_values (instance_id);
-create qss_tips_field_values_table_id_idx on qss_tips_field_values (table_id);
-create qss_tips_field_values_row_nbr_idx on qss_tips_field_values (row_nbr);
-create qss_tips_field_values_field_f_vc1k_idx on qss_tips_field_values (f_vc1k);
+create index qss_tips_field_values_instance_id_idx on qss_tips_field_values (instance_id);
+create index qss_tips_field_values_table_id_idx on qss_tips_field_values (table_id);
+create index qss_tips_field_values_row_nbr_idx on qss_tips_field_values (row_nbr);
+create index qss_tips_field_values_field_f_vc1k_idx on qss_tips_field_values (f_vc1k);
