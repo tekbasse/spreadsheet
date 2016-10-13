@@ -263,7 +263,12 @@ CREATE TABLE qss_tips_field_defs (
      label       varchar(40),
      name        varchar(40),
      -- qss_tips_field_values.fv is getting indexed
-     default_val varchar(1025)
+     default_val varchar(1025),
+     -- qss_tips_data_types.type_name
+     tdt_ data_type varchar(40),
+     -- ref that points to qss_tips_field_values. f_vc1k, f_nbr or f_txt
+     -- one of vc1k ,nbr or default to txt
+     field_type  varchar(5)
 );
 
 create qss_tips_field_defs_instance_id_idx on qss_tips_field_defs (instance_id);
@@ -287,10 +292,12 @@ CREATE TABLE qss_tips_field_values (
     field_id    integer,
     -- fv is field value
     -- This is indexed, so limiting to 1025 length instead of text.
-    fv          varchar(1025)
+    f_vc1k      varchar(1025),
+    f_nbr       numeric,
+    f_txt       text
 );
 
 create qss_tips_field_values_instance_id_idx on qss_tips_field_values (instance_id);
 create qss_tips_field_values_table_id_idx on qss_tips_field_values (table_id);
 create qss_tips_field_values_row_nbr_idx on qss_tips_field_values (row_nbr);
-create qss_tips_field_values_field_fv_idx on qss_tips_field_values (fv);
+create qss_tips_field_values_field_f_vc1k_idx on qss_tips_field_values (f_vc1k);
