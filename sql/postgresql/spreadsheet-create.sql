@@ -205,10 +205,15 @@ create index qss_cells_sheet_id_idx on qss_cells (sheet_id);
 -- use a regular sheet and set type/flags to p1 to show it's a 1 row table with column names just like PRETTI p1 type
 -- This reduces the need to create a separate API for composites
 
+
 -- spreadsheets are sometimes used as quasi-databases.
 -- spreadsheets package seems like an appropriate place to
 -- have procedures and services useful for table-integrated
 -- publishing.
+
+CREATE SEQUENCE qss_tips_id_seq start 100;
+SELECT nextval ('qss_tips_id_seq');
+
 
 -- This began in the 1990s as Table Integrated Publishing System (tips)
 -- for Ole Olesen of Olesen-Hunter Elevator using Excel macro language..
@@ -244,7 +249,7 @@ create index qss_tips_data_types_type_name_idx on qss_tips_data_types (type_name
 -- define a table
 CREATE TABLE qss_tips_table_defs (
      instance_id integer,
-     id          integer,
+     id          integer DEFAULT nextval ( 'qss_tips_id_seq' ),
      label       varchar(40),
      name        varchar(40)
      flags       varchar(12),
@@ -258,7 +263,7 @@ create qss_tips_table_defs_label_idx on qss_tips_table_defs (label);
 -- define fields for a table
 CREATE TABLE qss_tips_field_defs (
      instance_id integer,
-     id          integer not null,
+     id          integer not null DEFAULT nextval ( 'qss_tips_id_seq' ),
      table_id    integer not null,
      label       varchar(40),
      name        varchar(40),
@@ -288,12 +293,17 @@ CREATE TABLE qss_tips_field_values (
     instance_id integer,
     table_id    integer not null,
     row_nbr     integer not null,
-    -- from qss_tips_field_defs
+    -- from qss_tips_field_defs.id
     field_id    integer,
-    -- fv is field value
+    -- field value is put in one of these following fields
+    -- depending on qss_tips_field_defs.field_type
+    --
     -- This is indexed, so limiting to 1025 length instead of text.
+    -- f_txt and numeric are not indexed (yet)
     f_vc1k      varchar(1025),
+    -- for numbers
     f_nbr       numeric,
+    -- for general text content that is not indexed, sorted etc
     f_txt       text
 );
 
