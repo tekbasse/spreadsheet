@@ -13,8 +13,8 @@ ad_proc -public qss_tips_read {
 } {
     Returns one or more records of table_name as an array
     where field value pairs in field_name_val_list match query.
-    array indexes are name_array(field_label,row_number)
-    where row_number starts with 0.
+    array indexes are name_array(row_id,field_label)
+    where row_id are in a list in name_array(row_ids)
     If trashed_p is 0, returns only records that are untrashed.
 } {
     upvar 1 instance_id instance_id
@@ -35,13 +35,19 @@ ad_proc -public qss_tips_read {
                     set label_arr(${field_id}) $label
                 }
             }
-
+            if { [qf_is_true $trashed_p] } {
+                set trashed_sql ""
+            } else {
+                set trashed_sql "and trashed_p!='1'"
+            }
             set values_lists [db_list_of_lists qss_tips_field_values_r "select field_id, f_vc1k, f_nbr, f_txt, row_id from qss_tips_field_values 
         where table_id=:table_id
-        and instance_id=:instance_id
+        and instance_id=:instance_id ${trashed_sql}
         and row_id in ([template::util::tcl_to_sql_list $rows])"]
             # val_i = values initial
+            set row_ids_list [list ]
             foreach {field_id f_vc1k f_nbr f_txt row_id} $values_lists {
+                lappend row_ids_list $row_id
                 # since only one case of field value should be nonempty,
                 # following logic could be sped up using qal_first_nonempty_in_list
                 if { [info exists type_arr(${field_id}) ] } {
@@ -59,6 +65,7 @@ ad_proc -public qss_tips_read {
                 set label $label_arr(${field_id})
                 set n_arr(${label},${row_id}) $v
             }
+            set n_arr(row_ids) [lsort -unqiue -integer $row_ids_list]
             if { [llength $values_lists] > 0 } {
                 set success_p 1
             }
