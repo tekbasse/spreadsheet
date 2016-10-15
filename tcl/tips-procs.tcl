@@ -42,13 +42,15 @@ ad_proc -public qss_tips_read {
         and row_id in ([template::util::tcl_to_sql_list $rows])"]
             # val_i = values initial
             foreach {field_id f_vc1k f_nbr f_txt row_id} $values_lists {
+                # since only one case of field value should be nonempty,
+                # following logic could be sped up using qal_first_nonempty_in_list
                 if { [info exists type_arr(${field_id}) ] } {
                     switch -exact -- $type_arr(${field_id}) {
                         vc1k { set v $f_vc1k }
                         nbr  { set v $f_nbr }
                         txt  { set v $f_txt }
                         default {
-                        ns_log Warning "qss_tips_read.47: unknown type for table_name '${table_name}'  field_id '${field_id}' row_id '${row_id}'"
+                            ns_log Warning "qss_tips_read.47: unknown type for table_name '${table_name}'  field_id '${field_id}' row_id '${row_id}'"
                         }
                     }
                 } else {
