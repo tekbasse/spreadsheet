@@ -51,24 +51,31 @@ ad_proc -public qss_tips_read {
                     set row_ids_sql "and row_id in ([template::util::tcl_to_sql_list $row_id_list])"
                 }
             }
+            set vck1_search_sql ""
             if { $vc1k_search_label_val ne "" } {
                 # search scope
-                set label [lindex $vc1k_search_label_val_list 0]
-                set field_id $field_id_arr(${label})
-                set vc1k_search_val [lindex $vc1k_search_label_val_list 1]
-                set row_id_list [db_list qss_tips_field_values_r "select row_id from qss_tips_field_values 
+                foreach {label vc1k_search_val} $vc1k_search_label_val_list {
+                    if { [info exists field_id_arr(${label}) ] && $vck1_search_sql ne "na" } {
+                        set field_id $field_id_arr(${label})
+                        append vk1k_search_sql " and (field_id='${field_id}' and f_vc1k='${vc1k_search_val}')"
+                    } else {
+                        ns_log Warning "qss_tips_read.37: no field_id for search label '${label}' table_name '${table_name}' "
+                        set vck1_search_sql "na"
+                    }
+                }
+                if { $vck1_search_sql ne "na" } {
+                    set row_id_list [db_list qss_tips_field_values_r "select row_id from qss_tips_field_values 
         where table_id=:table_id
-        and field_id=:field_id
-        and f_vc1k=:vc1k_search_val
         and instance_id=:instance_id ${trashed_sql} ${vc1k_search_sql} ${row_ids_sql}"]
-                if { [llength $row_id_list ] > 0 } {
-                    set row_ids_sql "and row_id in ([template::util::tcl_to_sql_list $row_id_list])"
-                } else {
-                    set row_ids_sql "void"
+                    if { [llength $row_id_list ] > 0 } {
+                        set row_ids_sql "and row_id in ([template::util::tcl_to_sql_list $row_id_list])"
+                    } else {
+                        set row_ids_sql "na"
+                    }
                 }
             }
 
-            if { $row_ids_sql eq "void" } {
+            if { $row_ids_sql eq "na" || $vck1_search_sql eq "na" } {
                 set n_arr(row_ids) [list ]
             } else {
                 set values_lists [db_list_of_lists qss_tips_field_values_r "select field_id, f_vc1k, f_nbr, f_txt, row_id from qss_tips_field_values 
