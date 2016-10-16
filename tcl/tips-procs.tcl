@@ -38,11 +38,16 @@ ad_proc -public qss_tips_table_def {
 }
 
 
-ad_proc -public qss_tips_table_add {
-
+ad_proc -public qss_tips_table_create {
+    label
+    name
 } {
-    Defines a tips table
+    Defines a tips table. Label is a short reference with no spaces.
+    Name is usually a title for display and has spaces.
+    @return 1 if successful, otherwise 0
 } {
+    upvar 1 instance_id instance_id
+    
     # fields need to be defined at the same time the table is, otherwise
     # if records exist, they will be missing fields..
     # which will lead to unexpected behavior unless a transition technqiue is defined.
@@ -53,6 +58,33 @@ ad_proc -public qss_tips_table_add {
     # 
     # sql doesn't have to create an empty data.
     # When reading, assume column is empty, unless data exists -- consistent with simple_tables
+    set success_p 0
+    if { [hf_are_printable_characters_q $label] && [hf_are_visible_characters_q $title] } {
+        set existing_id [qss_tips_table_id_of_label $label]
+        if { $existing_id eq "" } {
+            set id [db_nextval qss_tips_id_seq]
+            set flags ""
+            set trashed_p "0"
+            db_dml qss_tips_table_cre {
+                insert into qss_tips_table_defs 
+                (instance_id,id,label,name,flags,trashed_p)
+                values (:instance_id,:id,:label,:name,:flags,:trashed_p)                   
+            }
+            set success_p 1
+        }
+    }
+    return $success_p
+}
+
+ad_proc -public qss_tips_table_update {
+    label
+    name
+    {id ""}
+} {
+    Given id, updates label and name (if not empty string). Given label, updates name.
+    @return 1 if successful, otherwise return 0.
+} {
+
 
 }
 
