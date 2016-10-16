@@ -8,13 +8,12 @@ ad_library {
 ad_proc -public qss_tips_read {
     name_array
     table_name
-    field_name_val_list
     {vc1k_search_label_val_list ""}
     {trashed_p "0"}
     {row_id_list ""}
 } {
     Returns one or more records of table_name as an array
-    where field value pairs in field_name_val_list match query.
+    where field value pairs in vc1k_search_label_val_list match query.
     array indexes are name_array(row_id,field_label)
     where row_id are in a list in name_array(row_ids)
     If trashed_p is 0, returns only records that are untrashed.
@@ -51,19 +50,19 @@ ad_proc -public qss_tips_read {
                     set row_ids_sql "and row_id in ([template::util::tcl_to_sql_list $row_id_list])"
                 }
             }
-            set vck1_search_sql ""
+            set vc1k_search_sql ""
             if { $vc1k_search_label_val ne "" } {
                 # search scope
                 foreach {label vc1k_search_val} $vc1k_search_label_val_list {
-                    if { [info exists field_id_arr(${label}) ] && $vck1_search_sql ne "na" } {
+                    if { [info exists field_id_arr(${label}) ] && $vc1k_search_sql ne "na" } {
                         set field_id $field_id_arr(${label})
                         append vk1k_search_sql " and (field_id='${field_id}' and f_vc1k='${vc1k_search_val}')"
                     } else {
                         ns_log Warning "qss_tips_read.37: no field_id for search label '${label}' table_name '${table_name}' "
-                        set vck1_search_sql "na"
+                        set vc1k_search_sql "na"
                     }
                 }
-                if { $vck1_search_sql ne "na" } {
+                if { $vc1k_search_sql ne "na" } {
                     set row_id_list [db_list qss_tips_field_values_r "select row_id from qss_tips_field_values 
         where table_id=:table_id
         and instance_id=:instance_id ${trashed_sql} ${vc1k_search_sql} ${row_ids_sql}"]
@@ -75,7 +74,7 @@ ad_proc -public qss_tips_read {
                 }
             }
 
-            if { $row_ids_sql eq "na" || $vck1_search_sql eq "na" } {
+            if { $row_ids_sql eq "na" || $vc1k_search_sql eq "na" } {
                 set n_arr(row_ids) [list ]
             } else {
                 set values_lists [db_list_of_lists qss_tips_field_values_r "select field_id, f_vc1k, f_nbr, f_txt, row_id from qss_tips_field_values 
