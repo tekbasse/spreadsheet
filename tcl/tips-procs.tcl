@@ -37,6 +37,20 @@ ad_proc -public qss_tips_table_def {
     return $table_list
 }
 
+
+ad_proc -public qss_tips_table_def {
+
+} {
+    Defines a tips table and fields
+} {
+    # fields need to be defined at the same time the table is, otherwise
+    # some records will be missing fields..
+    # which will lead to unexpected behavior unless a review allows it.
+
+
+}
+
+
 ad_proc -private qss_tips_field_defs {
     table_label
     {table_id ""}
@@ -62,11 +76,28 @@ ad_proc -public qss_tips_write {
 } {
     Writes a record into table_label. Returns row_id if successful, otherwise empty string.
 } {
+    upvar 1 instance_id instance_id
+    upvar 1 $name_array n_arr
     set row_id ""
 
 
     return $row_id
 }
+
+ad_proc -public qss_tips_table_write {
+    name_array
+    table_label
+} {
+    Creates or writes a record into table_label. Returns row_id if successful, otherwise empty string.
+} {
+    upvar 1 instance_id instance_id
+    upvar 1 $name_array n_arr
+    set row_id ""
+
+
+    return $row_id
+}
+
 
 
 ad_proc -public qss_tips_table_read {
