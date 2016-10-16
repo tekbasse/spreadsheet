@@ -38,15 +38,45 @@ ad_proc -public qss_tips_table_def {
 }
 
 
-ad_proc -public qss_tips_table_def {
+ad_proc -public qss_tips_table_add {
 
 } {
-    Defines a tips table and fields
+    Defines a tips table
 } {
     # fields need to be defined at the same time the table is, otherwise
-    # some records will be missing fields..
-    # which will lead to unexpected behavior unless a review allows it.
+    # if records exist, they will be missing fields..
+    # which will lead to unexpected behavior unless a transition technqiue is defined.
+    # How to handle. Treat like spreadsheets, when a column is added..
+    # New columns start with empty values.
+    # This should also help when importing data. A new column could be temporarily added,
+    # then removed after data has been integrated into other columns for example.
+    # 
+    # sql doesn't have to create an empty data.
+    # When reading, assume column is empty, unless data exists -- consistent with simple_tables
 
+}
+
+ad_proc -public qss_tips_table_trash {
+
+} {
+    Trashes a tips table
+} {
+
+}
+
+ad_proc -public qss_tips_field_add {
+
+} {
+    Adds one or more fields
+} {
+
+}
+
+ad_proc -public qss_tips_field_trash {
+
+} {
+    Trashes one or more fields
+} {
 
 }
 
