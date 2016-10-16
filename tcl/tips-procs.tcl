@@ -110,6 +110,9 @@ ad_proc -public qss_tips_table_read {
                 # filter to row_id_list
                 if { [hf_natural_number_list_validate $row_id_list] } {
                     set row_ids_sql "and row_id in ([template::util::tcl_to_sql_list $row_id_list])"
+                } else {
+                    ns_log Warning "qss_tips_read.31: One or more row_id are not a natural number '${row_id_list}'"
+                    set row_ids_sql "na"
                 }
             }
             set vc1k_search_sql ""
@@ -124,16 +127,6 @@ ad_proc -public qss_tips_table_read {
                         set vc1k_search_sql "na"
                     }
                 }
-                if { $vc1k_search_sql ne "na" } {
-                    set row_id_list [db_list qss_tips_field_values_r "select row_id from qss_tips_field_values 
-        where table_id=:table_id
-        and instance_id=:instance_id ${trashed_sql} ${vc1k_search_sql} ${row_ids_sql}"]
-                    if { [llength $row_id_list ] > 0 } {
-                        set row_ids_sql "and row_id in ([template::util::tcl_to_sql_list $row_id_list])"
-                    } else {
-                        set row_ids_sql "na"
-                    }
-                }
             }
 
             if { $row_ids_sql eq "na" || $vc1k_search_sql eq "na" } {
@@ -141,7 +134,7 @@ ad_proc -public qss_tips_table_read {
             } else {
                 set values_lists [db_list_of_lists qss_tips_field_values_r "select field_id, f_vc1k, f_nbr, f_txt, row_id from qss_tips_field_values 
         where table_id=:table_id
-        and instance_id=:instance_id ${trashed_sql} ${row_ids_sql}"]
+        and instance_id=:instance_id ${trashed_sql} ${vc1k_search_sql} ${row_ids_sql}"]
                 
                 # val_i = values initial
                 set row_ids_list [list ]
