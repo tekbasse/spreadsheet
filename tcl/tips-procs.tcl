@@ -141,6 +141,11 @@ ad_proc -public qss_tips_write {
     upvar 1 instance_id instance_id
     upvar 1 $name_array n_arr
     set row_id ""
+    if { [nsconn isconnected] } {
+        set user_id [ad_conn user_id]
+    } else {
+        set user_id 0
+    }
 
 
     return $row_id
@@ -155,12 +160,32 @@ ad_proc -public qss_tips_table_write {
     upvar 1 instance_id instance_id
     upvar 1 $name_array n_arr
     set row_id ""
-
+    if { [nsconn isconnected] } {
+        set user_id [ad_conn user_id]
+    } else {
+        set user_id 0
+    }
 
     return $row_id
 }
 
+ad_proc -public qss_tips_val {
+    table_label
+    search_label
+    search_value
+    return_val_label_list
+    {version "latest"}
+} {
+    Returns the values of the field labels in return_val_label_list in order in list.
+    If only one label is supplied for return_val_label_list, a scalar value is returned instead of list.
+    If more than one record matches search_value for search_label, the version
+    determines which version is chosen. Cases are "earliest" or "latest"
+} {
 
+
+
+    return $return_val
+}
 
 ad_proc -public qss_tips_table_read {
     name_array

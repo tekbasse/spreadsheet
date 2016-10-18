@@ -252,6 +252,9 @@ CREATE TABLE qss_tips_table_defs (
      id          integer DEFAULT nextval ( 'qss_tips_id_seq' ),
      label       varchar(40),
      name        varchar(40),
+     -- for revision history
+     user_id     integer,
+     created     timestamptz default now(),
      flags       varchar(12),
      trashed_p   varchar(1)
 );
@@ -265,6 +268,9 @@ CREATE TABLE qss_tips_field_defs (
      instance_id integer,
      id          integer not null DEFAULT nextval ( 'qss_tips_id_seq' ),
      table_id    integer not null,
+     -- for revision history
+     created     timestamptz default now(),
+     user_id     integer,
      label       varchar(40),
      name        varchar(40),
      -- qss_tips_field_values.fv is getting indexed
@@ -293,6 +299,12 @@ CREATE TABLE qss_tips_field_values (
     instance_id integer,
     table_id    integer not null,
     row_id      integer not null,
+    trashed_p   varchar(1) default "0",
+    -- created is same as last modified.
+    -- each update creates a new record.
+    created     timestamptz default now(),
+    -- for revision history
+    user_id     integer,
     -- from qss_tips_field_defs.id
     field_id    integer,
     -- field value is put in one of these following fields
