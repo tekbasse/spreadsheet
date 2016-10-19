@@ -303,6 +303,7 @@ CREATE TABLE qss_tips_field_values (
     row_id      integer not null,
     trashed_p   varchar(1) default "0",
     trashed_by  integer,
+    trashed_dt  timestamptz,
     -- created is same as last modified.
     -- each update creates a new record.
     created     timestamptz default now(),
