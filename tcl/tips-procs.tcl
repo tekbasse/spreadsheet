@@ -76,17 +76,6 @@ ad_proc -public qss_tips_table_create {
     return $success_p
 }
 
-ad_proc -public qss_tips_table_update {
-    label
-    name
-    {id ""}
-} {
-    Given id, updates label and name (if not empty string). Given label, updates name.
-    @return 1 if successful, otherwise return 0.
-} {
-
-
-}
 
 ad_proc -public qss_tips_table_trash {
 
@@ -96,96 +85,6 @@ ad_proc -public qss_tips_table_trash {
 
 }
 
-ad_proc -public qss_tips_field_add {
-
-} {
-    Adds one or more fields
-} {
-
-}
-
-ad_proc -public qss_tips_field_trash {
-
-} {
-    Trashes one or more fields
-} {
-
-}
-
-
-ad_proc -private qss_tips_field_defs {
-    table_label
-    {table_id ""}
-} { 
-    Returns list of lists of table_label, where colums are field_id,label,name,default_val,tdt_data_type,field_type or empty list if not found.
-} {
-    upvar 1 instance_id instance_id
-    upvar 1 $name_array n_arr
-    if { $table_id eq "" } {
-        set table_id [qss_tips_table_id_of_label $table_label]
-    }
-    set fields_lists [db_list_of_lists qss_tips_field_defs_r {select id as field_id,label,name,default_val,tdt_data_type,field_type from qss_tips_field_defs
-        where instance_id=:instance_id
-        and table_id=:table_id}]
-    return $fields_lists
-}
-
-
-
-ad_proc -public qss_tips_write {
-    name_array
-    table_label
-} {
-    Writes a record into table_label. Returns row_id if successful, otherwise empty string.
-} {
-    upvar 1 instance_id instance_id
-    upvar 1 $name_array n_arr
-    set row_id ""
-    if { [nsconn isconnected] } {
-        set user_id [ad_conn user_id]
-    } else {
-        set user_id 0
-    }
-
-
-    return $row_id
-}
-
-ad_proc -public qss_tips_table_write {
-    name_array
-    table_label
-} {
-    Creates or writes a record into table_label. Returns row_id if successful, otherwise empty string.
-} {
-    upvar 1 instance_id instance_id
-    upvar 1 $name_array n_arr
-    set row_id ""
-    if { [nsconn isconnected] } {
-        set user_id [ad_conn user_id]
-    } else {
-        set user_id 0
-    }
-
-    return $row_id
-}
-
-ad_proc -public qss_tips_val {
-    table_label
-    search_label
-    search_value
-    return_val_label_list
-    {version "latest"}
-} {
-    Returns the values of the field labels in return_val_label_list in order in list.
-    If only one label is supplied for return_val_label_list, a scalar value is returned instead of list.
-    If more than one record matches search_value for search_label, the version
-    determines which version is chosen. Cases are "earliest" or "latest"
-} {
-
-
-
-    return $return_val
-}
 
 ad_proc -public qss_tips_table_read {
     name_array
@@ -286,3 +185,152 @@ ad_proc -public qss_tips_table_read {
     return $success_p
 }
 
+
+
+ad_proc -public qss_tips_field_add {
+
+} {
+    Adds one or more fields. Each field is a column in a table.
+} {
+
+}
+
+
+ad_proc -public qss_tips_field_trash {
+
+} {
+    Trashes one or more fields. Each field is a column in a table.
+} {
+
+}
+
+ad_proc -public qss_tips_field_update {
+    label
+    name
+    {id ""}
+} {
+    Given id, updates label and name (if not empty string). Given label, updates name.
+    @return 1 if successful, otherwise return 0.
+} {
+
+
+}
+
+ad_proc -private qss_tips_field_defs {
+    table_label
+    {table_id ""}
+} { 
+    Returns list of lists of table_label, where colums are field_id,label,name,default_val,tdt_data_type,field_type or empty list if not found.
+} {
+    upvar 1 instance_id instance_id
+    upvar 1 $name_array n_arr
+    if { $table_id eq "" } {
+        set table_id [qss_tips_table_id_of_label $table_label]
+    }
+    set fields_lists [db_list_of_lists qss_tips_field_defs_r {select id as field_id,label,name,default_val,tdt_data_type,field_type from qss_tips_field_defs
+        where instance_id=:instance_id
+        and table_id=:table_id}]
+    return $fields_lists
+}
+
+
+
+ad_proc -public qss_tips_row_create {
+    name_array
+    table_label
+} {
+    Writes a record into table_label. Returns row_id if successful, otherwise empty string.
+} {
+    upvar 1 instance_id instance_id
+    upvar 1 $name_array n_arr
+    set row_id ""
+    if { [nsconn isconnected] } {
+        set user_id [ad_conn user_id]
+    } else {
+        set user_id 0
+    }
+
+
+    return $row_id
+}
+
+ad_proc -public qss_tips_row_update {
+    name_array
+    table_label
+} {
+    Creates or writes a record into table_label. Returns row_id if successful, otherwise empty string.
+} {
+    upvar 1 instance_id instance_id
+    upvar 1 $name_array n_arr
+    set row_id ""
+    if { [nsconn isconnected] } {
+        set user_id [ad_conn user_id]
+    } else {
+        set user_id 0
+    }
+
+    return $row_id
+}
+
+ad_proc -public qss_tips_row_read {
+} {
+    Reads a row from table_label
+} {
+    # see qss_tips_table_read.. 
+    return $row_list
+}
+
+ad_proc -public qss_tips_row_trash {
+    name_array
+    table_label
+    row_id
+} {
+    Trashes a record of table_label. Returns 1 if successful, otherwise 0.
+} {
+    upvar 1 instance_id instance_id
+    upvar 1 $name_array n_arr
+    set row_id ""
+    if { [nsconn isconnected] } {
+        set user_id [ad_conn user_id]
+    } else {
+        set user_id 0
+    }
+
+    return $row_id
+}
+
+ad_proc -public qss_tips_cell_read {
+    table_label
+    search_label
+    search_value
+    return_val_label_list
+    {version "latest"}
+} {
+    Returns the values of the field labels in return_val_label_list in order in list.
+    If only one label is supplied for return_val_label_list, a scalar value is returned instead of list.
+    If more than one record matches search_value for search_label, the version
+    determines which version is chosen. Cases are "earliest" or "latest"
+} {
+
+
+
+    return $return_val
+}
+
+ad_proc -public qss_tips_cell_update {
+    table_label
+    search_label
+    old_value
+    new_value
+    {version "latest"}
+} {
+    Returns the values of the field labels in return_val_label_list in order in list.
+    If only one label is supplied for return_val_label_list, a scalar value is returned instead of list.
+    If more than one record matches search_value for search_label, the version
+    determines which version is chosen. Cases are "earliest" or "latest"
+} {
+
+
+
+    return $return_val
+}
