@@ -256,7 +256,8 @@ CREATE TABLE qss_tips_table_defs (
      user_id     integer,
      created     timestamptz default now(),
      flags       varchar(12),
-     trashed_p   varchar(1)
+     trashed_p   varchar(1),
+     trashed_by  integer
 );
 
 create index qss_tips_table_defs_instance_id_idx on qss_tips_table_defs (instance_id);
@@ -301,6 +302,7 @@ CREATE TABLE qss_tips_field_values (
     table_id    integer not null,
     row_id      integer not null,
     trashed_p   varchar(1) default "0",
+    trashed_by  integer,
     -- created is same as last modified.
     -- each update creates a new record.
     created     timestamptz default now(),

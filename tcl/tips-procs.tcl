@@ -5,6 +5,20 @@ ad_library {
     @cs-id $Id:
 }
 
+ad_proc -private qss_tips_user_id_set {
+} {
+    Sets user_id in calling environment, 
+    @return user_id, or 0 if not a logged in user, or -1 if not called via connected session.
+} {
+    upvar 1 user_id user_id
+    if { [ns_conn isconnected] } {
+        set user_id [ad_conn user_id]
+    } else {
+        set user_id -1
+    }
+    return 1
+}    
+
 ad_proc -public qss_tips_table_id_of_label {
     table_label
 } { 
@@ -19,8 +33,31 @@ ad_proc -public qss_tips_table_id_of_label {
     return $table_id
 }
 
+ad_proc -private qss_tips_table_id_exists_q {
+    table_id
+    {trashed_p "0"}
+} {
+    Returns 1 if table_id exists.
+    Defaults to only check untrashed tables (trashed_p is 0). Set trashed_p to 1 to check all cases.
+} {
+    upvar 1 instance_id instance_id
+    if { ![qf_is_true $trashed_p ] } {
+        set exists_p [db_0or1row qss_tips_untrashed_table_id_exists {
+            select id from qss_tips_table_defs 
+            where id=:table_id 
+            and instance_id=:instance_id
+        }
+    } else {
+        set exists_p [db_0or1row qss_tips_untrashed_table_id_exists {
+            select id from qss_tips_table_defs 
+            where id=:table_id
+            and instance_id=:instance_id
+            and trashed_p!='1'
+        }
+    return $exists_p
+}
 
-ad_proc -public qss_tips_table_def {
+ad_proc -public qss_tips_table_def_read {
     table_label
 } { 
     Returns list of table_id, label, name, flags, trashed_p or empty list if not found.
@@ -38,13 +75,14 @@ ad_proc -public qss_tips_table_def {
 }
 
 
-ad_proc -public qss_tips_table_create {
+ad_proc -public qss_tips_table_def_create {
     label
     name
+    {flags ""}
 } {
     Defines a tips table. Label is a short reference with no spaces.
     Name is usually a title for display and has spaces.
-    @return 1 if successful, otherwise 0
+    @return id if successful, otherwise returns empty string.
 } {
     upvar 1 instance_id instance_id
     
@@ -58,7 +96,8 @@ ad_proc -public qss_tips_table_create {
     # 
     # sql doesn't have to create an empty data.
     # When reading, assume column is empty, unless data exists -- consistent with simple_tables
-    set success_p 0
+    set id ""
+    qss_table_user_id_set
     if { [hf_are_printable_characters_q $label] && [hf_are_visible_characters_q $title] } {
         set existing_id [qss_tips_table_id_of_label $label]
         if { $existing_id eq "" } {
@@ -67,22 +106,35 @@ ad_proc -public qss_tips_table_create {
             set trashed_p "0"
             db_dml qss_tips_table_cre {
                 insert into qss_tips_table_defs 
-                (instance_id,id,label,name,flags,trashed_p)
-                values (:instance_id,:id,:label,:name,:flags,:trashed_p)                   
+                (instance_id,id,label,name,flags,user_id,created,trashed_p)
+                values (:instance_id,:id,:label,:name,:flags,:user_id,now(),:trashed_p)                   
             }
-            set success_p 1
         }
     }
-    return $success_p
+    return $id
 }
 
 
 ad_proc -public qss_tips_table_trash {
-
+    table_id
 } {
-    Trashes a tips table
+    Trashes a tips table by table_id.
+    @return 1 if success, otherwise return 0.
 } {
-
+    upvar 1 instance_id instance_id
+    qss_tips_user_id_set
+    set success_p [qss_tips_table_id_exists_q $table_id]
+    if { $success_p } {
+        [db_dml qss_tips_table_trash {
+            update qss_tips_table_defs 
+            set trashed_p='1'
+            and trashed_by=:user_id
+            and trashed_dt=now()
+            where id=:table_id
+            and instance_id=:instance_id
+        } ]
+    }
+    return $success_p
 }
 
 
@@ -197,11 +249,39 @@ ad_proc -public qss_tips_field_add {
 
 
 ad_proc -public qss_tips_field_trash {
-
+    field_ids
+    {table_id ""}
 } {
-    Trashes one or more fields. Each field is a column in a table.
-} {
+    Trashes one or more fields. 
+    Each field is a column in a table. 
+    Accepts list or scalar value.
+    If table_id is supplied, scopes to table_id.
 
+    @return 1 if all cases are success,  otherwise returns 0.
+} {
+    upvar 1 instance_id instance_id
+    qss_tips_user_id_set
+    if { [llength $field_ids] > 0 } {
+        set field_ids_list $field_ids
+    } else {
+        set field_ids_list [list $field_ids]
+    }
+    set success_p_tot 1
+    foreach field_id $field_ids_list {
+        set success_p [qss_tips_field_id_exists_q $field_id $table_id]
+        set success_p_tot [expr { $success_p && $success_p_tot } ]
+        if { $success_p } {
+            [db_dml qss_tips_field_trash_def {
+                update qss_tips_field_defs 
+                set trashed_p='1'
+                and trashed_by=:user_id
+                and trashed_dt=now()
+                where id=:field_id
+                and instance_id=:instance_id
+            } ]
+        }
+    }
+    return $success_p
 }
 
 ad_proc -public qss_tips_field_update {
@@ -244,11 +324,6 @@ ad_proc -public qss_tips_row_create {
     upvar 1 instance_id instance_id
     upvar 1 $name_array n_arr
     set row_id ""
-    if { [nsconn isconnected] } {
-        set user_id [ad_conn user_id]
-    } else {
-        set user_id 0
-    }
 
 
     return $row_id
@@ -263,11 +338,7 @@ ad_proc -public qss_tips_row_update {
     upvar 1 instance_id instance_id
     upvar 1 $name_array n_arr
     set row_id ""
-    if { [nsconn isconnected] } {
-        set user_id [ad_conn user_id]
-    } else {
-        set user_id 0
-    }
+    qss_tips_user_id_set
 
     return $row_id
 }
@@ -290,11 +361,7 @@ ad_proc -public qss_tips_row_trash {
     upvar 1 instance_id instance_id
     upvar 1 $name_array n_arr
     set row_id ""
-    if { [nsconn isconnected] } {
-        set user_id [ad_conn user_id]
-    } else {
-        set user_id 0
-    }
+    qss_tips_user_id_set
 
     return $row_id
 }
