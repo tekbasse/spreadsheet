@@ -244,7 +244,7 @@ ad_proc -public qss_tips_field_add {
 } {
     Adds one or more fields. Each field is a column in a table.
 } {
-
+##code
 }
 
 
@@ -293,7 +293,19 @@ ad_proc -public qss_tips_field_update {
     @return 1 if successful, otherwise return 0.
 } {
 
+##code
+}
 
+ad_proc -private qss_tips_field_def_read {
+    table_id
+    label
+    {field_id ""}
+} {
+    Returns a list about one field in a table_id: field_id,label,name,default_val,tdt_data_type,field_type or empty list if not found.
+} {
+    upvar 1 instance_id instance_id
+
+##code
 }
 
 ad_proc -private qss_tips_field_defs {
@@ -325,7 +337,7 @@ ad_proc -public qss_tips_row_create {
     upvar 1 $name_array n_arr
     set row_id ""
 
-
+##code
     return $row_id
 }
 
@@ -339,7 +351,7 @@ ad_proc -public qss_tips_row_update {
     upvar 1 $name_array n_arr
     set row_id ""
     qss_tips_user_id_set
-
+##code
     return $row_id
 }
 
@@ -348,6 +360,7 @@ ad_proc -public qss_tips_row_read {
     Reads a row from table_label
 } {
     # see qss_tips_table_read.. 
+##code
     return $row_list
 }
 
@@ -362,7 +375,7 @@ ad_proc -public qss_tips_row_trash {
     upvar 1 $name_array n_arr
     set row_id ""
     qss_tips_user_id_set
-
+##code
     return $row_id
 }
 
@@ -396,7 +409,7 @@ ad_proc -public qss_tips_cell_update {
     If more than one record matches search_value for search_label, the version
     determines which version is chosen. Cases are "earliest" or "latest"
 } {
-
+##code
 
 
     return $return_val
