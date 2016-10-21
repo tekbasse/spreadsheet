@@ -116,18 +116,55 @@ ad_proc -public qss_tips_table_def_create {
 
 
 ad_proc -public qss_tips_table_def_update {
-    id
-    {label ""}
-    {name ""}
-    {flags ""}
+    table_id
+    args
 } {
-    Updates a table definition. If label, name or flags is nonempty, updates values
+    Updates a table definition for table_id. 
+    @return 1 if successful, otherwise 0.
 } {
-    ##code
     # Table keeps same id, but creates a copy of old record, assigns new id to it and trashes it.
     # as this is less work than updating mapping..
 
-    return 1
+    # Allow args to be passed as a list or separate parameters
+    set args_list [list ]
+    set arg1 [lindex $args 0]
+    if { [llength $arg1] > 1 } {
+        set args_list $arg1
+    }
+    set args_list [concat $args_list $args]
+    set update_sql ""
+    set separator ""
+    set field_list [list label name flags]
+    foreach {arg val} $args_list {
+        if { $arg in $field_list } {
+            set $arg $val
+            append update_sql "${arg}=:${arg}"
+            set separator ", "
+        }
+    }
+    if { [string length $update_sql] > 0 && $label ne "" } {
+        # append o preffix to avoid name collision with update_sql
+        set exists_p [db_0or1row qss_tips_table_def_ur {
+            select label as olabel,name as oname,flags as oflags,ouser_id,created 
+            from qss_tips_table_defs 
+            where instance_id=:instance_id 
+            and id=:table_id}]
+        if { $exists_p } {
+            qss_table_user_id_set
+            set new_id [db_nextval qss_tips_id_seq]
+            set trashed_p 1
+            set trashed_by $user_id
+            db_transaction {
+                db_dml tips_table_def_log_rev {
+                    insert into qss_tips_table_defs 
+                    (instance_id,id,label,name,flags,user_id,created,trashed_p)
+                    values (:instance_id,:new_id,:olabel,:oname,:oflags,:ouser_id,:created,:trashed_p,:trashed_by) 
+                }
+                db_dml tips_table_def_upd "update qss_tips_table_defs set ${update_sql} where instance_id=:instance_id and id=:table_id"
+            }
+        }
+    }
+    return $exists_p
 }
 
 ad_proc -public qss_tips_table_def_trash {
