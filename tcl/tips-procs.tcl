@@ -261,11 +261,7 @@ ad_proc -public qss_tips_field_trash {
 } {
     upvar 1 instance_id instance_id
     qss_tips_user_id_set
-    if { [llength $field_ids] > 0 } {
-        set field_ids_list $field_ids
-    } else {
-        set field_ids_list [list $field_ids]
-    }
+    set field_ids_list [qf_listify $field_ids]
     set success_p_tot 1
     foreach field_id $field_ids_list {
         set success_p [qss_tips_field_id_exists_q $field_id $table_id]
@@ -296,22 +292,15 @@ ad_proc -public qss_tips_field_update {
 ##code
 }
 
+
 ad_proc -private qss_tips_field_def_read {
-    table_id
-    label
-    {field_id ""}
-} {
-    Returns a list about one field in a table_id: field_id,label,name,default_val,tdt_data_type,field_type or empty list if not found.
-} {
-    upvar 1 instance_id instance_id
-
-##code
-}
-
-ad_proc -private qss_tips_field_defs {
     table_label
     {table_id ""}
+    {field_labels ""}
+    {field_ids ""}
 } { 
+    Defaults to all untrashed fields. 
+    If field_labels or field_ids is nonempty (list or scalar), scopes to just these.
     Returns list of lists of table_label, where colums are field_id,label,name,default_val,tdt_data_type,field_type or empty list if not found.
 } {
     upvar 1 instance_id instance_id
@@ -322,6 +311,49 @@ ad_proc -private qss_tips_field_defs {
     set fields_lists [db_list_of_lists qss_tips_field_defs_r {select id as field_id,label,name,default_val,tdt_data_type,field_type from qss_tips_field_defs
         where instance_id=:instance_id
         and table_id=:table_id}]
+    # allow glob with field_labels
+    set field_label_list [qf_listify $field_labels]
+    set field_label_list_len [llength $field_label_list]
+    if { $field_label_list_len > 0 } {
+        # create a searchable list
+        set label_search_list [list ]
+        foreach field_list $field_lists {
+            lappend label_search_list [lindex $field_list 1]
+        }
+        set field_label_idx_list [list ]
+        foreach field_label $field_label_list {
+            set indexes [lsearch -all -glob $label_search_list $field_label]
+            set field_label_idx_list [concat $field_label_idx_list $indexes]
+        }
+        
+    }        
+
+    set field_id_list [qf_listify $field_ids]
+    set field_id_list_len [llength $field_id_list]
+    if { $field_id_list_len > 0 } {
+        # create a searchable list
+        set id_search_list [list ]
+        foreach field_list $field_lists {
+            lappend id_search_list [lindex $field_list 1]
+        }
+        set field_id_idx_list [list ]
+        foreach id $field_id_list {
+            set indexes [lsearch -exact -integer $id_search_list $id]
+            set field_id_idx_list [concat $field_id_idx_list $indexes]
+        }
+    }
+    if { $field_id_list_len > 0 || $field_label_list_len > 0 } {
+        set field_idx_list [concat $field_id_idx_list $field_label_idx_list]
+        # remove duplicates
+        set field_idx_list [lsort -unique $field_idx_list]
+        # scope fields_lists to just the filtered ones
+        set filtered_lists [list ]
+        foreach fid $field_idx_list {
+            lappend filtered_lists [lindex $fields_lists $fid]
+        }
+        set fields_lists $filtered_lists
+    }
+
     return $fields_lists
 }
 
