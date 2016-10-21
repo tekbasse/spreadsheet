@@ -159,7 +159,7 @@ ad_proc -public qss_tips_table_read {
     set success_p 0
 
     if { $table_id ne "" } {
-        set fields_lists [qss_tips_field_defs $tabel_label $table_id]
+        set fields_lists [qss_tips_field_def_read $tabel_label $table_id]
         if { [llength $fields_lists ] > 0 } {
             foreach field_list $field_lists {
                 foreach {field_id label name def_val tdt_type field_type} $fields_list {
