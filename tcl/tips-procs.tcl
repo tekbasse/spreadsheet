@@ -115,7 +115,22 @@ ad_proc -public qss_tips_table_def_create {
 }
 
 
-ad_proc -public qss_tips_table_trash {
+ad_proc -public qss_tips_table_def_update {
+    id
+    {label ""}
+    {name ""}
+    {flags ""}
+} {
+    Updates a table definition. If label, name or flags is nonempty, updates values
+} {
+    ##code
+    # Table keeps same id, but creates a copy of old record, assigns new id to it and trashes it.
+    # as this is less work than updating mapping..
+
+    return 1
+}
+
+ad_proc -public qss_tips_table_def_trash {
     table_id
 } {
     Trashes a tips table by table_id.
@@ -239,7 +254,7 @@ ad_proc -public qss_tips_table_read {
 
 
 
-ad_proc -public qss_tips_field_add {
+ad_proc -public qss_tips_field_def_create {
 
 } {
     Adds one or more fields. Each field is a column in a table.
@@ -248,7 +263,7 @@ ad_proc -public qss_tips_field_add {
 }
 
 
-ad_proc -public qss_tips_field_trash {
+ad_proc -public qss_tips_field_def_trash {
     field_ids
     {table_id ""}
 } {
@@ -280,7 +295,7 @@ ad_proc -public qss_tips_field_trash {
     return $success_p
 }
 
-ad_proc -public qss_tips_field_update {
+ad_proc -public qss_tips_field_def_update {
     label
     name
     {id ""}
@@ -293,15 +308,17 @@ ad_proc -public qss_tips_field_update {
 }
 
 
-ad_proc -private qss_tips_field_def_read {
+ad_proc -public qss_tips_field_def_read {
     table_label
     {table_id ""}
     {field_labels ""}
     {field_ids ""}
 } { 
+    Reads info about a field in a table.
+    Returns list of lists of table_label, where colums are field_id,label,name,default_val,tdt_data_type,field_type or empty list if not found.
     Defaults to all untrashed fields. 
     If field_labels or field_ids is nonempty (list or scalar), scopes to just these.
-    Returns list of lists of table_label, where colums are field_id,label,name,default_val,tdt_data_type,field_type or empty list if not found.
+
 } {
     upvar 1 instance_id instance_id
     upvar 1 $name_array n_arr
