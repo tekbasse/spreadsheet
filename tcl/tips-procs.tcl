@@ -138,7 +138,7 @@ ad_proc -public qss_tips_table_def_update {
     foreach {arg val} $args_list {
         if { $arg in $field_list } {
             set $arg $val
-            append update_sql "${arg}=:${arg}"
+            append update_sql $separator "${arg}=:${arg}"
             set separator ", "
         }
     }
@@ -292,11 +292,64 @@ ad_proc -public qss_tips_table_read {
 
 
 ad_proc -public qss_tips_field_def_create {
+    args
+} {
+    Adds a field to an existing table. 
+    Each field is a column in a table.
+    args is passed in name value pairs. 
+    Requires table_label or table_id and field: label name tdt_data_type field_type.
+    default_val is empty string unless supplied.
+} {
+    upvar 1 instance_id instance_id
+    qss_tips_user_id_set
 
-} {
-    Adds one or more fields. Each field is a column in a table.
-} {
-##code
+    # Allow args to be passed as a list or separate parameters
+    set args_list [list ]
+    set arg1 [lindex $args 0]
+    if { [llength $arg1] > 1 } {
+        set args_list $arg1
+    }
+    set args_list [concat $args_list $args]
+    # req = required
+    set req_list [list label name tdt_data_type field_type]
+    set opt_list [list default_val]
+    set xor_list [list table_id table_label]
+    set all_list [concat $req_list $opt_list $xor_list]
+    set name_list [list ]
+
+    # optional values have defaults
+    set default_val ""
+
+    foreach {nam val} $args_list {
+        if { $nam in $all_list } {
+            set $nam $val
+            lappend name_list $nam
+        }
+    }
+    set success_p 1
+    foreach nam $req_list {
+        if { $nam ni $name_list } {
+            set success_p 0
+        }
+    }
+    if { $success_p && ( $table_id ni $name_list && $table_label ni $name_list ) } {
+        set success_p 0
+    }
+    if { $success_p } {
+        # since optional values have defaults, no need to customize sql
+        if { ![info exists table_id] } {
+            set table_id [qss_tips_table_id_of_label $table_label]
+        }
+        if { [qf_is_natural_number $table_id] } {
+            db_dml qss_tips_field_def_cr {insert into qss_tips_field_defs
+                (instance_id,id,table_id,created,user_id,label,name,default_val,tdt_data_type,field_type)
+                values (:instance_id,:id,:table_id,now(),:user_id,:label,:name,:default_val,:tdt_data_type,:field_type)
+            }
+        } else {
+            set success_p 0
+        }
+    }
+    return $success_p
 }
 
 
