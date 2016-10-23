@@ -11,6 +11,8 @@ drop index qss_tips_field_values_row_nbr_idx;
 drop index qss_tips_field_values_table_id_idx;
 drop index qss_tips_field_values_instance_id_idx;
 DROP TABLE qss_tips_field_values;
+
+drop index qss_tips_field_defs_trashed_p;
 drop index qss_tips_field_defs_table_id;
 drop index qss_tips_field_defs_id_idx;
 drop index qss_tips_field_defs_instance_id_idx;

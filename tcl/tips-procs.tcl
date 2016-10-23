@@ -340,10 +340,11 @@ ad_proc -public qss_tips_field_def_create {
         if { ![info exists table_id] } {
             set table_id [qss_tips_table_id_of_label $table_label]
         }
+        set trashed_p 0
         if { [qf_is_natural_number $table_id] } {
             db_dml qss_tips_field_def_cr {insert into qss_tips_field_defs
-                (instance_id,id,table_id,created,user_id,label,name,default_val,tdt_data_type,field_type)
-                values (:instance_id,:id,:table_id,now(),:user_id,:label,:name,:default_val,:tdt_data_type,:field_type)
+                (instance_id,id,table_id,created,user_id,label,name,default_val,tdt_data_type,field_type,trashed_p)
+                values (:instance_id,:id,:table_id,now(),:user_id,:label,:name,:default_val,:tdt_data_type,:field_type,:trashed_p)
             }
         } else {
             set success_p 0
@@ -386,15 +387,80 @@ ad_proc -public qss_tips_field_def_trash {
 }
 
 ad_proc -public qss_tips_field_def_update {
-    label
-    name
-    {id ""}
+    table_id
+    args
 } {
-    Given id, updates label and name (if not empty string). Given label, updates name.
+    Given table_id and field_id or field_label, updates label and/or name.
+    args can be passed as list or list of args in name value pairs.
+    Acceptable names are field_id or field_label for referencing field;
+    and name_new and/or label_new for setting new values for these.
     @return 1 if successful, otherwise return 0.
 } {
+    upvar 1 instance_id instance_id
+    set success_p 0
 
-##code
+    # Allow args to be passed as a list or separate parameters
+    set args_list [list ]
+    set arg1 [lindex $args 0]
+    if { [llength $arg1] > 1 } {
+        set args_list $arg1
+    }
+    set args_list [concat $args_list $args]
+
+    set includes_ref_p 0
+    set includes_set_p 0
+    set names_list [list field_id field_label name_new label_new]
+    set ref_list [list field_id field_label]
+    foreach {n v} $args_list {
+        if { $n in $names_list } {
+            set $n $v
+            if { $n in $ref_list } {
+                set includes_ref_p 1
+            } else {
+                set includes_set_p 1
+            }
+        }
+    }
+    if { $includes_ref_p && $includes_set_p } {
+
+        if { [info exists field_id] } {
+            set extra_ref_sql "and id=:field_id"
+        } elseif { [info exists field_label] } {
+            set extra_ref_sql "and label=:field_label"
+        }
+
+           
+        set exists_p [db_0or1row qss_tips_field_def_r_u1 "select id as field_id,label,name,default_val,tdt_data_type,field_type,created as c_date,user_id as c_user_id from qss_tips_field_defs
+        where instance_id=:instance_id
+        and table_id=:table_id
+        and trashed_p!='1' ${extra_ref_sql}" ]
+        if { $exists_p } {
+            qss_table_user_id_set
+            set new_id [db_nextval qss_tips_id_seq]
+            if { ![info exists name_new] } {
+                set name_new $name
+            }
+            if { ![info exists label_new] } {
+                set label_new $label
+            }
+            set trashed_p 0
+            db_transaction {
+                db_dml qss_tips_field_def_u1 { update qss_tips_field_def 
+                    set id=:new_id, 
+                    trashed_p='1'
+                    trashed_by=:user_id
+                    where id=:field_id 
+                    and instance_id=:instance_id 
+                    and table_id=:table_id }
+                db_dml qss_tips_field_def_u1_cr {
+                    {instance_id,table_id,id,label,name,flags,user_id,created,trashed_p,default_val,tdt_data_type,field_type}
+                    values (:instance_id,:table_id,:field_id,:label_new,:name_new,:flags,:user_id,now(),:trashed_p,:default_val,:tdt_data_type,:field_type)
+                }
+            }
+            set success_p 1
+        }
+    }
+    return $success_p
 }
 
 
@@ -417,7 +483,8 @@ ad_proc -public qss_tips_field_def_read {
     }
     set fields_lists [db_list_of_lists qss_tips_field_defs_r {select id as field_id,label,name,default_val,tdt_data_type,field_type from qss_tips_field_defs
         where instance_id=:instance_id
-        and table_id=:table_id}]
+        and table_id=:table_id
+        and trashed_p!='1'}]
     # allow glob with field_labels
     set field_label_list [qf_listify $field_labels]
     set field_label_list_len [llength $field_label_list]

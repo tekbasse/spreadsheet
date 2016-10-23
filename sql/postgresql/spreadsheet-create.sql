@@ -273,6 +273,8 @@ CREATE TABLE qss_tips_field_defs (
      -- for revision history
      created     timestamptz default now(),
      user_id     integer,
+     trashed_by  integer,
+     trashed_p   varchar(1),
      label       varchar(40),
      name        varchar(40),
      -- qss_tips_field_values.fv is getting indexed
@@ -287,6 +289,7 @@ CREATE TABLE qss_tips_field_defs (
 create index qss_tips_field_defs_instance_id_idx on qss_tips_field_defs (instance_id);
 create index qss_tips_field_defs_id_idx on qss_tips_field_defs (id);
 create index qss_tips_field_defs_table_id on qss_tips_field_defs (table_id);
+create index qss_tips_field_defs_trashed_p on qss_tips_field_defs (trashed_p);
 
 
 
