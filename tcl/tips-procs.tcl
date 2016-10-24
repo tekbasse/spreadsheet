@@ -542,8 +542,9 @@ ad_proc -public qss_tips_row_create {
     upvar 1 instance_id instance_id
     upvar 1 $name_array n_arr
     set row_id ""
+    set field_labels_list 
+    qf_array_to_vars n_arr $field_labels_list
 
-##code
     return $row_id
 }
 
