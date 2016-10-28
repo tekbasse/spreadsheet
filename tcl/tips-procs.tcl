@@ -568,7 +568,6 @@ ad_proc -public qss_tips_row_create {
     Missing field labels are left blank.
 } {
     upvar 1 instance_id instance_id
-    #upvar 1 $name_array n_arr
     set new_id ""
     set table_id [qss_tips_table_id_of_label $table_label]
     if { $table_id ne "" } {
@@ -588,37 +587,38 @@ ad_proc -public qss_tips_row_create {
             qss_tips_user_id_set
             set new_id [db_nextval qss_tips_id_seq]
             db_transaction {
-                foreach {label value} $label_value_list
-                # if field value is blank, skip..
-                if { $label in $field_labels_list && $value ne "" } {
-                    set field_id $l_arr(${label})
-                    set field_type $t_arr(${label})
-                    switch -exact $field_type -- {
-                        vc1k {
-                            set f_nbr ""
-                            set f_txt ""
-                            set f_vc1k $value
+                foreach {label value} $label_value_list {
+                    # if field value is blank, skip..
+                    if { $label in $field_labels_list && $value ne "" } {
+                        set field_id $l_arr(${label})
+                        set field_type $t_arr(${label})
+                        switch -exact $field_type -- {
+                            vc1k {
+                                set f_nbr ""
+                                set f_txt ""
+                                set f_vc1k $value
+                            }
+                            nbr {
+                                set f_nbr $value
+                                set f_txt ""
+                                set f_vc1k ""
+                            }
+                            txt {
+                                set f_nbr ""
+                                set f_txt $value
+                                set f_vc1k ""
+                            }
+                            default {
+                                ns_log Warning "qss_tips_row_create. field_type '${field_type}' not valid for field label ${label} table_label '${table_label}'. Defaulting to txt"
+                                set f_nbr ""
+                                set f_txt $value
+                                set f_vc1k ""
+                            }
                         }
-                        nbr {
-                            set f_nbr $value
-                            set f_txt ""
-                            set f_vc1k ""
+                        db_dml qss_tips_field_values_row_cr_1f { insert into qss_tips_field_values
+                            (instance_id,table_id,row_id,trashed_p,created,user_id,field_id,f_vc1k,f_nbr,f_txt)
+                            values (:instance_id,:table_id,:new_id,:trashed_p,now(),:user_id,:field_id,:f_vc1k,:f_nbr,:f_txt)
                         }
-                        txt {
-                            set f_nbr ""
-                            set f_txt $value
-                            set f_vc1k ""
-                        }
-                        default {
-                            ns_log Warning "qss_tips_row_create. field_type '${field_type}' not valid for field label ${label} table_label '${table_label}'. Defaulting to txt"
-                            set f_nbr ""
-                            set f_txt $value
-                            set f_vc1k ""
-                        }
-                    }
-                    db_dml qss_tips_field_values_row_cr_1f { insert into qss_tips_field_values
-                        (instance_id,table_id,row_id,trashed_p,created,user_id,field_id,f_vc1k,f_nbr,f_txt)
-                        values (:instance_id,:table_id,:new_id,:trashed_p,now(),:user_id,:field_id,:f_vc1k,:f_nbr,:f_txt)
                     }
                 }
             }
@@ -628,7 +628,7 @@ ad_proc -public qss_tips_row_create {
 }
 
 ad_proc -public qss_tips_row_update {
-    name_value_list
+    label_value_list
     table_label
     row_id
 } {
@@ -638,14 +638,60 @@ ad_proc -public qss_tips_row_update {
     upvar 1 instance_id instance_id
     set success_p [qss_tips_row_id_exists_q $row_id $table_id ]
     if { $success_p } {
-        qss_tips_user_id_set
-        db_transaction {
-            foreach {name value} $name_value_list
+    if { $table_id ne "" } {
+        set field_defs_lists [qss_tips_field_def_read "" $table_id]
+        #field_id,label,name,default_val,tdt_data_type,field_type
+        if { [llength $table_defs_lists] > 0 } {
+            foreach field_def $table_defs_lists {
+                foreach {field_id label name default_val tdt_data_type field_type} $field_def {
+                    if { [string length $label] > 0 } {
+                        set l_arr(${label}) $field_id
+                        set t_arr(${label}) $field_type
+                    }
+                }
+            }
+
+            set field_labels_list [array names l_arr]
+            qss_tips_user_id_set
+            set new_id [db_nextval qss_tips_id_seq]
+            db_transaction {
+                foreach {label value} $label_value_list {
+                    if { $label in $field_labels_list } {
+                        set field_id $l_arr(${label})
+                        set field_type $t_arr(${label})
+                        switch -exact $field_type -- {
+                            vc1k {
+                                set f_nbr ""
+                                set f_txt ""
+                                set f_vc1k $value
+                            }
+                            nbr {
+                                set f_nbr $value
+                                set f_txt ""
+                                set f_vc1k ""
+                            }
+                            txt {
+                                set f_nbr ""
+                                set f_txt $value
+                                set f_vc1k ""
+                            }
+                            default {
+                                ns_log Warning "qss_tips_row_create. field_type '${field_type}' not valid for field label ${label} table_label '${table_label}'. Defaulting to txt"
+                                set f_nbr ""
+                                set f_txt $value
+                                set f_vc1k ""
+                            }
+                        }
+                        db_dml qss_tips_field_values_row_up_1f { insert into qss_tips_field_values
+                            (instance_id,table_id,row_id,trashed_p,created,user_id,field_id,f_vc1k,f_nbr,f_txt)
+                            values (:instance_id,:table_id,:new_id,:trashed_p,now(),:user_id,:field_id,:f_vc1k,:f_nbr,:f_txt)
+                        }
+                    }
+                }
+                qss_tips_row_trash $row_id $trash_id
+            }
         }
     }
-    
-
-##code
     return $success_p
 }
 
@@ -659,18 +705,24 @@ ad_proc -public qss_tips_row_read {
 }
 
 ad_proc -public qss_tips_row_trash {
-    name_array
-    table_label
     row_id
+    table_id
 } {
-    Trashes a record of table_label. Returns 1 if successful, otherwise 0.
+    Trashes a record of table_id. Returns 1 if successful, otherwise 0.
 } {
     upvar 1 instance_id instance_id
-    upvar 1 $name_array n_arr
-    set row_id ""
-    qss_tips_user_id_set
-##code
-    return $row_id
+    set success_p [qss_tips_row_id_exists_q $row_id $table_id ]
+    if { $success_p } {
+        qss_tips_user_id_set
+        db_dml qss_tips_field_values_row_trash {
+            update qss_tips_field_values
+            set trashed_p='1',trashed_by=:user_id,trashed_dt=now()
+            where row_id=:row_id
+            and table_id=:table_id
+            and instance_id=:instance_id
+        }
+    }
+    return $success_p
 }
 
 ad_proc -public qss_tips_cell_read {
