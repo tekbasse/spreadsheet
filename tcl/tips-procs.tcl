@@ -42,18 +42,46 @@ ad_proc -private qss_tips_table_id_exists_q {
 } {
     upvar 1 instance_id instance_id
     if { ![qf_is_true $trashed_p ] } {
-        set exists_p [db_0or1row qss_tips_untrashed_table_id_exists {
+        set exists_p [db_0or1row qss_tips_trashed_table_id_exists {
             select id from qss_tips_table_defs 
             where id=:table_id 
             and instance_id=:instance_id
-        }
+        } ]
     } else {
         set exists_p [db_0or1row qss_tips_untrashed_table_id_exists {
             select id from qss_tips_table_defs 
             where id=:table_id
             and instance_id=:instance_id
             and trashed_p!='1'
-        }
+        } ]
+    }
+    return $exists_p
+}
+
+ad_proc -private qss_tips_row_id_exists_q {
+    row_id
+    table_id
+    {trashed_p "0"}
+} {
+    Returns 1 if row_id of table_id exists.
+    Defaults to only check untrashed tables (trashed_p is 0). 
+    Set trashed_p to 1 to check all cases.
+} {
+    upvar 1 instance_id instance_id
+    if { ![qf_is_true $trashed_p ] } {
+        set exists_p [db_0or1row qss_tips_trashed_row_id_exists {
+            select id from qss_tips_table_field_values
+            where row_id=:row_id
+            and table_id=:table_id
+            and instance_id=:instance_id } ]
+    } else {
+        set exists_p [db_0or1row qss_tips_untrashed_row_id_exists {
+            select id from qss_tips_table_field_values
+            where row_id=:row_id
+            and table_id=:table_id
+            and instance_id=:instance_id
+            and trashed_p!='1' } ]
+    }
     return $exists_p
 }
 
@@ -477,7 +505,6 @@ ad_proc -public qss_tips_field_def_read {
 
 } {
     upvar 1 instance_id instance_id
-    upvar 1 $name_array n_arr
     if { $table_id eq "" } {
         set table_id [qss_tips_table_id_of_label $table_label]
     }
@@ -542,7 +569,7 @@ ad_proc -public qss_tips_row_create {
 } {
     upvar 1 instance_id instance_id
     #upvar 1 $name_array n_arr
-    set row_id ""
+    set new_id ""
     set table_id [qss_tips_table_id_of_label $table_label]
     if { $table_id ne "" } {
         set field_defs_lists [qss_tips_field_def_read $table_label]
@@ -601,17 +628,25 @@ ad_proc -public qss_tips_row_create {
 }
 
 ad_proc -public qss_tips_row_update {
-    name_array
+    name_value_list
     table_label
+    row_id
 } {
-    Creates or writes a record into table_label. Returns row_id if successful, otherwise empty string.
+    Updates a record into table_label. 
+    @return 1 if successful, otherwise return 0.
 } {
     upvar 1 instance_id instance_id
-    upvar 1 $name_array n_arr
-    set row_id ""
-    qss_tips_user_id_set
+    set success_p [qss_tips_row_id_exists_q $row_id $table_id ]
+    if { $success_p } {
+        qss_tips_user_id_set
+        db_transaction {
+            foreach {name value} $name_value_list
+        }
+    }
+    
+
 ##code
-    return $row_id
+    return $success_p
 }
 
 ad_proc -public qss_tips_row_read {
