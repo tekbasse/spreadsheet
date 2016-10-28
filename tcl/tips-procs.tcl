@@ -752,69 +752,204 @@ ad_proc -public qss_tips_row_update {
     upvar 1 instance_id instance_id
     set success_p [qss_tips_row_id_exists_q $row_id $table_id ]
     if { $success_p } {
-    if { $table_id ne "" } {
-        set field_defs_lists [qss_tips_field_def_read "" $table_id]
-        #field_id,label,name,default_val,tdt_data_type,field_type
-        if { [llength $table_defs_lists] > 0 } {
-            foreach field_def $table_defs_lists {
-                foreach {field_id label name default_val tdt_data_type field_type} $field_def {
-                    if { [string length $label] > 0 } {
-                        set l_arr(${label}) $field_id
-                        set t_arr(${label}) $field_type
-                    }
-                }
-            }
-
-            set field_labels_list [array names l_arr]
-            qss_tips_user_id_set
-            set new_id [db_nextval qss_tips_id_seq]
-            db_transaction {
-                foreach {label value} $label_value_list {
-                    if { $label in $field_labels_list } {
-                        set field_id $l_arr(${label})
-                        set field_type $t_arr(${label})
-                        switch -exact $field_type -- {
-                            vc1k {
-                                set f_nbr ""
-                                set f_txt ""
-                                set f_vc1k $value
-                            }
-                            nbr {
-                                set f_nbr $value
-                                set f_txt ""
-                                set f_vc1k ""
-                            }
-                            txt {
-                                set f_nbr ""
-                                set f_txt $value
-                                set f_vc1k ""
-                            }
-                            default {
-                                ns_log Warning "qss_tips_row_create. field_type '${field_type}' not valid for field label ${label} table_label '${table_label}'. Defaulting to txt"
-                                set f_nbr ""
-                                set f_txt $value
-                                set f_vc1k ""
-                            }
-                        }
-                        db_dml qss_tips_field_values_row_up_1f { insert into qss_tips_field_values
-                            (instance_id,table_id,row_id,trashed_p,created,user_id,field_id,f_vc1k,f_nbr,f_txt)
-                            values (:instance_id,:table_id,:new_id,:trashed_p,now(),:user_id,:field_id,:f_vc1k,:f_nbr,:f_txt)
+        set table_id [qss_tips_table_id_of_name $table_label]
+        if { $table_id ne "" } {
+            set field_defs_lists [qss_tips_field_def_read "" $table_id]
+            #field_id,label,name,default_val,tdt_data_type,field_type
+            if { [llength $table_defs_lists] > 0 } {
+                foreach field_def $table_defs_lists {
+                    foreach {field_id label name default_val tdt_data_type field_type} $field_def {
+                        if { [string length $label] > 0 } {
+                            set l_arr(${label}) $field_id
+                            set t_arr(${label}) $field_type
                         }
                     }
                 }
-                qss_tips_row_trash $row_id $trash_id
+                
+                set field_labels_list [array names l_arr]
+                qss_tips_user_id_set
+                set new_id [db_nextval qss_tips_id_seq]
+                db_transaction {
+                    foreach {label value} $label_value_list {
+                        if { $label in $field_labels_list } {
+                            set field_id $l_arr(${label})
+                            set field_type $t_arr(${label})
+                            switch -exact $field_type -- {
+                                vc1k {
+                                    set f_nbr ""
+                                    set f_txt ""
+                                    set f_vc1k $value
+                                }
+                                nbr {
+                                    set f_nbr $value
+                                    set f_txt ""
+                                    set f_vc1k ""
+                                }
+                                txt {
+                                    set f_nbr ""
+                                    set f_txt $value
+                                    set f_vc1k ""
+                                }
+                                default {
+                                    ns_log Warning "qss_tips_row_create. field_type '${field_type}' not valid for field label ${label} table_label '${table_label}'. Defaulting to txt"
+                                    set f_nbr ""
+                                    set f_txt $value
+                                    set f_vc1k ""
+                                }
+                            }
+                            db_dml qss_tips_field_values_row_up_1f { insert into qss_tips_field_values
+                                (instance_id,table_id,row_id,trashed_p,created,user_id,field_id,f_vc1k,f_nbr,f_txt)
+                                values (:instance_id,:table_id,:new_id,:trashed_p,now(),:user_id,:field_id,:f_vc1k,:f_nbr,:f_txt)
+                            }
+                        }
+                    }
+                    qss_tips_row_trash $row_id $trash_id
+                }
             }
         }
     }
     return $success_p
 }
 
-ad_proc -public qss_tips_row_read {
+
+ad_proc -public qss_tips_row_id_of_table_label_value {
+    table_label
+    {vc1k_search_label_val_list ""}
+    {if_multiple "1"}
 } {
-    Reads a row from table_label
+    Reads a row from table_label as a name_value_list.
+    If more than one row matches, returns 1 row based on value of choose1:
+    -1 = return empty row
+    0 = row based on earliest value of label
+    1 = row based on latest value of label
+    @return name_value_list
 } {
-    # see qss_tips_table_read.. 
-##code
+    upvar 1 instance_id instance_id
+    set row_list [list ]
+    set table_id [qss_tips_table_id_of_name $table_label]
+    if { $table_id ne "" } {
+        set fields_lists [qss_tips_field_def_read $tabel_label $table_id]
+        if { [llength $fields_lists ] > 0 } {
+            foreach field_list $field_lists {
+                foreach {field_id label name def_val tdt_type field_type} $fields_list {
+                    set type_arr(${field_id}) $field_type
+                    set label_arr(${field_id}) $label
+                }
+            }
+            set sort_sql ""
+            switch -exact $if_multiple -- {
+                -1  { set vc1k_search_sql "na" }
+                0 { set sort_sql "order by created asc" }
+                1 { set sort_sql "order by created des" }
+            }
+            
+            set vc1k_search_sql ""
+            if { $vc1k_search_label_val ne "" } {
+                # search scope
+                foreach {label vc1k_search_val} $vc1k_search_label_val_list {
+                    if { [info exists field_id_arr(${label}) ] && $vc1k_search_sql ne "na" } {
+                        set field_id $field_id_arr(${label})
+                        append vk1k_search_sql " and (field_id='${field_id}' and f_vc1k='${vc1k_search_val}')"
+                    } else {
+                        ns_log Warning "qss_tips_read.37: no field_id for search label '${label}' table_label '${table_label}' "
+                        set vc1k_search_sql "na"
+                    }
+                }
+            } else {
+                set vck1_search_sql "na"
+            }
+
+            if { $vc1k_search_sql eq "na" } {
+                # do nothing
+            } else {
+                set exists_p [db_0or1_row qss_tips_field_values_row_id_search "select row_id from qss_tips_field_values 
+                    where instance_id=:instance_id and table_id=:table_id and trashed_p!='1' ${vc1k_search_sql} ${sort_sql} limit 1"]
+                # get row id, then row
+                if { $exists_p } {
+                    set values_lists [db_list_of_lists qss_tips_field_values_r1m "select field_id, row_id, f_vc1k, f_nbr, f_txt from qss_tips_field_values 
+        where table_id=:table_id
+        and instance_id=:instance_id
+        and trashed_p!='1'
+        and row_id=:row_id"]
+                    
+                    set values_lists [db_list_of_lists qss_tips_field_values_r {select field_id, row_id, f_vc1k, f_nbr, f_txt from qss_tips_field_values 
+                        where table_id=:table_id
+                        and row_id=:row_id
+                        and instance_id=:instance_id
+                        and trashed_p!='1'}]
+                    foreach row $values_lists {
+                        foreach {field_id row_id f_vc1k f_nbr f_txt} {
+                            if { [info exists type_arr(${field_id}) ] } {
+                                switch -exact -- $type_arr(${field_id}) {
+                                    vc1k { set v $f_vc1k }
+                                    nbr  { set v $f_nbr }
+                                    txt  { set v $f_txt }
+                                    default {
+                                        ns_log Warning "qss_tips_read_from_id.843: unknown type for table_label '${table_label}' field_id '${field_id}' row_id '${row_id}'"
+                                        set v [qal_first_nonempty_in_list [list $f_nbr $f_vc1k $f_txt]]
+                                    }
+                                }
+                            } else {
+                                ns_log Warning "qss_tips_read_from_id.848: field_id does not have a field_type. table_label '${table_label}' field_id '${field_id}' row_id '${row_id}'"
+                            }
+                            # label $label_arr(${field_id})
+                            lappend row_list $label_arr(${field_id}) $v
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return $row_list
+}
+
+
+ad_proc -public qss_tips_row_read_from_id {
+    table_id
+    row_id
+} {
+    Reads a row from table_label as a name_value_list
+} {
+    upvar 1 instance_id instance_id
+    set row_list [list ]
+    set table_id [qss_tips_table_id_of_name $table_label]
+    if { $table_id ne "" } {
+        set fields_lists [qss_tips_field_def_read $tabel_label $table_id]
+        if { [llength $fields_lists ] > 0 } {
+            foreach field_list $field_lists {
+                foreach {field_id label name def_val tdt_type field_type} $fields_list {
+                    set type_arr(${field_id}) $field_type
+                    set label_arr(${field_id}) $label
+                }
+            }
+
+            set values_lists [db_list_of_lists qss_tips_field_values_r {select field_id, row_id, f_vc1k, f_nbr, f_txt from qss_tips_field_values 
+                where table_id=:table_id
+                and row_id=:row_id
+                and instance_id=:instance_id
+                and trashed_p!='1'}]
+            foreach row $values_lists {
+                foreach {field_id row_id f_vc1k f_nbr f_txt} {
+                    if { [info exists type_arr(${field_id}) ] } {
+                        switch -exact -- $type_arr(${field_id}) {
+                            vc1k { set v $f_vc1k }
+                            nbr  { set v $f_nbr }
+                            txt  { set v $f_txt }
+                            default {
+                                ns_log Warning "qss_tips_read_from_id.843: unknown type for table_label '${table_label}' field_id '${field_id}' row_id '${row_id}'"
+                                set v [qal_first_nonempty_in_list [list $f_nbr $f_vc1k $f_txt]]
+                            }
+                        }
+                    } else {
+                        ns_log Warning "qss_tips_read_from_id.848: field_id does not have a field_type. table_label '${table_label}' field_id '${field_id}' row_id '${row_id}'"
+                    }
+                    # label $label_arr(${field_id})
+                    lappend row_list $label_arr(${field_id}) $v
+
+                }
+            }
+        }
+    }
     return $row_list
 }
 
