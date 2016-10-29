@@ -636,6 +636,8 @@ ad_proc -public qss_tips_field_def_read {
         
     }        
 
+    ## This logic should be simplified for casets that request one field_id. for example with qss_tips_cell_update
+
     set field_id_list [qf_listify $field_ids]
     set field_id_list_len [llength $field_id_list]
     if { $field_id_list_len > 0 } {
@@ -790,8 +792,7 @@ ad_proc -public qss_tips_row_update {
                                 }
                             }
                             qss_tips_cell_update
-
-
+                            ##code
                         }
                     }
                 }
@@ -977,7 +978,7 @@ ad_proc -public qss_tips_cell_read {
     determines which version is chosen. Cases are "earliest" or "latest"
 } {
 
-
+##code
 
     return $return_val
 }
@@ -988,17 +989,43 @@ ad_proc -public qss_tips_cell_update {
     row_id
     new_value
 } {
-
-
+    Updates a cell value.
 } {
-##code
-    # if cell exists
-    db_transaction {
-        qss_tips_cell_trash
-        db_dml qss_tips_field_values_row_up_1f { insert into qss_tips_field_values
-            (instance_id,table_id,row_id,trashed_p,created,user_id,field_id,f_vc1k,f_nbr,f_txt)
-            values (:instance_id,:table_id,:row_id,:trashed_p,now(),:user_id,:field_id,:f_vc1k,:f_nbr,:f_txt)
+    upvar 1 instance_id instance_id
+    set field_info_list [qss_tips_field_def_read "" $table_id "" $field_id]
+    if { [llength $field_info_list] > 0 } {
+        set field_type [lindex $field_info_list 5]
+        switch -exact $field_type -- {
+            vc1k {
+                set f_nbr ""
+                set f_txt ""
+                set f_vc1k $value
+            }
+            nbr {
+                set f_nbr $value
+                set f_txt ""
+                set f_vc1k ""
+            }
+            txt {
+                set f_nbr ""
+                set f_txt $value
+                set f_vc1k ""
+            }
+            default {
+                ns_log Warning "qss_tips_cell_update. field_type '${field_type}' not valid for field_id ${field_id} table_id '${table_id}'. Defaulting to txt"
+                set f_nbr ""
+                set f_txt $value
+                set f_vc1k ""
+            }
         }
+        qss_tips_user_id_set
+        set trashed_p 0
+        db_transaction {
+            qss_tips_cell_trash $table_id $row_id $field_id
+            db_dml qss_tips_field_values_row_up_1f { insert into qss_tips_field_values
+                (instance_id,table_id,row_id,trashed_p,created,user_id,field_id,f_vc1k,f_nbr,f_txt)
+                values (:instance_id,:table_id,:row_id,:trashed_p,now(),:user_id,:field_id,:f_vc1k,:f_nbr,:f_txt)
+            }
     }
 
     return $return_val
