@@ -150,45 +150,40 @@ ad_proc -public qss_tips_table_def_update {
     Updates a table definition for table_id. 
     @return 1 if successful, otherwise 0.
 } {
-    # Table keeps same id, but creates a copy of old record, assigns new id to it and trashes it.
-    # as this is less work than updating mapping..
-
-    # Allow args to be passed as a list or separate parameters
-    set args_list [list ]
-    set arg1 [lindex $args 0]
-    if { [llength $arg1] > 1 } {
-        set args_list $arg1
-    }
-    set args_list [concat $args_list $args]
-    set update_sql ""
-    set separator ""
-    set field_list [list label name flags]
-    foreach {arg val} $args_list {
-        if { $arg in $field_list } {
-            set $arg $val
-            append update_sql $separator "${arg}=:${arg}"
-            set separator ", "
+    set exists_p [db_0or1row qss_tips_table_def_ur {
+            select label,name,flags from qss_tips_table_defs 
+        where instance_id=:instance_id 
+        and id=:table_id
+        and trashed_p!='1'}]
+    if { $exists_p } {
+        # Allow args to be passed as a list or separate parameters
+        set args_list [list ]
+        set arg1 [lindex $args 0]
+        if { [llength $arg1] > 1 } {
+            set args_list $arg1
         }
-    }
-    if { [string length $update_sql] > 0 && $label ne "" } {
-        # append o preffix to avoid name collision with update_sql
-        set exists_p [db_0or1row qss_tips_table_def_ur {
-            select label as olabel,name as oname,flags as oflags,ouser_id,created 
-            from qss_tips_table_defs 
-            where instance_id=:instance_id 
-            and id=:table_id}]
-        if { $exists_p } {
+        set args_list [concat $args_list $args]
+        
+        set field_list [list label name flags]
+        set changed_p 0
+        foreach {arg val} $args_list {
+            if { $arg in $field_list } {
+                set changed_p 1
+                set $arg $val
+            }
+        }
+        if { $changed_p } {
             qss_table_user_id_set
-            set new_id [db_nextval qss_tips_id_seq]
-            set trashed_p 1
-            set trashed_by $user_id
             db_transaction {
+                # trash record
+                qss_tips_table_def_trash $table_id
+                # create new
+                set trashed_p 0
                 db_dml tips_table_def_log_rev {
                     insert into qss_tips_table_defs 
                     (instance_id,id,label,name,flags,user_id,created,trashed_p)
-                    values (:instance_id,:new_id,:olabel,:oname,:oflags,:ouser_id,:created,:trashed_p,:trashed_by) 
+                    values (:instance_id,:table_id,:label,:name,:flags,:ouser_id,now(),:trashed_p) 
                 }
-                db_dml tips_table_def_upd "update qss_tips_table_defs set ${update_sql} where instance_id=:instance_id and id=:table_id"
             }
         }
     }
@@ -578,7 +573,6 @@ ad_proc -public qss_tips_field_def_update {
         and trashed_p!='1' ${extra_ref_sql}" ]
         if { $exists_p } {
             qss_table_user_id_set
-            set new_id [db_nextval qss_tips_id_seq]
             if { ![info exists name_new] } {
                 set name_new $name
             }
@@ -588,8 +582,7 @@ ad_proc -public qss_tips_field_def_update {
             set trashed_p 0
             db_transaction {
                 db_dml qss_tips_field_def_u1 { update qss_tips_field_def 
-                    set id=:new_id, 
-                    trashed_p='1'
+                    set trashed_p='1'
                     trashed_by=:user_id
                     where id=:field_id 
                     and instance_id=:instance_id 
@@ -768,7 +761,6 @@ ad_proc -public qss_tips_row_update {
                 
                 set field_labels_list [array names l_arr]
                 qss_tips_user_id_set
-                set new_id [db_nextval qss_tips_id_seq]
                 db_transaction {
                     foreach {label value} $label_value_list {
                         if { $label in $field_labels_list } {
@@ -797,13 +789,11 @@ ad_proc -public qss_tips_row_update {
                                     set f_vc1k ""
                                 }
                             }
-                            db_dml qss_tips_field_values_row_up_1f { insert into qss_tips_field_values
-                                (instance_id,table_id,row_id,trashed_p,created,user_id,field_id,f_vc1k,f_nbr,f_txt)
-                                values (:instance_id,:table_id,:new_id,:trashed_p,now(),:user_id,:field_id,:f_vc1k,:f_nbr,:f_txt)
-                            }
+                            qss_tips_cell_update
+
+
                         }
                     }
-                    qss_tips_row_trash $row_id $trash_id
                 }
             }
         }
@@ -993,19 +983,39 @@ ad_proc -public qss_tips_cell_read {
 }
 
 ad_proc -public qss_tips_cell_update {
-    table_label
-    search_label
-    old_value
+    table_id
+    field_id
+    row_id
     new_value
-    {version "latest"}
 } {
-    Returns the values of the field labels in return_val_label_list in order in list.
-    If only one label is supplied for return_val_label_list, a scalar value is returned instead of list.
-    If more than one record matches search_value for search_label, the version
-    determines which version is chosen. Cases are "earliest" or "latest"
+
+
 } {
 ##code
-
+    # if cell exists
+    db_transaction {
+        qss_tips_cell_trash
+        db_dml qss_tips_field_values_row_up_1f { insert into qss_tips_field_values
+            (instance_id,table_id,row_id,trashed_p,created,user_id,field_id,f_vc1k,f_nbr,f_txt)
+            values (:instance_id,:table_id,:row_id,:trashed_p,now(),:user_id,:field_id,:f_vc1k,:f_nbr,:f_txt)
+        }
+    }
 
     return $return_val
+}
+
+ad_proc -public qss_tips_cell_trash {
+    table_id
+    row_id
+    field_id
+} {
+    @return 1 if successful, otherwise 0
+} {
+    set exists_p [db_dml qss_tips_field_values_cell_trash { update qss_tips_field_values
+        set trashed_p='1',trashed_by=:user_id,trashed_dt=now()
+        where instance_id=:instance_id
+        and table_id=:table_id
+        and row_id=:row_id
+        and field_id=:field_id }]
+    return $exists_p
 }
