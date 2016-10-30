@@ -745,6 +745,7 @@ ad_proc -public qss_tips_row_update {
     @return 1 if successful, otherwise return 0.
 } {
     upvar 1 instance_id instance_id
+    upvar 1 __qss_tips_cell_arr 
     set success_p [qss_tips_row_id_exists_q $row_id $table_id ]
     if { $success_p } {
         set table_id [qss_tips_table_id_of_name $table_label]
@@ -791,8 +792,7 @@ ad_proc -public qss_tips_row_update {
                                     set f_vc1k ""
                                 }
                             }
-                            qss_tips_cell_update
-                            ##code
+                            qss_tips_cell_update $table_id $field_id $row_id $value
                         }
                     }
                 }
@@ -977,7 +977,7 @@ ad_proc -public qss_tips_cell_read {
     If more than one record matches search_value for search_label, value of "which_one"
     determines which one is chosen. Cases are "earliest" or "latest"
 } {
-
+    
 ##code
 
     return $return_val
@@ -993,9 +993,15 @@ ad_proc -public qss_tips_cell_read_by_id {
     If more than one record matches search_value for search_label, the version
     determines which version is chosen. Cases are "earliest" or "latest"
 } {
-
-##code
-
+    upvar 1 instance_id instance_id
+    set exists_p [db_0or1row qss_tips_field_values_r1_by_id {select f_vc1k, f_nbr, f_txt from qss_tips_field_values
+        where row_id=:row_id
+        and table_id=:table_id
+        and instance_id=:instance_id
+        and trashed_p!='1'} ]
+    if { $exists_p } {
+        set field_value [qal_first_nonempty_in_list [list $f_vc1k $f_nbr $f_txt] ]
+    }
     return $return_val
 }
 
