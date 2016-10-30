@@ -808,6 +808,7 @@ ad_proc -public qss_tips_row_id_of_table_label_value {
     {vc1k_search_label_val_list ""}
     {if_multiple "1"}
 } {
+##code This should be change to return row_id(s) as list.
     Reads a row from table_label as a name_value_list.
     If more than one row matches, returns 1 row based on value of choose1:
     -1 = return empty row
@@ -979,7 +980,7 @@ ad_proc -public qss_tips_cell_read {
 } {
     
 ##code
-
+#see qss_tips_row_id_of_table_label_value for partial focus.
     return $return_val
 }
 
