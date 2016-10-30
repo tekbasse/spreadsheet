@@ -970,7 +970,23 @@ ad_proc -public qss_tips_cell_read {
     search_label
     search_value
     return_val_label_list
-    {version "latest"}
+    {which_one "latest"}
+} {
+    Returns the values of the field labels in return_val_label_list in order in list.
+    If only one label is supplied for return_val_label_list, a scalar value is returned instead of list.
+    If more than one record matches search_value for search_label, value of "which_one"
+    determines which one is chosen. Cases are "earliest" or "latest"
+} {
+
+##code
+
+    return $return_val
+}
+
+ad_proc -public qss_tips_cell_read_by_id {
+    table_id
+    row_id
+    field_id
 } {
     Returns the values of the field labels in return_val_label_list in order in list.
     If only one label is supplied for return_val_label_list, a scalar value is returned instead of list.
