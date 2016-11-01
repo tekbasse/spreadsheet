@@ -114,10 +114,9 @@ ad_proc -public qss_tips_table_def_create {
 } {
     upvar 1 instance_id instance_id
     
-    # fields need to be defined at the same time the table is, otherwise
-    # if records exist, they will be missing fields..
-    # which will lead to unexpected behavior unless a transition technqiue is defined.
-    # How to handle. Treat like spreadsheets, when a column is added..
+    # fields may not be defined at the same time the table is
+    # new fields may be applied to existing tables, 
+    # resulting in fields with no (empty) values.
     # New columns start with empty values.
     # This should also help when importing data. A new column could be temporarily added,
     # then removed after data has been integrated into other columns for example.
@@ -898,7 +897,7 @@ ad_proc -public qss_tips_row_id_of_table_label_value {
     return $row_list
 }
 
-ad_proc -public qss_tips_rows_read_from_id {
+ad_proc -public qss_tips_rows_read {
     table_id
     row_ids_list
 } {
@@ -907,24 +906,30 @@ ad_proc -public qss_tips_rows_read_from_id {
     Returns empty list if table not found.
 } {
     upvar 1 instance_id instance_id
-    set rows_list [list ]
+    set rows_lists [list ]
     if { $table_id ne "" && [hf_natural_number_list_validate $row_ids_list] } {
         set fields_lists [qss_tips_field_def_read "" $table_id]
         if { [llength $fields_lists ] > 0 } {
+            set labels_list [list ]
             foreach field_list $field_lists {
                 foreach {field_id label name def_val tdt_type field_type} $fields_list {
                     set type_arr(${field_id}) $field_type
                     set label_arr(${field_id}) $label
+                    lappend labels_list $label
                 }
             }
-
-            set values_lists [db_list_of_lists qss_tips_field_values_r "select field_id, row_id, f_vc1k, f_nbr, f_txt from qss_tips_field_values 
+            lappend rows_lists $labels_list
+            set values_lists [db_list_of_lists qss_tips_field_values_r_mult "select field_id, row_id, f_vc1k, f_nbr, f_txt from qss_tips_field_values 
                 where table_id=:table_id
                 and instance_id=:instance_id
                 and trashed_p!='1'
                 and row_id in ([template::util::tcl_to_sql_list $row_id_list])"]
+            set values_lists [lsort -integer -index 1 $values_lists]
+            set row_id [lindex [lindex $values_lists 0] 1]
+            set row_id_prev $row_id
+            set row_list [list ]
             foreach row $values_lists {
-                foreach {field_id row_id f_vc1k f_nbr f_txt} {
+                foreach {field_id row_id f_vc1k f_nbr f_txt} $row {
                     if { [info exists type_arr(${field_id}) ] } {
                         switch -exact -- $type_arr(${field_id}) {
                             vc1k { set v $f_vc1k }
@@ -938,18 +943,33 @@ ad_proc -public qss_tips_rows_read_from_id {
                     } else {
                         ns_log Warning "qss_tips_read_from_id.848: field_id does not have a field_type. table_label '${table_label}' field_id '${field_id}' row_id '${row_id}'"
                     }
-                    # label $label_arr(${field_id})
-                    lappend row_list $label_arr(${field_id}) $v
-
+                    if { $row_id eq $row_id_prev } {
+                        # label $label_arr(${field_id})
+                        lappend row_list $label_arr(${field_id}) $v
+                    } else {
+                        array set row_arr $row_list
+                        set row2_list [list ]
+                        foreach label $labels_list {
+                            if { [info exists row_arr(${label}) ] } {
+                                lappend row2_list $row_arr(${label})
+                            } else {
+                                lappend row2_list ""
+                            }
+                        }
+                        lappend rows_lists $row2_list
+                        array unset row_arr
+                        set row_list [list ]
+                        lappend row_list $label_arr(${field_id}) $v
+                    }
                 }
             }
         }
     }
-    return $rows_list
+    return $rows_lists
 }
 
 
-ad_proc -public qss_tips_row_read_from_id {
+ad_proc -public qss_tips_row_read {
     table_id
     row_id
 } {
@@ -974,7 +994,7 @@ ad_proc -public qss_tips_row_read_from_id {
                 and instance_id=:instance_id
                 and trashed_p!='1'}]
             foreach row $values_lists {
-                foreach {field_id row_id f_vc1k f_nbr f_txt} {
+                foreach {field_id row_id f_vc1k f_nbr f_txt} $row {
                     if { [info exists type_arr(${field_id}) ] } {
                         switch -exact -- $type_arr(${field_id}) {
                             vc1k { set v $f_vc1k }
@@ -1021,19 +1041,20 @@ ad_proc -public qss_tips_row_trash {
 
 ad_proc -public qss_tips_cell_read {
     table_label
-    search_label
-    search_value
+    {vc1k_search_label_val_list ""}
+    {if_multiple "1"}
     return_val_label_list
-    {which_one "latest"}
+    {which_row "latest"}
 } {
     Returns the values of the field labels in return_val_label_list in order in list.
     If only one label is supplied for return_val_label_list, a scalar value is returned instead of list.
-    If more than one record matches search_value for search_label, value of "which_one"
-    determines which one is chosen. Cases are "earliest" or "latest"
+    If more than one record matches search_value for search_label, value of "which_row"
+    determines which one is chosen. Cases are "earliest" or "latest" or empty if multiple rows returned.
 } {
-    
+    set row_id [qss_tips_row_id_of_table_label_value $table_label $vc1k_search_abel_val_list $which_row]
+
+
     ##code
-    #see qss_tips_row_id_of_table_label_value for partial focus.
     return $return_val
 }
 
