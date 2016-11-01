@@ -19,6 +19,17 @@ ad_proc -private qss_tips_user_id_set {
     return 1
 }    
 
+ad_proc -private qss_tips_field_ids_of_labels {
+    table_label
+    label_list
+} {
+    Returns name value list of field labels and ids for table.
+} {
+
+    ##code
+
+}
+
 ad_proc -public qss_tips_table_id_of_label {
     table_label
 } { 
@@ -1060,15 +1071,6 @@ ad_proc -public qss_tips_cell_read {
     return $return_val
 }
 
-ad_proc -public qss_tips_field_ids_of_labels {
-    table_label
-    label_list
-} {
-    Returns list of field ids for table.
-} {
-    ##code
-
-}
 ad_proc -public qss_tips_cell_read_by_id {
     table_id
     row_id
