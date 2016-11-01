@@ -806,7 +806,7 @@ ad_proc -public qss_tips_row_update {
 
 
 ad_proc -public qss_tips_row_id_of_table_label_value {
-    table_label
+    table_id
     {vc1k_search_label_val_list ""}
     {if_multiple "1"}
 } {
@@ -819,8 +819,7 @@ ad_proc -public qss_tips_row_id_of_table_label_value {
 } {
     upvar 1 instance_id instance_id
     set row_list [list ]
-    set table_id [qss_tips_table_id_of_name $table_label]
-    if { $table_id ne "" } {
+    if { [qf_is_natural_number $table_id] } {
         set fields_lists [qss_tips_field_def_read $tabel_label $table_id]
         if { [llength $fields_lists ] > 0 } {
             foreach field_list $field_lists {
@@ -1044,29 +1043,39 @@ ad_proc -public qss_tips_cell_read {
     {vc1k_search_label_val_list ""}
     {if_multiple "1"}
     return_val_label_list
-    {which_row "latest"}
+    {which_row "0"}
 } {
     Returns the values of the field labels in return_val_label_list in order in list.
     If only one label is supplied for return_val_label_list, a scalar value is returned instead of list.
     If more than one record matches search_value for search_label, value of "which_row"
-    determines which one is chosen. Cases are "earliest" or "latest" or empty if multiple rows returned.
+    determines which one is chosen. Cases are "0" for first, integer N for Nth, or "end" for more recent one.
+    "which_row" accepts tcl ref math, such as "end-1" for example.
 } {
-    set row_id [qss_tips_row_id_of_table_label_value $table_label $vc1k_search_abel_val_list $which_row]
-
+    set table_id [qss_tips_table_id_of_name $table_label]
+    set row_id [qss_tips_row_id_of_table_label_value $table_id $vc1k_search_label_val_list $which_row]
+    set field_id_list [qss_tips_field_ids_of_labels $return_val_label_list]
+    set values_list [qss_tips_cell_read_by_id $table_id $row_id $field_id_list]
 
     ##code
     return $return_val
 }
 
+ad_proc -public qss_tips_field_ids_of_labels {
+    table_label
+    label_list
+} {
+    Returns list of field ids for table.
+} {
+    ##code
+
+}
 ad_proc -public qss_tips_cell_read_by_id {
     table_id
     row_id
-    field_id
+    field_id_list
 } {
     Returns the values of the field labels in return_val_label_list in order in list.
     If only one label is supplied for return_val_label_list, a scalar value is returned instead of list.
-    If more than one record matches search_value for search_label, the version
-    determines which version is chosen. Cases are "earliest" or "latest"
 } {
     upvar 1 instance_id instance_id
     set exists_p [db_0or1row qss_tips_field_values_r1_by_id {select f_vc1k, f_nbr, f_txt from qss_tips_field_values
