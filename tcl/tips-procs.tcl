@@ -615,6 +615,8 @@ ad_proc -public qss_tips_field_def_read {
     if { $table_id eq "" } {
         set table_id [qss_tips_table_id_of_label $table_label]
     }
+    ## This logic should be simplified for cases that request one field_id. for example with qss_tips_cell_update
+
     set fields_lists [db_list_of_lists qss_tips_field_defs_r {select id as field_id,label,name,default_val,tdt_data_type,field_type from qss_tips_field_defs
         where instance_id=:instance_id
         and table_id=:table_id
@@ -636,7 +638,7 @@ ad_proc -public qss_tips_field_def_read {
         
     }        
 
-    ## This logic should be simplified for casets that request one field_id. for example with qss_tips_cell_update
+
 
     set field_id_list [qf_listify $field_ids]
     set field_id_list_len [llength $field_id_list]
@@ -652,6 +654,7 @@ ad_proc -public qss_tips_field_def_read {
             set field_id_idx_list [concat $field_id_idx_list $indexes]
         }
     }
+    
     if { $field_id_list_len > 0 || $field_label_list_len > 0 } {
         set field_idx_list [concat $field_id_idx_list $field_label_idx_list]
         # remove duplicates
@@ -808,7 +811,6 @@ ad_proc -public qss_tips_row_id_of_table_label_value {
     {vc1k_search_label_val_list ""}
     {if_multiple "1"}
 } {
-##code This should be change to return row_id(s) as list.
     Reads a row from table_label as a name_value_list.
     If more than one row matches, returns 1 row based on value of choose1:
     -1 = return empty row
@@ -830,9 +832,10 @@ ad_proc -public qss_tips_row_id_of_table_label_value {
             }
             set sort_sql ""
             switch -exact $if_multiple -- {
-                -1  { set vc1k_search_sql "na" }
-                0 { set sort_sql "order by created asc" }
+                -1 { set vc1k_search_sql "na" }
                 1 { set sort_sql "order by created des" }
+                0 -
+                default  { set sort_sql "order by created asc" }
             }
             
             set vc1k_search_sql ""
@@ -850,7 +853,7 @@ ad_proc -public qss_tips_row_id_of_table_label_value {
             } else {
                 set vck1_search_sql "na"
             }
-
+            
             if { $vc1k_search_sql eq "na" } {
                 # do nothing
             } else {
@@ -893,6 +896,56 @@ ad_proc -public qss_tips_row_id_of_table_label_value {
         }
     }
     return $row_list
+}
+
+ad_proc -public qss_tips_rows_read_from_id {
+    table_id
+    row_ids_list
+} {
+    Reads rows from table_id as a list of lists, where first list is field labels.
+    row_ids_list is a list of row_ids of table_id.
+    Returns empty list if table not found.
+} {
+    upvar 1 instance_id instance_id
+    set rows_list [list ]
+    if { $table_id ne "" && [hf_natural_number_list_validate $row_ids_list] } {
+        set fields_lists [qss_tips_field_def_read "" $table_id]
+        if { [llength $fields_lists ] > 0 } {
+            foreach field_list $field_lists {
+                foreach {field_id label name def_val tdt_type field_type} $fields_list {
+                    set type_arr(${field_id}) $field_type
+                    set label_arr(${field_id}) $label
+                }
+            }
+
+            set values_lists [db_list_of_lists qss_tips_field_values_r "select field_id, row_id, f_vc1k, f_nbr, f_txt from qss_tips_field_values 
+                where table_id=:table_id
+                and instance_id=:instance_id
+                and trashed_p!='1'
+                and row_id in ([template::util::tcl_to_sql_list $row_id_list])"]
+            foreach row $values_lists {
+                foreach {field_id row_id f_vc1k f_nbr f_txt} {
+                    if { [info exists type_arr(${field_id}) ] } {
+                        switch -exact -- $type_arr(${field_id}) {
+                            vc1k { set v $f_vc1k }
+                            nbr  { set v $f_nbr }
+                            txt  { set v $f_txt }
+                            default {
+                                ns_log Warning "qss_tips_read_from_id.843: unknown type for table_label '${table_label}' field_id '${field_id}' row_id '${row_id}'"
+                                set v [qal_first_nonempty_in_list [list $f_nbr $f_vc1k $f_txt]]
+                            }
+                        }
+                    } else {
+                        ns_log Warning "qss_tips_read_from_id.848: field_id does not have a field_type. table_label '${table_label}' field_id '${field_id}' row_id '${row_id}'"
+                    }
+                    # label $label_arr(${field_id})
+                    lappend row_list $label_arr(${field_id}) $v
+
+                }
+            }
+        }
+    }
+    return $rows_list
 }
 
 
@@ -979,8 +1032,8 @@ ad_proc -public qss_tips_cell_read {
     determines which one is chosen. Cases are "earliest" or "latest"
 } {
     
-##code
-#see qss_tips_row_id_of_table_label_value for partial focus.
+    ##code
+    #see qss_tips_row_id_of_table_label_value for partial focus.
     return $return_val
 }
 
@@ -1049,8 +1102,8 @@ ad_proc -public qss_tips_cell_update {
                 (instance_id,table_id,row_id,trashed_p,created,user_id,field_id,f_vc1k,f_nbr,f_txt)
                 values (:instance_id,:table_id,:row_id,:trashed_p,now(),:user_id,:field_id,:f_vc1k,:f_nbr,:f_txt)
             }
+        }
     }
-
     return $return_val
 }
 
