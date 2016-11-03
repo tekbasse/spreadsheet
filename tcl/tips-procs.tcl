@@ -24,7 +24,7 @@ ad_proc -public qss_tips_fields_name_id_list {
 } {
     Returns a name value list of field names and field ids.
 } {
-##code
+    ##code
 
 }
 
@@ -250,7 +250,7 @@ ad_proc -public qss_tips_table_def_update {
     @return 1 if successful, otherwise 0.
 } {
     set exists_p [db_0or1row qss_tips_table_def_ur {
-            select label,name,flags from qss_tips_table_defs 
+        select label,name,flags from qss_tips_table_defs 
         where instance_id=:instance_id 
         and id=:table_id
         and trashed_p!='1'}]
@@ -335,7 +335,7 @@ ad_proc -public qss_tips_table_read_as_array {
     set table_id [qss_tips_table_id_of_name $table_label]
     set success_p 0
 
-    if { $table_id ne "" } {
+    if { [qf_is_natural_number $table_id] } {
         set count [qss_tips_field_defs_maps_set $table_id "" field_id_arr type_arr label_arr ]
         if { $count > 0 } {
             set row_ids_sql ""
@@ -411,7 +411,7 @@ ad_proc -public qss_tips_table_read {
     set table_id [qss_tips_table_id_of_name $table_label]
     set success_p 0
     set table_lists [list ]
-    if { $table_id ne "" } {
+    if { [qf_is_natural_number $table_id] } {
         set label_ids_list_len [qss_tips_field_defs_maps_set $table_id "" field_id_arr type_arr label_arr label_ids_list titles_list]
         if { $label_ids_list_len > 0 } {
             lappend table_lists $titles_list
@@ -626,7 +626,7 @@ ad_proc -public qss_tips_field_def_update {
             set extra_ref_sql "and label=:field_label"
         }
 
-           
+        
         set exists_p [db_0or1row qss_tips_field_def_r_u1 "select id as field_id,label,name,default_val,tdt_data_type,field_type,created as c_date,user_id as c_user_id from qss_tips_field_defs
         where instance_id=:instance_id
         and table_id=:table_id
@@ -733,7 +733,7 @@ ad_proc -public qss_tips_row_create {
 } {
     upvar 1 instance_id instance_id
     set new_id ""
-    if { $table_id ne "" } {
+    if { [qf_is_natural_number $table_id] } {
         set count [qss_tips_field_defs_maps_set $table_id t_arr l_arr "" "" "" field_labels_list]
         if { $count > 0 } {
             qss_tips_user_id_set
@@ -829,7 +829,7 @@ ad_proc -public qss_tips_row_update {
     set success_p [qss_tips_row_id_exists_q $row_id $table_id ]
     if { $success_p } {
         set table_id [qss_tips_table_id_of_name $table_label]
-        if { $table_id ne "" } {
+        if { [qf_is_natural_number $table_id] } {
             set count [qss_tips_field_defs_maps_set $table_id t_arr l_arr "" "" "" field_labels_list ]
             if { $count > 0 } { 
                 qss_tips_user_id_set
@@ -937,7 +937,7 @@ ad_proc -public qss_tips_rows_read {
 } {
     upvar 1 instance_id instance_id
     set rows_lists [list ]
-    if { $table_id ne "" && [hf_natural_number_list_validate $row_ids_list] } {
+    if { [qf_is_natural_number $table_id] && [hf_natural_number_list_validate $row_ids_list] } {
         set count [qss_tips_field_defs_maps_set $table_id "" "" type_arr label_arr "" labels_list]
         if { $count > 0  } {
             lappend rows_lists $labels_list
