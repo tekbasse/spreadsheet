@@ -19,7 +19,27 @@ ad_proc -private qss_tips_user_id_set {
     return 1
 }    
 
-ad_proc -private qss_tips_field_defs_mapped_to_arrays {
+ad_proc -public qss_tips_fields_name_id_list {
+    table_id
+} {
+    Returns a name value list of field names and field ids.
+} {
+##code
+
+}
+
+ad_proc -public qss_tips_fields_name_label_list {
+    table_id
+} {
+    Returns a name value list of field names and field labels.
+} {
+    ##code
+
+
+}
+
+
+ad_proc -private qss_tips_field_defs_maps_set {
     table_id
     {field_type_of_label_array_name ""}
     {field_id_of_label_array_name ""}
@@ -30,17 +50,22 @@ ad_proc -private qss_tips_field_defs_mapped_to_arrays {
     {filter_by_label_list ""}
 } {
     Returns count of fields returned.
-    If filter_by_label_list is nonempty, scopes to return info on just ones in filter_by_label_list.
+    If filter_by_label_list is nonempty, scopes to return info on only field definitions in filter_by_label_list.
 
     If field_type_of_label_array_name is nonempty, returns an array in calling environment
-    of that name in the form field_type_arr(label) for example.
+    of that name in the form field_type_of(label) for example.
+
     If field_id_of_label_array_name is nonempty, returns an array in calling environment
-    of that name in the form field_id_arr(label) for example.
+    of that name in the form field_id_of(label) for example.
+
     If field_type_of_id_array_name is nonempty, returns an array in calling environment
-    of that name in the form field_type_arr(label) for example.
+    of that name in the form field_type_of(id) for example.
+
     If field_label_of_id_array_name is nonempty, returns an array in calling environment
-    of that name in the form field_label_arr(label) for example.
+    of that name in the form field_label_of(id) for example.
+
     If field_labels_list_name is nonempty, returns a list of field labels in calling environment.
+
     If field_ids_list_name is nonempty, returns a list of field ids in calling environment.
 } {
     set fields_lists [qss_tips_field_def_read $table_id $field_labels]
@@ -48,22 +73,22 @@ ad_proc -private qss_tips_field_defs_mapped_to_arrays {
     set field_ids_list [list ]
     set set_field_type_label_arr_p 0
     if { [regsub -all -nocase -- {[^a-z0-9\_]+} $field_type_of_label_array_name {} field_type_label_arr_nam ] } {
-        upvar $field_type_label_arr_nam field_type_arr
+        upvar $field_type_label_arr_nam field_type_label_arr
         set set_field_type_label_arr_p 1
     }         
     set set_field_id_label_arr_p 0
     if { [regsub -all -nocase -- {[^a-z0-9\_]+} $field_id_of_label_array_name {} field_id_label_arr_nam ] } {
-        upvar $field_id_label_arr_nam field_id_arr
+        upvar $field_id_label_arr_nam field_id_label_arr
         set set_field_id_label_arr_p 1
     }
     set set_field_type_id_arr_p 0
     if { [regsub -all -nocase -- {[^a-z0-9\_]+} $field_type_of_id_array_name {} field_type_id_arr_nam ] } {
-        upvar $field_type_id_arr_nam field_type_arr
+        upvar $field_type_id_arr_nam field_type_id_arr
         set set_field_type_id_arr_p 1
     }         
     set set_field_label_id_arr_p 0
     if { [regsub -all -nocase -- {[^a-z0-9\_]+} $field_label_of_id_array_name {} field_label_id_arr_nam ] } {
-        upvar $field_label_id_arr_nam field_id_arr
+        upvar $field_label_id_arr_nam field_label_id_arr
         set set_field_label_id_arr_p 1
     }
     if { [llength $fields_lists ] > 0 } {
@@ -77,17 +102,17 @@ ad_proc -private qss_tips_field_defs_mapped_to_arrays {
                 lappend field_id_type_list $field_id $field_type
             }
         }
-        if { $set_field_id_label_arr_p } {
-            array set $field_id_label_arr_nam $field_label_id_list
-        }
         if { $set_field_type_label_arr_p } {
             array set $field_type_label_arr_nam $field_label_type_list
         }
-        if { $set_field_label_id_arr_p } {
-            array set $field_label_id_arr_nam $field_id_label_list
+        if { $set_field_id_label_arr_p } {
+            array set $field_id_label_arr_nam $field_label_id_list
         }
         if { $set_field_type_id_arr_p } {
             array set $field_type_id_arr_nam $field_id_type_list
+        }
+        if { $set_field_label_id_arr_p } {
+            array set $field_label_id_arr_nam $field_id_label_list
         }
     }
     set count [llength $field_labels_list]
@@ -311,17 +336,8 @@ ad_proc -public qss_tips_table_read_as_array {
     set success_p 0
 
     if { $table_id ne "" } {
-        set fields_lists [qss_tips_field_def_read $table_id]
-        if { [llength $fields_lists ] > 0 } {
-
-            foreach field_list $field_lists {
-                foreach {field_id label name def_val tdt_type field_type} $fields_list {
-                    set type_arr(${field_id}) $field_type
-                    set label_arr(${field_id}) $label
-                    set field_id_arr(${label}) $field_id
-                }
-            }
-
+        set count [qss_tips_field_defs_maps_set $table_id "" field_id_arr type_arr label_arr ]
+        if { $count > 0 } {
             set row_ids_sql ""
             if { $row_id_list ne "" } {
                 # filter to row_id_list
@@ -396,23 +412,8 @@ ad_proc -public qss_tips_table_read {
     set success_p 0
     set table_lists [list ]
     if { $table_id ne "" } {
-        set fields_lists [qss_tips_field_def_read $table_id]
-        if { [llength $fields_lists ] > 0 } {
-            set label_ids_list [list ]
-            foreach field_list $field_lists {
-                foreach {field_id label name def_val tdt_type field_type} $fields_list {
-                    set type_arr(${field_id}) $field_type
-                    set label_arr(${field_id}) $label
-                    set field_id_arr(${label}) $field_id
-                    lappend label_ids_list $field_id
-                }
-            }
-            set label_ids_list [lsort -integer $label_ids_list ]
-            set label_ids_list_len [llength $label_ids_list]
-            set titles_list [list]
-            foreach field_id $label_ids_list {
-                lappend titles_list $label_arr(${field_id})
-            }
+        set label_ids_list_len [qss_tips_field_defs_maps_set $table_id "" field_id_arr type_arr label_arr label_ids_list titles_list]
+        if { $label_ids_list_len > 0 } {
             lappend table_lists $titles_list
 
             set row_ids_sql ""
@@ -733,19 +734,8 @@ ad_proc -public qss_tips_row_create {
     upvar 1 instance_id instance_id
     set new_id ""
     if { $table_id ne "" } {
-        set field_defs_lists [qss_tips_field_def_read $table_id]
-        #field_id,label,name,default_val,tdt_data_type,field_type
-        if { [llength $table_defs_lists] > 0 } {
-            foreach field_def $table_defs_lists {
-                foreach {field_id label name default_val tdt_data_type field_type} $field_def {
-                    if { [string length $label] > 0 } {
-                        set l_arr(${label}) $field_id
-                        set t_arr(${label}) $field_type
-                    }
-                }
-            }
-
-            set field_labels_list [array names l_arr]
+        set count [qss_tips_field_defs_maps_set $table_id t_arr l_arr "" "" "" field_labels_list]
+        if { $count > 0 } {
             qss_tips_user_id_set
             set new_id [db_nextval qss_tips_id_seq]
             db_transaction {
@@ -826,9 +816,6 @@ ad_proc -private qss_tips_set_by_field_type {
 }
 
 
-
-
-
 ad_proc -public qss_tips_row_update {
     label_value_list
     table_label
@@ -843,27 +830,16 @@ ad_proc -public qss_tips_row_update {
     if { $success_p } {
         set table_id [qss_tips_table_id_of_name $table_label]
         if { $table_id ne "" } {
-            set field_defs_lists [qss_tips_field_def_read $table_id]
-            #field_id,label,name,default_val,tdt_data_type,field_type
-            if { [llength $table_defs_lists] > 0 } {
-                foreach field_def $table_defs_lists {
-                    foreach {field_id label name default_val tdt_data_type field_type} $field_def {
-                        if { [string length $label] > 0 } {
-                            set l_arr(${label}) $field_id
-                            set t_arr(${label}) $field_type
-                        }
-                    }
-                }
-                
-                set field_labels_list [array names l_arr]
+            set count [qss_tips_field_defs_maps_set $table_id t_arr l_arr "" "" "" field_labels_list ]
+            if { $count > 0 } { 
                 qss_tips_user_id_set
                 db_transaction {
                     foreach {label value} $label_value_list {
                         if { $label in $field_labels_list } {
-                            set field_id $l_arr(${label})
-                            set field_type $t_arr(${label})
-                            qss_tips_set_by_field_type $field_type $value f_nbr f_txt f_vc1k
-                            qss_tips_cell_update $table_id $field_id $row_id $value
+                            #set field_id $l_arr(${label})
+                            #set field_type $t_arr(${label})
+                            qss_tips_set_by_field_type $t_arr(${label}) $value f_nbr f_txt f_vc1k
+                            qss_tips_cell_update $table_id $larr(${label}) $row_id $value
                         }
                     }
                 }
@@ -889,14 +865,8 @@ ad_proc -public qss_tips_row_id_of_table_label_value {
     upvar 1 instance_id instance_id
     set row_list [list ]
     if { [qf_is_natural_number $table_id] } {
-        set fields_lists [qss_tips_field_def_read $table_id]
-        if { [llength $fields_lists ] > 0 } {
-            foreach field_list $field_lists {
-                foreach {field_id label name def_val tdt_type field_type} $fields_list {
-                    set type_arr(${field_id}) $field_type
-                    set label_arr(${field_id}) $label
-                }
-            }
+        set count [qss_tips_field_defs_maps_set $table_id "" "" type_arr label_arr ]
+        if { $count > 0 } {
             set sort_sql ""
             switch -exact $if_multiple -- {
                 -1 { set vc1k_search_sql "na" }
@@ -910,8 +880,8 @@ ad_proc -public qss_tips_row_id_of_table_label_value {
                 # search scope
                 foreach {label vc1k_search_val} $vc1k_search_label_val_list {
                     if { [info exists field_id_arr(${label}) ] && $vc1k_search_sql ne "na" } {
-                        set field_id $field_id_arr(${label})
-                        append vk1k_search_sql " and (field_id='${field_id}' and f_vc1k='${vc1k_search_val}')"
+                        #set field_id $field_id_arr(${label})
+                        append vk1k_search_sql " and (field_id='$field_id_arr(${label})' and f_vc1k='${vc1k_search_val}')"
                     } else {
                         ns_log Warning "qss_tips_read.37: no field_id for search label '${label}' table_label '${table_label}' "
                         set vc1k_search_sql "na"
@@ -968,16 +938,8 @@ ad_proc -public qss_tips_rows_read {
     upvar 1 instance_id instance_id
     set rows_lists [list ]
     if { $table_id ne "" && [hf_natural_number_list_validate $row_ids_list] } {
-        set fields_lists [qss_tips_field_def_read $table_id]
-        if { [llength $fields_lists ] > 0 } {
-            set labels_list [list ]
-            foreach field_list $field_lists {
-                foreach {field_id label name def_val tdt_type field_type} $fields_list {
-                    set type_arr(${field_id}) $field_type
-                    set label_arr(${field_id}) $label
-                    lappend labels_list $label
-                }
-            }
+        set count [qss_tips_field_defs_maps_set $table_id "" "" type_arr label_arr "" labels_list]
+        if { $count > 0  } {
             lappend rows_lists $labels_list
             set values_lists [db_list_of_lists qss_tips_field_values_r_mult "select field_id, row_id, f_vc1k, f_nbr, f_txt from qss_tips_field_values 
                 where table_id=:table_id
@@ -1030,15 +992,8 @@ ad_proc -public qss_tips_row_read {
     upvar 1 instance_id instance_id
     set row_list [list ]
     if { [qf_is_natural_number $table_id ] } {
-        set fields_lists [qss_tips_field_def_read $table_id]
-        if { [llength $fields_lists ] > 0 } {
-            foreach field_list $field_lists {
-                foreach {field_id label name def_val tdt_type field_type} $fields_list {
-                    set type_arr(${field_id}) $field_type
-                    set label_arr(${field_id}) $label
-                }
-            }
-
+        set count [qss_tips_field_defs_maps_set $table_id "" "" type_arr label_arr ]
+        if { $count > 0 } {
             set values_lists [db_list_of_lists qss_tips_field_values_r {select field_id, row_id, f_vc1k, f_nbr, f_txt from qss_tips_field_values 
                 where table_id=:table_id
                 and row_id=:row_id
