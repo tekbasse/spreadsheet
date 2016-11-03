@@ -19,47 +19,79 @@ ad_proc -private qss_tips_user_id_set {
     return 1
 }    
 
-ad_proc -private qss_tips_field_defs_of_labels {
+ad_proc -private qss_tips_field_defs_mapped_to_arrays {
     table_id
-    {field_type_array_name ""}
-    {field_id_array_name ""}
-    {label_list ""}
+    {field_type_of_label_array_name ""}
+    {field_id_of_label_array_name ""}
+    {field_type_of_id_array_name ""}
+    {field_label_of_id_array_name ""}
+    {field_ids_list_name ""}
+    {field_labels_list_name ""}
+    {filter_by_label_list ""}
 } {
-    Returns list of field labels for table.
-    If label_list is nonempty, scopes to return info on just ones in label_list.
-    If field_type_array_name is nonempty, returns an array in calling environment
+    Returns count of fields returned.
+    If filter_by_label_list is nonempty, scopes to return info on just ones in filter_by_label_list.
+
+    If field_type_of_label_array_name is nonempty, returns an array in calling environment
     of that name in the form field_type_arr(label) for example.
-    If field_id_array_name is nonempty, returns an array in calling environment
+    If field_id_of_label_array_name is nonempty, returns an array in calling environment
     of that name in the form field_id_arr(label) for example.
+    If field_type_of_id_array_name is nonempty, returns an array in calling environment
+    of that name in the form field_type_arr(label) for example.
+    If field_label_of_id_array_name is nonempty, returns an array in calling environment
+    of that name in the form field_label_arr(label) for example.
+    If field_labels_list_name is nonempty, returns a list of field labels in calling environment.
+    If field_ids_list_name is nonempty, returns a list of field ids in calling environment.
 } {
     set fields_lists [qss_tips_field_def_read $table_id $field_labels]
     set field_labels_list [list ]
-    set set_field_type_arr_p 0
-    if { [regsub -all -nocase -- {[^a-z0-9\_]+} $field_type_array_name {} field_type_arr_nam ] } {
-        upvar $field_type_arr_nam field_type_arr
-        set set_field_type_arr_p 1
+    set field_ids_list [list ]
+    set set_field_type_label_arr_p 0
+    if { [regsub -all -nocase -- {[^a-z0-9\_]+} $field_type_of_label_array_name {} field_type_label_arr_nam ] } {
+        upvar $field_type_label_arr_nam field_type_arr
+        set set_field_type_label_arr_p 1
     }         
-    set set_field_id_arr_p 0
-    if { [regsub -all -nocase -- {[^a-z0-9\_]+} $field_id_array_name {} field_id_arr_nam ] } {
-        upvar $field_id_arr_nam field_id_arr
-        set set_field_id_arr_p 1
+    set set_field_id_label_arr_p 0
+    if { [regsub -all -nocase -- {[^a-z0-9\_]+} $field_id_of_label_array_name {} field_id_label_arr_nam ] } {
+        upvar $field_id_label_arr_nam field_id_arr
+        set set_field_id_label_arr_p 1
+    }
+    set set_field_type_id_arr_p 0
+    if { [regsub -all -nocase -- {[^a-z0-9\_]+} $field_type_of_id_array_name {} field_type_id_arr_nam ] } {
+        upvar $field_type_id_arr_nam field_type_arr
+        set set_field_type_id_arr_p 1
+    }         
+    set set_field_label_id_arr_p 0
+    if { [regsub -all -nocase -- {[^a-z0-9\_]+} $field_label_of_id_array_name {} field_label_id_arr_nam ] } {
+        upvar $field_label_id_arr_nam field_id_arr
+        set set_field_label_id_arr_p 1
     }
     if { [llength $fields_lists ] > 0 } {
         foreach field_list $field_lists {
             foreach {field_id label name def_val tdt_type field_type} $fields_list {
                 lappend field_labels_list $label
+                lappend field_ids_list $field_id
                 lappend field_label_type_list $label $field_type
                 lappend field_label_id_list $label $field_id
+                lappend field_id_label_list $field_id $label
+                lappend field_id_type_list $field_id $field_type
             }
         }
-        if { $set_field_id_arr_p } {
-            array set $field_id_arr_nam $field_label_id_list
+        if { $set_field_id_label_arr_p } {
+            array set $field_id_label_arr_nam $field_label_id_list
         }
-        if { $set_field_type_arr_p } {
-            array set $field_type_arr_nam $field_label_type_list
+        if { $set_field_type_label_arr_p } {
+            array set $field_type_label_arr_nam $field_label_type_list
+        }
+        if { $set_field_label_id_arr_p } {
+            array set $field_label_id_arr_nam $field_id_label_list
+        }
+        if { $set_field_type_id_arr_p } {
+            array set $field_type_id_arr_nam $field_id_type_list
         }
     }
-    return $field_labels_list
+    set count [llength $field_labels_list]
+    return $count
 }
 
 ad_proc -public qss_tips_table_id_of_label {
@@ -281,6 +313,7 @@ ad_proc -public qss_tips_table_read_as_array {
     if { $table_id ne "" } {
         set fields_lists [qss_tips_field_def_read $table_id]
         if { [llength $fields_lists ] > 0 } {
+
             foreach field_list $field_lists {
                 foreach {field_id label name def_val tdt_type field_type} $fields_list {
                     set type_arr(${field_id}) $field_type
