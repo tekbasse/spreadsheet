@@ -19,23 +19,46 @@ ad_proc -private qss_tips_user_id_set {
     return 1
 }    
 
-ad_proc -public qss_tips_fields_name_id_list {
+ad_proc -public qss_tips_field_id_name_list {
     table_id
 } {
     Returns a name value list of field names and field ids.
 } {
-    ##code
-
+    upvar 1 instance_id instance_id
+    set id_name_list [list ]
+    if {[qf_is_natural_number $table_id ]} {
+        set fields_lists [db_list_of_lists qss_tips_field_defs_id_name_r {select id,name from qss_tips_field_defs
+            where instance_id=:instance_id
+            and table_id=:table_id
+            and trashed_p!='1'}]
+        foreach row $fields_lsits {
+            foreach {id name} {
+                lappend id_name_list $id $name
+            }
+        }
+    }
+    return $id_name_list
 }
 
-ad_proc -public qss_tips_fields_name_label_list {
+ad_proc -public qss_tips_field_label_name_list {
     table_id
 } {
     Returns a name value list of field names and field labels.
 } {
-    ##code
-
-
+    upvar 1 instance_id instance_id
+    set label_name_list [list ]
+    if {[qf_is_natural_number $table_id ]} {
+        set fields_lists [db_list_of_lists qss_tips_field_defs_label_name_r {select label,name from qss_tips_field_defs
+            where instance_id=:instance_id
+            and table_id=:table_id
+            and trashed_p!='1'}]
+        foreach row $fields_lsits {
+            foreach {label name} {
+                lappend label_name_list $label $name
+            }
+        }
+    }
+    return label_name_list
 }
 
 
