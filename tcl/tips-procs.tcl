@@ -1064,7 +1064,7 @@ ad_proc -public qss_tips_cell_read {
     table_label
     {vc1k_search_label_val_list ""}
     {if_multiple "1"}
-    return_val_label_list
+    {return_val_label_list ""}
     {which_row "0"}
 } {
     Returns the values of the field labels in return_val_label_list in order in list.
