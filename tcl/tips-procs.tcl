@@ -144,15 +144,23 @@ ad_proc -private qss_tips_field_defs_maps_set {
 
 ad_proc -public qss_tips_table_id_of_label {
     table_label
+    {include_trashed_p "0"}
 } { 
     Returns table_id of table_name, or empty string if not found.
+    If include_trashed_p is true, includes checking trashed tables.
 } {
     upvar 1 instance_id instance_id
-    upvar 1 $name_array n_arr
     set table_id ""
-    db_0or1_row qss_tips_table_defs_r_name {select id as table_id from qss_tips_table_defs
-        where label=:table_name
-        and instance_id=:instance_id}
+    if { [qf_is_true $include_trashed_p] } {
+        db_0or1_row qss_tips_table_defs_r_name {select id as table_id from qss_tips_table_defs
+            where label=:table_name
+            and instance_id=:instance_id}
+    } else {
+        db_0or1_row qss_tips_table_defs_r_name_untrashed {select id as table_id from qss_tips_table_defs
+            where label=:table_name
+            and instance_id=:instance_id
+            and trashed_p!='1'}
+    }
     return $table_id
 }
 
@@ -210,15 +218,24 @@ ad_proc -private qss_tips_row_id_exists_q {
 
 ad_proc -public qss_tips_table_def_read {
     table_label
+    {trashed_p "0"}
 } { 
     Returns list of table_id, label, name, flags, trashed_p or empty list if not found.
+    Set trashed_p to 1 to include searching trashed ones.
 } {
     upvar 1 instance_id instance_id
     upvar 1 $name_array n_arr
     set table_list [list ]
-    set exists_p [db_0or1_row qss_tips_table_defs_r1 {select id,label,name,flags,trashed_p from qss_tips_table_defs
-        where label=:table_label
-        and instance_id=:instance_id}]
+    if { [qf_is_true $trashed_p ] } {
+        set exists_p [db_0or1_row qss_tips_table_defs_r1 {select id,label,name,flags,trashed_p from qss_tips_table_defs
+            where label=:table_label
+            and instance_id=:instance_id}]
+    } else {
+        set exists_p [db_0or1_row qss_tips_table_defs_r1_untrashed {select id,label,name,flags,trashed_p from qss_tips_table_defs
+            where label=:table_label
+            and instance_id=:instance_id
+            and trashed_p!='1'}]
+    }
     if { $exists_p } {
         set table_list [list $id $label $name $flags $trashed_p]
     }
