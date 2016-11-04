@@ -17,8 +17,20 @@ aa_register_case -cats {api smoke} qss_tips_check {
 
 # # #
 # table definitions
-#  qss_tips_table_def_create
-#  qss_tips_table_def_read
+            set flags "test"
+            set i 1
+            set word_count [randomRange 10]
+            incr $word_count
+            set title [qal_namelur $word_count]
+            regsub -all { } [string tolower $title] {_} labelized
+            set t_label_arr($i) $labelized
+            set t_name_arr($i) $title
+            set t_id_arr($i) [qss_tips_table_def_create $labelized $title $flags]
+            set t_list [qss_tips_table_def_read $t_label_arr($i)]
+            foreach {t_i_id t_i_label t_i_name t_i_trashed_p} $t_list {
+                # set vars
+            }
+            aa_equals "Test " $test_value $expected_value
 #  qss_tips_table_def_trash
 #  qss_tips_table_def_update
 #  qss_tips_table_id_exists_q
