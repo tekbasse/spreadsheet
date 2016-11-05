@@ -257,7 +257,7 @@ ad_proc -public qss_tips_table_def_create {
     # sql doesn't have to create an empty data.
     # When reading, assume column is empty, unless data exists -- consistent with simple_tables
     set id ""
-    qss_table_user_id_set
+    qss_tips_user_id_set
     if { [hf_are_printable_characters_q $label] && [hf_are_visible_characters_q $title] } {
         set existing_id [qss_tips_table_id_of_label $label]
         if { $existing_id eq "" } {
@@ -307,7 +307,7 @@ ad_proc -public qss_tips_table_def_update {
             }
         }
         if { $changed_p } {
-            qss_table_user_id_set
+            qss_tips_user_id_set
             db_transaction {
                 # trash record
                 qss_tips_table_def_trash $table_id
@@ -667,7 +667,7 @@ ad_proc -public qss_tips_field_def_update {
         and table_id=:table_id
         and trashed_p!='1' ${extra_ref_sql}" ]
         if { $exists_p } {
-            qss_table_user_id_set
+            qss_tips_user_id_set
             if { ![info exists name_new] } {
                 set name_new $name
             }
