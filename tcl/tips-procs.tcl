@@ -372,9 +372,7 @@ ad_proc -public qss_tips_table_def_trash {
     if { $success_p } {
         db_dml qss_tips_table_trash {
             update qss_tips_table_defs 
-            set trashed_p='1'
-            and trashed_by=:user_id
-            and trashed_dt=now()
+            set trashed_p='1',trashed_by=:user_id,trashed_dt=now()
             where id=:table_id
             and instance_id=:instance_id
         }
