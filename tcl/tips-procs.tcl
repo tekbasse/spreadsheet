@@ -265,19 +265,19 @@ ad_proc -public qss_tips_table_def_create {
         set i 1
         if { $label_len > 39 || $name_len > 39 } {
             incr i
-            set chars_max [expr { 39 - [string length $i] } ]
+            set chars_max [expr { 38 - [string length $i] } ]
             if { $label_len > 39 } {
                 set label [qf_abbreviate $label $chars_max "" "_"]
                 append label "-" $i
             }
             if { $name_len > 39 } {
-                set name [qf_abbreviate $name $chars_max ]
+                set name [qf_abbreviate $name $chars_max ".." " "]
             }
         }
         set label_orig $label
         while { $existing_id ne "" && $i < 1000 } {
             incr i
-            set chars_max [expr { 39 - [string length $i] } ]
+            set chars_max [expr { 38 - [string length $i] } ]
             set label [string range $label_orig 0 $chars_max]
             append label "-" $i
             set existing_id [qss_tips_table_id_of_label $label]
@@ -310,6 +310,7 @@ ad_proc -public qss_tips_table_def_update {
     Accepted names are: label name flags.
     @return 1 if successful, otherwise 0.
 } {
+    upvar 1 instance_id instance_id
     set exists_p [db_0or1row qss_tips_table_def_ur {
         select label,name,flags from qss_tips_table_defs 
         where instance_id=:instance_id 

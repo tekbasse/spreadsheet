@@ -30,7 +30,17 @@ aa_register_case -cats {api smoke} qss_tips_check {
                 set t_trashed_p_arr(${i}) 0
 
                 set t_id_arr(${i}) [qss_tips_table_def_create $labelized $title $flags]
+                if { $t_id_arr(${i}) ne "" } {
+                    set t_id_exists_p 1
+                } else {
+                    set t_id_exists_p 0
+                }
+                aa_true "Test.${i} table def. created table_id '$t_id_arr(${i})'" $t_id_exists_p
                 set t_larr(${i}) [qss_tips_table_def_read $t_label_arr(${i})] 
+                set t_i_id ""
+                set t_i_label ""
+                set t_i_name ""
+                set t_i_trashed_p ""
                 foreach {t_i_id t_i_label t_i_name t_i_trashed_p} $t_larr(${i}) {
                     # set vars
                 }
@@ -71,6 +81,10 @@ aa_register_case -cats {api smoke} qss_tips_check {
                     
                     qss_tips_table_def_update $t_i_id [list label $labelized name $title flags $flags]
                     set t_larr(${i}) [qss_tips_table_def_read $t_label_arr(${i})]
+                    set t_i_id ""
+                    set t_i_label ""
+                    set t_i_name ""
+                    set t_i_trashed_p ""
                     foreach {t_i_id t_i_label t_i_name t_i_trashed_p} $t_larr(${i}) {
                         # set vars
                     }
@@ -82,7 +96,7 @@ aa_register_case -cats {api smoke} qss_tips_check {
                 incr i
             }
             incr i -1
-            set exists_p [qss_tips_table_id_exists_q $t_i_d]
+            set exists_p [qss_tips_table_id_exists_q $t_i_id]
             aa_true "Test.${i} table def. exists_q" $exists_p
 
             set test_t_id [qss_tips_table_id_of_label $t_i_label]
