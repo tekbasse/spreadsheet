@@ -145,13 +145,13 @@ ad_proc -private qss_tips_field_defs_maps_set {
 ad_proc -public qss_tips_table_id_of_label {
     table_label
 } { 
-    Returns table_id of table_name, or empty string if not found.
+    Returns table_id of table_label, or empty string if not found.
 } {
     # cannot check for trashed tables, because that could give multiple results.
     upvar 1 instance_id instance_id
     set table_id ""
-    db_0or1_row qss_tips_table_defs_r_name_untrashed {select id as table_id from qss_tips_table_defs
-        where label=:table_name
+    db_0or1row qss_tips_table_defs_r_name_untrashed {select id as table_id from qss_tips_table_defs
+        where label=:table_label
         and instance_id=:instance_id
         and trashed_p!='1'}
     return $table_id
@@ -220,11 +220,11 @@ ad_proc -public qss_tips_table_def_read {
     upvar 1 $name_array n_arr
     set table_list [list ]
     if { [qf_is_true $trashed_p ] } {
-        set exists_p [db_0or1_row qss_tips_table_defs_r1 {select id,label,name,flags,trashed_p from qss_tips_table_defs
+        set exists_p [db_0or1row qss_tips_table_defs_r1 {select id,label,name,flags,trashed_p from qss_tips_table_defs
             where label=:table_label
             and instance_id=:instance_id}]
     } else {
-        set exists_p [db_0or1_row qss_tips_table_defs_r1_untrashed {select id,label,name,flags,trashed_p from qss_tips_table_defs
+        set exists_p [db_0or1row qss_tips_table_defs_r1_untrashed {select id,label,name,flags,trashed_p from qss_tips_table_defs
             where label=:table_label
             and instance_id=:instance_id
             and trashed_p!='1'}]
@@ -258,7 +258,7 @@ ad_proc -public qss_tips_table_def_create {
     # When reading, assume column is empty, unless data exists -- consistent with simple_tables
     set id ""
     qss_tips_user_id_set
-    if { [hf_are_printable_characters_q $label] && [hf_are_visible_characters_q $title] } {
+    if { [hf_are_printable_characters_q $label] && [hf_are_visible_characters_q $name] } {
         set existing_id [qss_tips_table_id_of_label $label]
         if { $existing_id eq "" } {
             set id [db_nextval qss_tips_id_seq]
@@ -929,7 +929,7 @@ ad_proc -public qss_tips_row_id_of_table_label_value {
             if { $vc1k_search_sql eq "na" } {
                 # do nothing
             } else {
-                set exists_p [db_0or1_row qss_tips_field_values_row_id_search "select row_id from qss_tips_field_values 
+                set exists_p [db_0or1row qss_tips_field_values_row_id_search "select row_id from qss_tips_field_values 
                     where instance_id=:instance_id and table_id=:table_id and trashed_p!='1' ${vc1k_search_sql} ${sort_sql} limit 1"]
                 # get row id, then row
                 if { $exists_p } {

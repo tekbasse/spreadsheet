@@ -304,7 +304,7 @@ CREATE TABLE qss_tips_field_values (
     instance_id integer,
     table_id    integer not null,
     row_id      integer not null,
-    trashed_p   varchar(1) default "0",
+    trashed_p   varchar(1) default '0',
     trashed_by  integer,
     trashed_dt  timestamptz,
     -- created is same as last modified.
@@ -328,6 +328,6 @@ CREATE TABLE qss_tips_field_values (
 
 create index qss_tips_field_values_instance_id_idx on qss_tips_field_values (instance_id);
 create index qss_tips_field_values_table_id_idx on qss_tips_field_values (table_id);
-create index qss_tips_field_values_row_nbr_idx on qss_tips_field_values (row_nbr);
+create index qss_tips_field_values_row_nbr_idx on qss_tips_field_values (row_id);
 create index qss_tips_field_values_field_f_vc1k_idx on qss_tips_field_values (f_vc1k);
 create index qss_tips_field_values_trashed_p_idx on qss_tips_field_values (trashed_p);
