@@ -217,7 +217,6 @@ ad_proc -public qss_tips_table_def_read {
     Set trashed_p to 1 to include searching trashed ones.
 } {
     upvar 1 instance_id instance_id
-    upvar 1 $name_array n_arr
     set table_list [list ]
     if { [qf_is_true $trashed_p ] } {
         set exists_p [db_0or1row qss_tips_table_defs_r1 {select id,label,name,flags,trashed_p from qss_tips_table_defs
