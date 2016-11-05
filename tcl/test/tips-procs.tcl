@@ -27,6 +27,7 @@ aa_register_case -cats {api smoke} qss_tips_check {
                 regsub -all { } [string tolower $title] {_} labelized
                 set t_label_arr(${i}) $labelized
                 set t_name_arr(${i}) $title
+                set t_flags_arr(${i}) $flags
                 set t_trashed_p_arr(${i}) 0
 
                 set t_id_arr(${i}) [qss_tips_table_def_create $labelized $title $flags]
@@ -37,15 +38,14 @@ aa_register_case -cats {api smoke} qss_tips_check {
                 }
                 aa_true "Test.${i} table def. created table_id '$t_id_arr(${i})'" $t_id_exists_p
                 set t_larr(${i}) [qss_tips_table_def_read_by_id $t_id_arr(${i})] 
-                set t_list $t_larr(${i})
-                foreach {t_i_id t_i_label t_i_name t_i_flags t_i_trashed_p} $t_list {
-                    # set vars
-                }
                 set t_i_id ""
                 set t_i_label ""
                 set t_i_name ""
                 set t_i_flags ""
                 set t_i_trashed_p ""
+                foreach {t_i_id t_i_label t_i_name t_i_flags t_i_trashed_p} $t_larr(${i}) {
+                    # set vars
+                }
                 aa_equals "Test.${i} table def. create/read id" $t_i_id $t_id_arr(${i})
                 aa_equals "Test.${i} table def. create/read label" $t_i_label $t_label_arr(${i})
                 aa_equals "Test.${i} table def. create/read name" $t_i_name $t_name_arr(${i})
@@ -62,15 +62,21 @@ aa_register_case -cats {api smoke} qss_tips_check {
                     regsub -all { } [string tolower $title] {_} labelized
                     set t_label_arr(${i}) $labelized
                     set t_name_arr(${i}) $title
+                    set t_flags_arr(${i}) $flags
                     set t_trashed_p_arr(${i}) 0
                     
                     qss_tips_table_def_update $t_i_id label $labelized name $title flags $flags
                     set t_larr(${i}) [qss_tips_table_def_read_by_id $t_id_arr(${i})]
+                    set t_i_id ""
+                    set t_i_label ""
+                    set t_i_name ""
+                    set t_i_trashed_p ""
                     foreach {t_i_id t_i_label t_i_name t_i_flags t_i_trashed_p} $t_larr(${i}) {
                         # set vars
                     }
                     aa_equals "Test.${i} table def. update/read label by param" $t_i_label $t_label_arr(${i})
                     aa_equals "Test.${i} table def. update/read name by param" $t_i_name $t_name_arr(${i})
+                    aa_equals "Test.${i} table def. update/read flags by param" $t_i_flags $t_flags_arr(${i})
                     aa_equals "Test.${i} table def. update/read trashed_p by param" $t_i_trashed_p $t_trashed_p_arr(${i})
                     
                 }
@@ -81,6 +87,7 @@ aa_register_case -cats {api smoke} qss_tips_check {
                     regsub -all { } [string tolower $title] {_} labelized
                     set t_label_arr(${i}) $labelized
                     set t_name_arr(${i}) $title
+                    set t_flags_arr(${i}) $flags
                     set t_trashed_p_arr(${i}) 0
                     
                     qss_tips_table_def_update $t_i_id [list label $labelized name $title flags $flags]
@@ -94,6 +101,7 @@ aa_register_case -cats {api smoke} qss_tips_check {
                     }
                     aa_equals "Test.${i} table def. update/read label by list" $t_i_label $t_label_arr(${i})
                     aa_equals "Test.${i} table def. update/read name by list" $t_i_name $t_name_arr(${i})
+                    aa_equals "Test.${i} table def. update/read flags by list" $t_i_flags $t_flags_arr(${i})
                     aa_equals "Test.${i} table def. update/read trashed_p by list" $t_i_trashed_p $t_trashed_p_arr(${i})
                 }
 

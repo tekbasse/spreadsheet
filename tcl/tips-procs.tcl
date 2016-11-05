@@ -370,14 +370,14 @@ ad_proc -public qss_tips_table_def_trash {
     qss_tips_user_id_set
     set success_p [qss_tips_table_id_exists_q $table_id]
     if { $success_p } {
-        [db_dml qss_tips_table_trash {
+        db_dml qss_tips_table_trash {
             update qss_tips_table_defs 
             set trashed_p='1'
             and trashed_by=:user_id
             and trashed_dt=now()
             where id=:table_id
             and instance_id=:instance_id
-        } ]
+        }
     }
     return $success_p
 }
