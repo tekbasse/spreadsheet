@@ -257,6 +257,7 @@ CREATE TABLE qss_tips_table_defs (
      created     timestamptz default now(),
      flags       varchar(12),
      trashed_p   varchar(1),
+     trashed_dt  timestamptz,
      trashed_by  integer
 );
 
@@ -275,6 +276,7 @@ CREATE TABLE qss_tips_field_defs (
      user_id     integer,
      trashed_by  integer,
      trashed_p   varchar(1),
+     trashed_dt  timestamptz,
      label       varchar(40),
      name        varchar(40),
      -- qss_tips_field_values.fv is getting indexed
