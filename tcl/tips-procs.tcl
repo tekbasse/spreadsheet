@@ -211,25 +211,34 @@ ad_proc -private qss_tips_row_id_exists_q {
 
 ad_proc -public qss_tips_table_def_read {
     table_label
-    {trashed_p "0"}
 } { 
     Returns list of table_id, label, name, flags, trashed_p or empty list if not found.
-    Set trashed_p to 1 to include searching trashed ones.
 } {
     upvar 1 instance_id instance_id
     set table_list [list ]
-    if { [qf_is_true $trashed_p ] } {
-        set exists_p [db_0or1row qss_tips_table_defs_r1 {select id,label,name,flags,trashed_p from qss_tips_table_defs
-            where label=:table_label
-            and instance_id=:instance_id}]
-    } else {
-        set exists_p [db_0or1row qss_tips_table_defs_r1_untrashed {select id,label,name,flags,trashed_p from qss_tips_table_defs
+    set exists_p [db_0or1row qss_tips_table_defs_r1_untrashed {select id,label,name,flags,trashed_p from qss_tips_table_defs
             where label=:table_label
             and instance_id=:instance_id
-            and trashed_p!='1'}]
-    }
+            and trashed_p!='1'}]    
     if { $exists_p } {
         set table_list [list $id $label $name $flags $trashed_p]
+    }
+    return $table_list
+}
+
+ad_proc -public qss_tips_table_def_read_by_id {
+    table_id
+} { 
+    Returns list of table_id, label, name, flags, trashed_p or empty list if not found.
+} {
+    upvar 1 instance_id instance_id
+    set table_list [list ]
+    set exists_p [db_0or1row qss_tips_table_defs_r1_untrashed {select id,label,name,flags,trashed_p from qss_tips_table_defs
+            where id=:table_id
+            and instance_id=:instance_id
+            and trashed_p!='1'}]    
+    if { $exists_p } {
+        lappend table_list $id $label $name $flags $trashed_p
     }
     return $table_list
 }
