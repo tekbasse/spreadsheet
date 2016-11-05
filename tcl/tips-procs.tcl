@@ -144,23 +144,16 @@ ad_proc -private qss_tips_field_defs_maps_set {
 
 ad_proc -public qss_tips_table_id_of_label {
     table_label
-    {include_trashed_p "0"}
 } { 
     Returns table_id of table_name, or empty string if not found.
-    If include_trashed_p is true, includes checking trashed tables.
 } {
+    # cannot check for trashed tables, because that could give multiple results.
     upvar 1 instance_id instance_id
     set table_id ""
-    if { [qf_is_true $include_trashed_p] } {
-        db_0or1_row qss_tips_table_defs_r_name {select id as table_id from qss_tips_table_defs
-            where label=:table_name
-            and instance_id=:instance_id}
-    } else {
-        db_0or1_row qss_tips_table_defs_r_name_untrashed {select id as table_id from qss_tips_table_defs
-            where label=:table_name
-            and instance_id=:instance_id
-            and trashed_p!='1'}
-    }
+    db_0or1_row qss_tips_table_defs_r_name_untrashed {select id as table_id from qss_tips_table_defs
+        where label=:table_name
+        and instance_id=:instance_id
+        and trashed_p!='1'}
     return $table_id
 }
 
@@ -287,6 +280,8 @@ ad_proc -public qss_tips_table_def_update {
     args
 } {
     Updates a table definition for table_id. 
+    args can be passed as name value list or parameters.
+    Accepted names are: label name flags.
     @return 1 if successful, otherwise 0.
 } {
     set exists_p [db_0or1row qss_tips_table_def_ur {

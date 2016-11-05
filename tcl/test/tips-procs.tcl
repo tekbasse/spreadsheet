@@ -10,7 +10,7 @@ aa_register_case -cats {api smoke} qss_tips_check {
         -test_code {
 # -rollback \
             ns_log Notice "tcl/test/tips-procs.tcl.12: test begin"
-            
+            set instance_id [ad_conn package_id]            
 # create a scenario to test this api:
 
 
@@ -19,32 +19,74 @@ aa_register_case -cats {api smoke} qss_tips_check {
 # table definitions
             set flags "test"
             set i 1
-            set word_count [randomRange 10]
-            incr $word_count
-            set title [qal_namelur $word_count]
-            regsub -all { } [string tolower $title] {_} labelized
-            set t_label_arr($i) $labelized
-            set t_name_arr($i) $title
-            set t_id_arr($i) [qss_tips_table_def_create $labelized $title $flags]
-            set t_list [qss_tips_table_def_read $t_label_arr($i)]
-            foreach {t_i_id t_i_label t_i_name t_i_trashed_p} $t_list {
-                # set vars
+            while { ${i} < 4 } {
+                # setup table def
+                set word_count [randomRange 10]
+                incr $word_count
+                set title [qal_namelur $word_count]
+                regsub -all { } [string tolower $title] {_} labelized
+                set t_label_arr(${i}) $labelized
+                set t_name_arr(${i}) $title
+                set t_trashed_p_arr(${i}) 0
+
+                set t_id_arr(${i}) [qss_tips_table_def_create $labelized $title $flags]
+                set t_larr(${i}) [qss_tips_table_def_read $t_label_arr(${i})] 
+                foreach {t_i_id t_i_label t_i_name t_i_trashed_p} $t_larr(${i}) {
+                    # set vars
+                }
+                aa_equals "Test.${i} table def. create/read label" $t_i_label $t_label_arr(${i})
+                aa_equals "Test.${i} table def. create/read name" $t_i_name $t_name_arr(${i})
+                aa_equals "Test.${i} table def. create/read trashed_p" $t_i_trashed_p $t_trashed_p_arr(${i})
+                if { ${i} == 1 } {
+                    set success_p [qss_tips_table_def_trash $t_i_id]
+                    aa_true "Test.${i} table def. trashed ok" $success_p
+                }
+                if { ${i} == 2 } {
+                    set word_count [randomRange 10]
+                    incr $word_count
+                    set title [qal_namelur $word_count]
+                    regsub -all { } [string tolower $title] {_} labelized
+                    set t_label_arr(${i}) $labelized
+                    set t_name_arr(${i}) $title
+                    set t_trashed_p_arr(${i}) 0
+                    
+                    qss_tips_table_def_update $t_i_id label $labelized name $title flags $flags
+                    set t_larr(${i}) [qss_tips_table_def_read $t_label_arr(${i})]
+                    foreach {t_i_id t_i_label t_i_name t_i_trashed_p} $t_larr(${i}) {
+                        # set vars
+                    }
+                    aa_equals "Test.${i} table def. update/read label by param" $t_i_label $t_label_arr(${i})
+                    aa_equals "Test.${i} table def. update/read name by param" $t_i_name $t_name_arr(${i})
+                    aa_equals "Test.${i} table def. update/read trashed_p by param" $t_i_trashed_p $t_trashed_p_arr(${i})
+                    
+                }
+                if { ${i} == 3 } {
+                    set word_count [randomRange 10]
+                    incr $word_count
+                    set title [qal_namelur $word_count]
+                    regsub -all { } [string tolower $title] {_} labelized
+                    set t_label_arr(${i}) $labelized
+                    set t_name_arr(${i}) $title
+                    set t_trashed_p_arr(${i}) 0
+                    
+                    qss_tips_table_def_update $t_i_id [list label $labelized name $title flags $flags]
+                    set t_larr(${i}) [qss_tips_table_def_read $t_label_arr(${i})]
+                    foreach {t_i_id t_i_label t_i_name t_i_trashed_p} $t_larr(${i}) {
+                        # set vars
+                    }
+                    aa_equals "Test.${i} table def. update/read label by list" $t_i_label $t_label_arr(${i})
+                    aa_equals "Test.${i} table def. update/read name by list" $t_i_name $t_name_arr(${i})
+                    aa_equals "Test.${i} table def. update/read trashed_p by list" $t_i_trashed_p $t_trashed_p_arr(${i})
+                }
+
+                incr i
             }
-            aa_equals "Test " $test_value $expected_value
-#  qss_tips_table_def_trash
-#  qss_tips_table_def_update
-#  qss_tips_table_id_exists_q
-#  qss_tips_table_id_of_label
+            incr i -1
+            set exists_p [qss_tips_table_id_exists_q $t_i_d]
+            aa_true "Test.${i} table def. exists_q" $exists_p
 
-
-# # #
-# create
-# read
-# update
-# trash
-# read
-# create
-
+            set test_t_id [qss_tips_table_id_of_label $t_i_label]
+            aa_equals "Test.${i} table_id_of_label" $test_t_id $t_i_id
 
 # # #
 # field definitions
@@ -100,7 +142,7 @@ aa_register_case -cats {api smoke} qss_tips_check {
 #  qss_tips_table_read_as_array
 
 
-            set instance_id [ad_conn package_id]
+
             
             ns_log Notice "tcl/test/q-control-procs.tcl.429 test end"
         } \
