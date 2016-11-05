@@ -241,8 +241,9 @@ ad_proc -public qss_tips_table_def_create {
     name
     {flags ""}
 } {
-    Defines a tips table. Label is a short reference with no spaces.
-    Name is usually a title for display and has spaces.
+    Defines a tips table. Label is a short reference (up to 40 chars) with no spaces.
+    Name is usually a title for display and has spaces (40 char max).
+    If label exists, will rename label to "-integer".
     @return id if successful, otherwise returns empty string.
 } {
     upvar 1 instance_id instance_id
@@ -260,6 +261,28 @@ ad_proc -public qss_tips_table_def_create {
     qss_tips_user_id_set
     if { [hf_are_printable_characters_q $label] && [hf_are_visible_characters_q $name] } {
         set existing_id [qss_tips_table_id_of_label $label]
+        set label_len [string length $label]
+        set name_len [string length $name]
+        set i 1
+        if { $label_len > 39 || $name_len > 39 } {
+            incr i
+            set chars_max [expr { 39 - [string length $i] } ]
+            if { $label_len > 39 } {
+                set label [qf_abbreviate $label $chars_max "" "_"]
+                append label "-" $i
+            }
+            if { $name_len > 39 } {
+                set name [qf_abbreviate $name $chars_max ]
+            }
+        }
+        set label_orig $label
+        while { $existing_id ne "" && $i < 1000 } {
+            incr i
+            set chars_max [expr { 39 - [string length $i] } ]
+            set label [string range $label_orig 0 $chars_max]
+            append label "-" $i
+            set existing_id [qss_tips_table_id_of_label $label]
+        }
         if { $existing_id eq "" } {
             set id [db_nextval qss_tips_id_seq]
             set flags ""
@@ -269,7 +292,11 @@ ad_proc -public qss_tips_table_def_create {
                 (instance_id,id,label,name,flags,user_id,created,trashed_p)
                 values (:instance_id,:id,:label,:name,:flags,:user_id,now(),:trashed_p)                   
             }
+        } else {
+            ns_log Notice "qss_tips_table_def_create.273: table label '${label}' already exists."
         }
+    } else {
+        ns_log Notice "qss_tips_table_def_create.276: table label or name includes characters not allowed."
     }
     return $id
 }
