@@ -169,14 +169,14 @@ ad_proc -private qss_tips_table_id_exists_q {
         set exists_p [db_0or1row qss_tips_trashed_table_id_exists {
             select id from qss_tips_table_defs 
             where id=:table_id 
-            and instance_id=:instance_id
+            and instance_id=:instance_id limit 1
         } ]
     } else {
         set exists_p [db_0or1row qss_tips_untrashed_table_id_exists {
             select id from qss_tips_table_defs 
             where id=:table_id
             and instance_id=:instance_id
-            and trashed_p!='1'
+            and trashed_p!='1' limit 1
         } ]
     }
     return $exists_p
@@ -293,7 +293,6 @@ ad_proc -public qss_tips_table_def_create {
         }
         if { $existing_id eq "" } {
             set id [db_nextval qss_tips_id_seq]
-            set flags ""
             set trashed_p "0"
             db_dml qss_tips_table_cre {
                 insert into qss_tips_table_defs 
@@ -335,11 +334,34 @@ ad_proc -public qss_tips_table_def_update {
         set args_list [concat $args_list $args]
         
         set field_list [list label name flags]
+        set field_len_limit_list [list label name]
         set changed_p 0
         foreach {arg val} $args_list {
             if { $arg in $field_list } {
                 set changed_p 1
                 set $arg $val
+                if { $arg  in $field_len_limit_list } {
+                    ##code
+                    if { [string length $val] > 39 } {
+                        set i 2
+                        set chars_max [expr { 38 - [string length $i] } ]
+                        if { $arg eq "name" } {
+                            set name [qf_abbreviate $val $chars_max ".." " "]
+                        } elseif { $arg eq "label" } {
+                            set label_orig [qf_abbreviate $val $chars_max "" "_"]
+                            set label $label_orig
+                            append label "-" $i
+                            set existing_id [qss_tips_table_id_of_label $label]
+                            while { ( $existing_id ne "" && $existing_id ne $table_id ) && $i < 1000 } {
+                                incr i
+                                set chars_max [expr { 38 - [string length $i] } ]
+                                set label [string range $label_orig 0 $chars_max]
+                                append label "-" $i
+                                set existing_id [qss_tips_table_id_of_label $label]
+                            }
+                        }
+                    }
+                }
             }
         }
         if { $changed_p } {
@@ -352,7 +374,7 @@ ad_proc -public qss_tips_table_def_update {
                 db_dml tips_table_def_log_rev {
                     insert into qss_tips_table_defs 
                     (instance_id,id,label,name,flags,user_id,created,trashed_p)
-                    values (:instance_id,:table_id,:label,:name,:flags,:ouser_id,now(),:trashed_p) 
+                    values (:instance_id,:table_id,:label,:name,:flags,:user_id,now(),:trashed_p) 
                 }
             }
         }
