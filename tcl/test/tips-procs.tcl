@@ -47,8 +47,9 @@ aa_register_case -cats {api smoke} qss_tips_check {
                     # set vars
                 }
                 aa_equals "Test.${i} table def. create/read id" $t_i_id $t_id_arr(${i})
-                aa_equals "Test.${i} table def. create/read label" $t_i_label $t_label_arr(${i})
-                aa_equals "Test.${i} table def. create/read name" $t_i_name $t_name_arr(${i})
+                aa_equals "Test.${i} table def. create/read label" [string range $t_i_label 0 36] [string range $t_label_arr(${i}) 0 36]
+                set tin_max [expr { [string length $t_i_name] - 3 } ]
+                aa_equals "Test.${i} table def. create/read name" [string range $t_i_name 0 $tin_max] [string range $t_name_arr(${i}) 0 $tin_max]
                 aa_equals "Test.${i} table def. create/read flags" $t_i_flags $t_flags_arr(${i})
                 aa_equals "Test.${i} table def. create/read trashed_p" $t_i_trashed_p $t_trashed_p_arr(${i})
                 if { ${i} == 1 } {
@@ -74,8 +75,9 @@ aa_register_case -cats {api smoke} qss_tips_check {
                     foreach {t_i_id t_i_label t_i_name t_i_flags t_i_trashed_p} $t_larr(${i}) {
                         # set vars
                     }
-                    aa_equals "Test.${i} table def. update/read label by param" $t_i_label $t_label_arr(${i})
-                    aa_equals "Test.${i} table def. update/read name by param" $t_i_name $t_name_arr(${i})
+                    aa_equals "Test.${i} table def. update/read label by param" [string range $t_i_label 0 36] [string range $t_label_arr(${i}) 0 36]
+                    set tin_max [expr { [string length $t_i_name] - 3 } ]
+                    aa_equals "Test.${i} table def. update/read name by param" [string range $t_i_name 0 $tin_max] [string range $t_name_arr(${i}) 0 $tin_max]
                     aa_equals "Test.${i} table def. update/read flags by param" $t_i_flags $t_flags_arr(${i})
                     aa_equals "Test.${i} table def. update/read trashed_p by param" $t_i_trashed_p $t_trashed_p_arr(${i})
                     
@@ -99,8 +101,9 @@ aa_register_case -cats {api smoke} qss_tips_check {
                     foreach {t_i_id t_i_label t_i_name t_i_flags t_i_trashed_p} $t_larr(${i}) {
                         # set vars
                     }
-                    aa_equals "Test.${i} table def. update/read label by list" $t_i_label $t_label_arr(${i})
-                    aa_equals "Test.${i} table def. update/read name by list" $t_i_name $t_name_arr(${i})
+                    aa_equals "Test.${i} table def. update/read label by list" [string range $t_i_label 0 36] [string range $t_label_arr(${i}) 0 36]
+                    set tin_max [expr { [string length $t_i_name] - 3 } ]
+                    aa_equals "Test.${i} table def. update/read name by list" [string range $t_i_name 0 $tin_max] [string range $t_name_arr(${i}) 0 $tin_max]
                     aa_equals "Test.${i} table def. update/read flags by list" $t_i_flags $t_flags_arr(${i})
                     aa_equals "Test.${i} table def. update/read trashed_p by list" $t_i_trashed_p $t_trashed_p_arr(${i})
                 }
