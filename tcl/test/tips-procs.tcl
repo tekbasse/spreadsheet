@@ -113,12 +113,44 @@ aa_register_case -cats {api smoke} qss_tips_check {
             incr i -1
             set exists_p [qss_tips_table_id_exists_q $t_i_id]
             aa_true "Test.${i} table def. exists_q" $exists_p
-
+            # we have to grab t_i_label to test because create may have modified label..
+            set table_list [qss_tips_table_def_read_by_id $t_i_id]
+            set t_i_label [lindex $table_list 1]
             set test_t_id [qss_tips_table_id_of_label $t_i_label]
             aa_equals "Test.${i} table_id_of_label" $test_t_id $t_i_id
 
-# # #
-# field definitions
+
+
+            # # #
+            # field definitions
+
+            # initializations (create table)
+            incr i
+            set word_count [randomRange 10]
+            incr $word_count
+            set title [qal_namelur $word_count]
+            regsub -all { } [string tolower $title] {_} labelized
+            set t_label_arr(${i}) $labelized
+            set t_name_arr(${i}) $title
+            set t_flags_arr(${i}) $flags
+            set t_trashed_p_arr(${i}) 0
+            set t_id_arr(${i}) [qss_tips_table_def_create $labelized $title $flags]
+            set j 0
+            foreach field_type [list txt vc1k nbr] {
+                incr j
+                set name [qal_namelur 2]
+                regsub -all { } [string tolower $name] {_} label
+                set f_name_arr($j) $name
+                set f_label_arr($j) $label
+                set f_field_type_arr($j) $field_type
+                set f_tdt_data_type_arr($j) ""
+                set f_default_value_arr($j) ""
+                set success_p [qss_tips_field_def_create table_id $t_id_arr(${i}) label $label name $name field_type $field_type]
+
+                aa_true "Test.${i}-${j} field_def created label ${label} of type ${field_type}" $success_p
+            }
+
+
 #  qss_tips_field_def_create
 #  qss_tips_field_def_read
 #  qss_tips_field_def_trash

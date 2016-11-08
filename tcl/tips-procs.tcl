@@ -586,7 +586,16 @@ ad_proc -public qss_tips_field_def_create {
     Each field is a column in a table.
     args is passed in name value pairs. 
     Requires table_label or table_id and field: label name tdt_data_type field_type.
-    default_val is empty string unless supplied.
+    default_val and tdt_dat_type are empty strings unless supplied.
+    field_type defaults to txt.
+
+    field_type is one of txt, vc1k, or nbr; 
+    txt is of data type "text", 
+    nbr is of type numeric, and 
+    vc1k is of type varchar(1000).
+    Searches are fastest on vc1k types as these entries are indexed in the data model.
+
+    tdt_data_type references an entry in qss_tips_data_types.
 } {
     upvar 1 instance_id instance_id
     qss_tips_user_id_set
@@ -599,19 +608,26 @@ ad_proc -public qss_tips_field_def_create {
     }
     set args_list [concat $args_list $args]
     # req = required
-    set req_list [list label name tdt_data_type field_type]
-    set opt_list [list default_val]
+    set req_list [list label name]
+    set opt_list [list default_val tdt_data_type field_type]
     set xor_list [list table_id table_label]
     set all_list [concat $req_list $opt_list $xor_list]
     set name_list [list ]
 
+    set field_types_list [list txt vc1k nbr]
     # optional values have defaults
     set default_val ""
+    set tdt_data_type ""
+    set field_type "txt"
 
     foreach {nam val} $args_list {
         if { $nam in $all_list } {
-            set $nam $val
-            lappend name_list $nam
+            if { $nam eq "field_type" && $val ni $field_types_list } {
+                # use default
+            } else {
+                set $nam $val
+                lappend name_list $nam
+            }
         }
     }
     set success_p 1
@@ -620,7 +636,7 @@ ad_proc -public qss_tips_field_def_create {
             set success_p 0
         }
     }
-    if { $success_p && ( $table_id ni $name_list && $table_label ni $name_list ) } {
+    if { $success_p && ( "table_id" ni $name_list && "table_label" ni $name_list ) } {
         set success_p 0
     }
     if { $success_p } {
@@ -630,9 +646,10 @@ ad_proc -public qss_tips_field_def_create {
         }
         set trashed_p 0
         if { [qf_is_natural_number $table_id] } {
+            set new_id [db_nextval qss_tips_id_seq]
             db_dml qss_tips_field_def_cr {insert into qss_tips_field_defs
                 (instance_id,id,table_id,created,user_id,label,name,default_val,tdt_data_type,field_type,trashed_p)
-                values (:instance_id,:id,:table_id,now(),:user_id,:label,:name,:default_val,:tdt_data_type,:field_type,:trashed_p)
+                values (:instance_id,:new_id,:table_id,now(),:user_id,:label,:name,:default_val,:tdt_data_type,:field_type,:trashed_p)
             }
         } else {
             set success_p 0
