@@ -121,8 +121,8 @@ aa_register_case -cats {api smoke} qss_tips_check {
 
 
 
-            # # #
-            # field definitions
+# # #
+# field definitions
 
             # initializations (create table)
             incr i
@@ -145,14 +145,15 @@ aa_register_case -cats {api smoke} qss_tips_check {
                 set f_field_type_arr($j) $field_type
                 set f_tdt_data_type_arr($j) ""
                 set f_default_value_arr($j) ""
+#  qss_tips_field_def_create
                 set success_p [qss_tips_field_def_create table_id $t_id_arr(${i}) label $label name $name field_type $field_type]
-
                 aa_true "Test.${i}-${j} field_def created label ${label} of type ${field_type}" $success_p
+#  qss_tips_field_def_read
             }
 
 
-#  qss_tips_field_def_create
-#  qss_tips_field_def_read
+
+
 #  qss_tips_field_def_trash
 #  qss_tips_field_def_update
 #  qss_tips_field_defs_maps_set
