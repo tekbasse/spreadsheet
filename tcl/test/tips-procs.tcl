@@ -63,9 +63,14 @@ aa_register_case -cats {api smoke} qss_tips_check {
                 }
                 if { ${i} == 2 } {
                     set word_count [randomRange 10]
-                    incr $word_count
+                    incr word_count
                     set title [qal_namelur $word_count]
-                    regsub -all { } [string tolower $title] {_} labelized
+                    set labelized [string tolower $title]
+                    regsub -all { } $labelized {_} labelized
+                    if { $labelized eq "" } {
+                        incr word_count
+                        set labelized [ad_generate_random_string $word_count]
+                    }
                     set t_label_arr(${i}) $labelized
                     set t_name_arr(${i}) $title
                     set t_flags_arr(${i}) $flags
@@ -89,9 +94,14 @@ aa_register_case -cats {api smoke} qss_tips_check {
                 }
                 if { ${i} == 3 } {
                     set word_count [randomRange 10]
-                    incr $word_count
+                    incr word_count
                     set title [qal_namelur $word_count]
-                    regsub -all { } [string tolower $title] {_} labelized
+                    set labelized [string tolower $title]
+                    regsub -all { } $labelized {_} labelized
+                    if { $labelized eq "" } {
+                        incr word_count
+                        set labelized [ad_generate_random_string $word_count]
+                    }
                     set t_label_arr(${i}) $labelized
                     set t_name_arr(${i}) $title
                     set t_flags_arr(${i}) $flags
@@ -132,16 +142,21 @@ aa_register_case -cats {api smoke} qss_tips_check {
             # initializations (create table)
             incr i
             set word_count [randomRange 10]
-            incr $word_count
+            incr word_count
             set title [qal_namelur $word_count]
-            regsub -all { } [string tolower $title] {_} labelized<
+            set labelized [string tolower $title]
+            regsub -all { } $labelized {_} labelized
+            if { $labelized eq "" } {
+                incr word_count
+                set labelized [ad_generate_random_string $word_count]
+            }
             set t_label_arr(${i}) $labelized
             set t_name_arr(${i}) $title
             set t_flags_arr(${i}) $flags
             set t_trashed_p_arr(${i}) 0
             set t_id_arr(${i}) [qss_tips_table_def_create $labelized $title $flags]
             set j 0
-            set field_defs_by_ones_lists [list ]
+            set field_defs_by_ones_list [list ]
             foreach field_type [list txt vc1k nbr] {
                 incr j
                 set name [qal_namelur 2]
@@ -158,7 +173,7 @@ aa_register_case -cats {api smoke} qss_tips_check {
                 } else {
                     set success_p 0
                 }
-                aa_true "Test.${i}-${j} field_def created label ${label} of type ${field_type}" $success_p
+                aa_true "Test.${i}-${j} field_def created label ${label} of type ${field_type} for table_id '$t_id_arr(${i})'" $success_p
 #  qss_tips_field_def_read
                 set f_def1_list [qss_tips_field_def_read $t_id_arr(${i}) "" $f_def_id]
                 set f_def2_list [qss_tips_field_def_read $t_id_arr(${i}) $label]
@@ -171,13 +186,13 @@ aa_register_case -cats {api smoke} qss_tips_check {
                 lappend field_defs_by_ones_list $f_def_id
             }
             #  field_id,label,name,default_val,tdt_data_type,field_type or empty list if not found
-            set f_def_lists [qss_tips_field_def_read $t_id_arr(${i})]
+            set f_def_lists [qss_tips_field_def_read $t_id_arr(${i}) ]
             set f_def_lists_len [llength $f_def_lists]
-            set f_defs_by_ones_list_len [llength $field_defs_by_ones_list]
-            aa_equals "Test.${i}. qss_tips_field_def_read. Quantity of all same as adding each one" $f_def_lists_len $f_defs_by_ones_list_len
+            set field_defs_by_ones_list_len [llength $field_defs_by_ones_list]
+            aa_equals "Test.${i}. qss_tips_field_def_read. Quantity of all same as adding each one" $f_def_lists_len $field_defs_by_ones_list_len
             foreach f_list $f_def_lists {
                 set f_def_id_ck [lindex $f_list 0]
-                if { $f_def_id_ck in $f_defs_by_ones_list } {
+                if { $f_def_id_ck in $field_defs_by_ones_list } {
                     set success_p 1
                 } else {
                     set success_p 0

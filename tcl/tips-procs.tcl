@@ -785,15 +785,16 @@ ad_proc -private qss_tips_field_def_read {
             and table_id=:table_id
             and trashed_p!='1'}]
         # allow glob with field_labels
+        set field_label_idx_list [list ]
         set field_label_list [qf_listify $field_labels]
         set field_label_list_len [llength $field_label_list]
+        #ns_log Notice "qss_tips_field_def_read.790 field_label_list '${field_label_list}' field_label_list_len '${field_label_list_len}'"
         if { $field_label_list_len > 0 } {
             # create a searchable list
             set label_search_list [list ]
             foreach field_list $fields_lists {
                 lappend label_search_list [lindex $field_list 1]
             }
-            set field_label_idx_list [list ]
             foreach field_label $field_label_list {
                 set indexes [lsearch -all -glob $label_search_list $field_label]
                 set field_label_idx_list [concat $field_label_idx_list $indexes]
@@ -804,6 +805,7 @@ ad_proc -private qss_tips_field_def_read {
         set field_id_idx_list [list ]
         set field_id_list [hf_list_filter_by_natural_number [qf_listify $field_ids]]       
         set field_id_list_len [llength $field_id_list]
+        #ns_log Notice "qss_tips_field_def_read.808 field_id_list '${field_id_list}' field_id_list_len '${field_id_list_len}'"
         if { $field_id_list_len > 0 } {
             # create a searchable list
             set id_search_list [list ]
