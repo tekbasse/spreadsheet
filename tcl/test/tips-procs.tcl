@@ -22,10 +22,14 @@ aa_register_case -cats {api smoke} qss_tips_check {
             while { ${i} < 4 } {
                 # setup table def
                 set word_count [randomRange 10]
-                incr $word_count
+                incr word_count
                 set title [qal_namelur $word_count]
                 set labelized [string tolower $title]
                 regsub -all { } $labelized {_} labelized
+                if { $labelized eq "" } {
+                    incr word_count
+                    set labelized [ad_generate_random_string $word_count]
+                }
                 set t_label_arr(${i}) $labelized
                 set t_name_arr(${i}) $title
                 set t_flags_arr(${i}) $flags
@@ -37,7 +41,7 @@ aa_register_case -cats {api smoke} qss_tips_check {
                 } else {
                     set t_id_exists_p 0
                 }
-                aa_true "Test.${i} table def. created table_id '$t_id_arr(${i})' with label '${labelized}'" $t_id_exists_p
+                aa_true "Test.${i} table def. created table_id '$t_id_arr(${i})' label '${labelized}' title ${title}" $t_id_exists_p
                 set t_larr(${i}) [qss_tips_table_def_read_by_id $t_id_arr(${i})] 
                 set t_i_id ""
                 set t_i_label ""
@@ -163,11 +167,14 @@ aa_register_case -cats {api smoke} qss_tips_check {
                 } else {
                     set success_p 0
                 }
-                aa_true "Test.${i}-${j} field_def read via label ${label} vs via field_id matches" $success_p
+                aa_true "Test.${i}-${j} field_def read via label ${label} VS. via field_id matches" $success_p
                 lappend field_defs_by_ones_list $f_def_id
             }
             #  field_id,label,name,default_val,tdt_data_type,field_type or empty list if not found
             set f_def_lists [qss_tips_field_def_read $t_id_arr(${i})]
+            set f_def_lists_len [llength $f_def_lists]
+            set f_defs_by_ones_list_len [llength $field_defs_by_ones_list]
+            aa_equals "Test.${i}. qss_tips_field_def_read. Quantity of all same as adding each one" $f_def_lists_len $f_defs_by_ones_list_len
             foreach f_list $f_def_lists {
                 set f_def_id_ck [lindex $f_list 0]
                 if { $f_def_id_ck in $f_defs_by_ones_list } {
