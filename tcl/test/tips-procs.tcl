@@ -24,7 +24,8 @@ aa_register_case -cats {api smoke} qss_tips_check {
                 set word_count [randomRange 10]
                 incr $word_count
                 set title [qal_namelur $word_count]
-                regsub -all { } [string tolower $title] {_} labelized
+                set labelized [string tolower $title]
+                regsub -all { } $labelized {_} labelized
                 set t_label_arr(${i}) $labelized
                 set t_name_arr(${i}) $title
                 set t_flags_arr(${i}) $flags
@@ -36,7 +37,7 @@ aa_register_case -cats {api smoke} qss_tips_check {
                 } else {
                     set t_id_exists_p 0
                 }
-                aa_true "Test.${i} table def. created table_id '$t_id_arr(${i})'" $t_id_exists_p
+                aa_true "Test.${i} table def. created table_id '$t_id_arr(${i})' with label '${labelized}'" $t_id_exists_p
                 set t_larr(${i}) [qss_tips_table_def_read_by_id $t_id_arr(${i})] 
                 set t_i_id ""
                 set t_i_label ""
@@ -129,13 +130,14 @@ aa_register_case -cats {api smoke} qss_tips_check {
             set word_count [randomRange 10]
             incr $word_count
             set title [qal_namelur $word_count]
-            regsub -all { } [string tolower $title] {_} labelized
+            regsub -all { } [string tolower $title] {_} labelized<
             set t_label_arr(${i}) $labelized
             set t_name_arr(${i}) $title
             set t_flags_arr(${i}) $flags
             set t_trashed_p_arr(${i}) 0
             set t_id_arr(${i}) [qss_tips_table_def_create $labelized $title $flags]
             set j 0
+            set field_defs_by_ones_lists [list ]
             foreach field_type [list txt vc1k nbr] {
                 incr j
                 set name [qal_namelur 2]
@@ -146,11 +148,35 @@ aa_register_case -cats {api smoke} qss_tips_check {
                 set f_tdt_data_type_arr($j) ""
                 set f_default_value_arr($j) ""
 #  qss_tips_field_def_create
-                set success_p [qss_tips_field_def_create table_id $t_id_arr(${i}) label $label name $name field_type $field_type]
+                set f_def_id [qss_tips_field_def_create table_id $t_id_arr(${i}) label $label name $name field_type $field_type]
+                if { [qf_is_natural_number $f_def_id] } {
+                    set success_p 1
+                } else {
+                    set success_p 0
+                }
                 aa_true "Test.${i}-${j} field_def created label ${label} of type ${field_type}" $success_p
 #  qss_tips_field_def_read
+                set f_def1_list [qss_tips_field_def_read $t_id_arr(${i}) "" $f_def_id]
+                set f_def2_list [qss_tips_field_def_read $t_id_arr(${i}) $label]
+                if { $f_def1_list eq $f_def2_list } {
+                    set success_p 1
+                } else {
+                    set success_p 0
+                }
+                aa_true "Test.${i}-${j} field_def read via label ${label} vs via field_id matches" $success_p
+                lappend field_defs_by_ones_list $f_def_id
             }
-
+            #  field_id,label,name,default_val,tdt_data_type,field_type or empty list if not found
+            set f_def_lists [qss_tips_field_def_read $t_id_arr(${i})]
+            foreach f_list $f_def_lists {
+                set f_def_id_ck [lindex $f_list 0]
+                if { $f_def_id_ck in $f_defs_by_ones_list } {
+                    set success_p 1
+                } else {
+                    set success_p 0
+                }
+                aa_true "Test.${i} field_def_id from limit read in bulk read also" $success_p
+            }
 
 
 

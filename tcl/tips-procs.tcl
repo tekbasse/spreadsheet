@@ -596,6 +596,8 @@ ad_proc -public qss_tips_field_def_create {
     Searches are fastest on vc1k types as these entries are indexed in the data model.
 
     tdt_data_type references an entry in qss_tips_data_types.
+
+    @return field_def_id or empty string if unsuccessful.
 } {
     upvar 1 instance_id instance_id
     qss_tips_user_id_set
@@ -615,6 +617,7 @@ ad_proc -public qss_tips_field_def_create {
     set name_list [list ]
 
     set field_types_list [list txt vc1k nbr]
+    set new_id ""
     # optional values have defaults
     set default_val ""
     set tdt_data_type ""
@@ -651,11 +654,9 @@ ad_proc -public qss_tips_field_def_create {
                 (instance_id,id,table_id,created,user_id,label,name,default_val,tdt_data_type,field_type,trashed_p)
                 values (:instance_id,:new_id,:table_id,now(),:user_id,:label,:name,:default_val,:tdt_data_type,:field_type,:trashed_p)
             }
-        } else {
-            set success_p 0
-        }
+        } 
     }
-    return $success_p
+    return $new_id
 }
 
 
@@ -789,7 +790,7 @@ ad_proc -private qss_tips_field_def_read {
         if { $field_label_list_len > 0 } {
             # create a searchable list
             set label_search_list [list ]
-            foreach field_list $field_lists {
+            foreach field_list $fields_lists {
                 lappend label_search_list [lindex $field_list 1]
             }
             set field_label_idx_list [list ]
@@ -800,15 +801,15 @@ ad_proc -private qss_tips_field_def_read {
             
         }        
         
-        set field_id_list [qf_listify $field_ids]
+        set field_id_idx_list [list ]
+        set field_id_list [hf_list_filter_by_natural_number [qf_listify $field_ids]]       
         set field_id_list_len [llength $field_id_list]
         if { $field_id_list_len > 0 } {
             # create a searchable list
             set id_search_list [list ]
-            foreach field_list $field_lists {
-                lappend id_search_list [lindex $field_list 1]
+            foreach field_list $fields_lists {
+                lappend id_search_list [lindex $field_list 0]
             }
-            set field_id_idx_list [list ]
             foreach id $field_id_list {
                 set indexes [lsearch -exact -integer $id_search_list $id]
                 set field_id_idx_list [concat $field_id_idx_list $indexes]
