@@ -199,21 +199,18 @@ aa_register_case -cats {api smoke} qss_tips_check {
                 }
                 aa_true "Test.${i} field_def_id from limit read in bulk read also" $success_p
             }
+#  qss_tips_field_def_update  (change the field labels to something predictable)
+# qss_tips_field_def_read to confirm
+#  qss_tips_field_def_create some new ones
+# qss_tips_field_def_read to confirm
+#  qss_tips_field_def_trash the new ones
+# qss_tips_field_def_read to confirm
 
 
 
-#  qss_tips_field_def_trash
-#  qss_tips_field_def_update
-#  qss_tips_field_defs_maps_set
+#  qss_tips_field_defs_maps_set  (Ignore, because this is intrinsic to other proc operations)
 #  qss_tips_field_id_name_list
 #  qss_tips_field_label_name_list
-
-# create
-# read
-# update
-# trash
-# read
-# create
 
 
 # # # 
