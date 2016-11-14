@@ -197,7 +197,36 @@ aa_register_case -cats {api smoke} qss_tips_check {
                 } else {
                     set success_p 0
                 }
-                aa_true "Test.${i} field_def_id from limit read in bulk read also" $success_p
+                aa_true "Test.${i} field_def_id '${f_def_id_ck}' from single read in bulk read also" $success_p
+            }
+            foreach f_list $f_def_lists {
+                set f_def_id_i [lindex $f_list 0]
+                set f_field_type [lindex $f_list 5]
+                set name_new $f_field_type
+                append name_new "_test"
+                set success_p [qss_tips_field_def_update $t_id_arr(${i}) field_id $f_def_id_i name_new $name_new]
+                aa_true "Test.${i} field_def_id '${f_def_id_i}' name change to '${name_new}'" $success_p
+                set f2_list [qss_tips_field_def_read $t_id_arr(${i}) "" $f_def_id_i ]
+                set f2_name [lindex [lindex $f2_list 0] 2]
+                if { $f2_name eq $name_new } {
+                    set success_p 1
+                } else {
+                    set success_p 0
+                }
+                aa_true "Test.${i} field_def_id '${f_def_id_i}' confirmed name changed to '${name_new}'" $success_p
+
+                set label_new $f_field_type
+                append label_new "_" $f_def_id_i
+                set success_p [qss_tips_field_def_update $t_id_arr(${i}) field_id $f_def_id_i label_new $label_new]
+                aa_true "Test.${i} field_def_id '${f_def_id_i}' label change to '${label_new}'" $success_p
+                set f2_list [qss_tips_field_def_read $t_id_arr(${i}) $label_new ]
+                set f2_label [lindex [lindex $f2_list 0] 1]
+                if { $f2_label eq $label_new } {
+                    set success_p 1
+                } else {
+                    set success_p 0
+                }
+                aa_true "Test.${i} field_def_id '${f_def_id_i}' confirmed label changed to '${label_new}'" $success_p
             }
 #  qss_tips_field_def_update  (change the field labels to something predictable)
 # qss_tips_field_def_read to confirm

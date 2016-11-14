@@ -750,15 +750,17 @@ ad_proc -public qss_tips_field_def_update {
             }
             set trashed_p 0
             db_transaction {
-                db_dml qss_tips_field_def_u1 { update qss_tips_field_def 
-                    set trashed_p='1'
+                db_dml qss_tips_field_def_u1 { update qss_tips_field_defs 
+                    set trashed_p='1',
+                    trashed_dt=now(),
                     trashed_by=:user_id
                     where id=:field_id 
                     and instance_id=:instance_id 
                     and table_id=:table_id }
                 db_dml qss_tips_field_def_u1_cr {
-                    {instance_id,table_id,id,label,name,flags,user_id,created,trashed_p,default_val,tdt_data_type,field_type}
-                    values (:instance_id,:table_id,:field_id,:label_new,:name_new,:flags,:user_id,now(),:trashed_p,:default_val,:tdt_data_type,:field_type)
+                    insert into qss_tips_field_defs
+                    (instance_id,table_id,id,label,name,user_id,created,trashed_p,default_val,tdt_data_type,field_type)
+                    values (:instance_id,:table_id,:field_id,:label_new,:name_new,:user_id,now(),:trashed_p,:default_val,:tdt_data_type,:field_type)
                 }
             }
             set success_p 1
