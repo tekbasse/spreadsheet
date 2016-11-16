@@ -233,6 +233,7 @@ aa_register_case -cats {api smoke} qss_tips_check {
                 set label $field_type
                 set name [string toupper $field_type]
                 set f_def_id [qss_tips_field_def_create table_id $t_id_arr(${i}) label $label name $name field_type $field_type]
+                # qss_tips_field_def_read to confirm
                 set f_def_list [qss_tips_field_def_read $t_id_arr(${i}) "" $f_def_id]
                 set f_def1_list [lindex $f_def_list 0]
                 foreach {f_def_id2 label2 name2 default_val2 tdt_data_type2 field_type2} $f_def1_list {
@@ -244,12 +245,26 @@ aa_register_case -cats {api smoke} qss_tips_check {
                 aa_equals "Test.${i}. qss_tips_field_def_create confirm default_val" $default_val2 ""
                 aa_equals "Test.${i}. qss_tips_field_def_create confirm tdt_data_type" $tdt_data_type2 ""
                 aa_equals "Test.${i}. qss_tips_field_def_create confirm field_type" $field_type2 $field_type
-                
-
-# qss_tips_field_def_read to confirm
             }
-#  qss_tips_field_def_trash the old ones
-# qss_tips_field_def_read to confirm
+            #  qss_tips_field_def_trash the old ones
+            set field_id [lindex $field_defs_by_ones_list 0]
+            set field_ids_list [lrange $field_defs_by_ones_list 1 end]
+            set success1_p [qss_tips_field_def_trash $field_id $t_id_arr(${i})]
+            aa_true "Test.${i}. qss_tips_field_def_trash one id '${field_id}'" $success1_p
+            set success2_p [qss_tips_field_def_trash $field_ids_list $t_id_arr(${i})]
+            aa_true "Test.${i}. qss_tips_field_def_trash list of ids '${field_ids_list}'" $success2_p
+            # qss_tips_field_def_read to confirm
+            set defs_lists [qss_tips_field_def_read $t_id_arr(${i}) ]
+            set success_p 1
+            foreach def_list $defs_lists {
+                set id [lindex $def_list 0]
+                if { $id in $field_defs_by_ones_list } {
+                    set success_p 0
+                } 
+            }
+            aa_true "Test.${i}. qss_tips_field_def_trash confirm old ones deleted" $success_p
+
+
 
 
 

@@ -182,6 +182,36 @@ ad_proc -private qss_tips_table_id_exists_q {
     return $exists_p
 }
 
+
+ad_proc -private qss_tips_field_def_id_exists_q {
+    field_id
+    table_id
+    {trashed_p "0"}
+} {
+    Returns 1 if field_id exists for table_id.
+    Defaults to only check untrashed fields (trashed_p is 0). Set trashed_p to 1 to check all cases.
+} {
+    upvar 1 instance_id instance_id
+    if { ![qf_is_true $trashed_p ] } {
+        set exists_p [db_0or1row qss_tips_trashed_field_id_exists {
+            select id from qss_tips_field_defs
+            where id=:field_id 
+            and table_id=:table_id
+            and instance_id=:instance_id limit 1
+        } ]
+    } else {
+        set exists_p [db_0or1row qss_tips_untrashed_field_id_exists {
+            select id from qss_tips_field_defs
+            where id=:field_id
+            and table_id=:table_id
+            and instance_id=:instance_id
+            and trashed_p!='1' limit 1
+        } ]
+    }
+    return $exists_p
+}
+
+
 ad_proc -private qss_tips_row_id_exists_q {
     row_id
     table_id
@@ -662,7 +692,7 @@ ad_proc -public qss_tips_field_def_create {
 
 ad_proc -public qss_tips_field_def_trash {
     field_ids
-    {table_id ""}
+    table_id
 } {
     Trashes one or more fields. 
     Each field is a column in a table. 
@@ -676,20 +706,18 @@ ad_proc -public qss_tips_field_def_trash {
     set field_ids_list [qf_listify $field_ids]
     set success_p_tot 1
     foreach field_id $field_ids_list {
-        set success_p [qss_tips_field_id_exists_q $field_id $table_id]
+        set success_p [qss_tips_field_def_id_exists_q $field_id $table_id]
         set success_p_tot [expr { $success_p && $success_p_tot } ]
         if { $success_p } {
-            [db_dml qss_tips_field_trash_def {
+            db_dml qss_tips_field_trash_def1 {
                 update qss_tips_field_defs 
-                set trashed_p='1'
-                and trashed_by=:user_id
-                and trashed_dt=now()
+                set trashed_p='1',trashed_by=:user_id,trashed_dt=now()
                 where id=:field_id
-                and instance_id=:instance_id
-            } ]
+                and table_id=:table_id
+                and instance_id=:instance_id}
         }
     }
-    return $success_p
+    return $success_p_tot
 }
 
 ad_proc -public qss_tips_field_def_update {
@@ -1223,11 +1251,11 @@ ad_proc -public qss_tips_cell_trash {
 } {
     @return 1 if successful, otherwise 0
 } {
-    set exists_p [db_dml qss_tips_field_values_cell_trash { update qss_tips_field_values
+    set exists_p db_dml qss_tips_field_values_cell_trash { update qss_tips_field_values
         set trashed_p='1',trashed_by=:user_id,trashed_dt=now()
         where instance_id=:instance_id
         and table_id=:table_id
         and row_id=:row_id
-        and field_id=:field_id }]
+        and field_id=:field_id }
     return $exists_p
 }
