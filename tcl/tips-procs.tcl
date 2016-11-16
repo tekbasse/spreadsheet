@@ -866,11 +866,11 @@ ad_proc -private qss_tips_field_def_read {
 
 
 ad_proc -public qss_tips_row_create {
-    label_value_list
     table_id
+    label_value_list
 } {
     Writes a record into table_label. Returns row_id if successful, otherwise empty string.
-    Missing field labels are left blank.
+    Missing field labels are left blank ie. no default_value subistituion is performed.
 } {
     upvar 1 instance_id instance_id
     set new_id ""

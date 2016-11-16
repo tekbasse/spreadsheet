@@ -313,8 +313,37 @@ aa_register_case -cats {api smoke} qss_tips_check {
 
 # # # 
 # data rows
-#  qss_tips_row_create
-#  qss_tips_row_id_exists_q
+
+            set label_value_list [list ]
+            # make some data
+            for {set j 1} {$j < 4} {incr j} {
+                switch -exact $f_field_type_arr($j) {
+                    txt {
+                        set value [qal_namelur [randomRange 20]]
+                    }
+                    vc1k {
+                        set value [string range [qal_namelur [randomRange 10]] 0 38]
+                    }
+                    nbr {
+                        set value [clock microseconds]
+                    }
+                }
+                set f_value_arr($j) $value
+                lappend label_value_list $f_label_arr(${i}) $value
+            }
+            #  qss_tips_row_create
+            set f_row_id [qss_tips_row_create t_id_arr(${i}) $label_value_list]
+            if { $f_row_id ne "" } {
+                set success_p 1
+            } else {
+                set success_p 0
+            }
+            aa_true "Test.${i} row created for table_id '$t_id_arr(${i})'" $success_p
+            #  qss_tips_row_id_exists_q
+            set f_row_id_ck [qss_tips_row_id_exists_q $f_row_id $t_id_arr(${i})]
+            aa_true "Test.${i} qss_tips_row_id_exists_q for row_id '${f_row_id}' table_id '$t_id_arr(${i})'" $f_row_id_ck
+
+
 #  qss_tips_row_id_of_table_label_value
 #  qss_tips_row_read
 #  qss_tips_row_trash
