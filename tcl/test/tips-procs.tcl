@@ -228,11 +228,27 @@ aa_register_case -cats {api smoke} qss_tips_check {
                 }
                 aa_true "Test.${i} field_def_id '${f_def_id_i}' confirmed label changed to '${label_new}'" $success_p
             }
-#  qss_tips_field_def_update  (change the field labels to something predictable)
+            foreach field_type [list txt vc1k nbr] {
+                #  qss_tips_field_def_create some new ones
+                set label $field_type
+                set name [string toupper $field_type]
+                set f_def_id [qss_tips_field_def_create table_id $t_id_arr(${i}) label $label name $name field_type $field_type]
+                set f_def_list [qss_tips_field_def_read $t_id_arr(${i}) "" $f_def_id]
+                set f_def1_list [lindex $f_def_list 0]
+                foreach {f_def_id2 label2 name2 default_val2 tdt_data_type2 field_type2} $f_def1_list {
+                    # loading vars
+                }
+                aa_equals "Test.${i}. qss_tips_field_def_create confirm id" $f_def_id2 $f_def_id
+                aa_equals "Test.${i}. qss_tips_field_def_create confirm label" $label2 $label
+                aa_equals "Test.${i}. qss_tips_field_def_create confirm name" $name2 $name
+                aa_equals "Test.${i}. qss_tips_field_def_create confirm default_val" $default_val2 ""
+                aa_equals "Test.${i}. qss_tips_field_def_create confirm tdt_data_type" $tdt_data_type2 ""
+                aa_equals "Test.${i}. qss_tips_field_def_create confirm field_type" $field_type2 $field_type
+                
+
 # qss_tips_field_def_read to confirm
-#  qss_tips_field_def_create some new ones
-# qss_tips_field_def_read to confirm
-#  qss_tips_field_def_trash the new ones
+            }
+#  qss_tips_field_def_trash the old ones
 # qss_tips_field_def_read to confirm
 
 
