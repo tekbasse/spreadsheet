@@ -264,14 +264,52 @@ aa_register_case -cats {api smoke} qss_tips_check {
             }
             aa_true "Test.${i}. qss_tips_field_def_trash confirm old ones deleted" $success_p
 
+            #  qss_tips_field_defs_maps_set  (Ignore, because this is intrinsic to other proc operations)
+            #  qss_tips_field_id_name_list
+            #  qss_tips_field_label_name_list
 
 
-
-
-#  qss_tips_field_defs_maps_set  (Ignore, because this is intrinsic to other proc operations)
-#  qss_tips_field_id_name_list
-#  qss_tips_field_label_name_list
-
+            # initializations (create table)
+            incr i
+            set unique [clock seconds]
+            set title "Table ${unique}"
+            set labelized [string tolower $title]
+            regsub -all { } $labelized {_} labelized
+            set t_label_arr(${i}) $labelized
+            set t_name_arr(${i}) $title
+            set t_flags_arr(${i}) $flags
+            set t_trashed_p_arr(${i}) 0
+            set t_id_arr(${i}) [qss_tips_table_def_create $labelized $title $flags]
+            if { $t_id_arr(${i}) > 0 } {
+                set success_p 1
+            } else {
+                set success_p 0
+            }
+            aa_true "Test.${i}. qss_tips_table_def_create for '${labelized}'" $success_p
+            set j 0
+            set field_defs_by_ones_list [list ]
+            foreach field_type [list txt vc1k nbr] {
+                incr j
+                set name "Data for "
+                append name [string toupper $field_type]
+                regsub -all { } [string tolower $name] {_} label
+                set f_name_arr($j) $name
+                set f_label_arr($j) $label
+                set f_field_type_arr($j) $field_type
+                set f_tdt_data_type_arr($j) ""
+                set f_default_value_arr($j) ""
+                #  qss_tips_field_def_create
+                set f_def_id [qss_tips_field_def_create table_id $t_id_arr(${i}) label $label name $name field_type $field_type]
+                if { [qf_is_natural_number $f_def_id] } {
+                    set success_p 1
+                } else {
+                    set success_p 0
+                }
+                aa_true "Test.${i}-${j} field_def created label ${label} of type ${field_type} for table_id '$t_id_arr(${i})'" $success_p
+                #  qss_tips_field_def_read
+                lappend field_defs_by_ones_list $f_def_id
+            }
+            #  field_id,label,name,default_val,tdt_data_type,field_type or empty list if not found
 
 # # # 
 # data rows
