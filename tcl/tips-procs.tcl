@@ -867,12 +867,23 @@ ad_proc -private qss_tips_field_def_read {
 
 ad_proc -public qss_tips_row_create {
     table_id
-    label_value_list
+    args
 } {
     Writes a record into table_label. Returns row_id if successful, otherwise empty string.
+    args can be passed as name value list or parameters.
     Missing field labels are left blank ie. no default_value subistituion is performed.
 } {
     upvar 1 instance_id instance_id
+    # args was label_value_list
+    # Allow args to be passed as a list or separate parameters
+    set label_value_list [list ]
+    set arg1 [lindex $args 0]
+    if { [llength $arg1] > 1 } {
+        set label_value_list $arg1
+    }
+    set label_value_list [concat $label_value_list $args]
+
+
     set new_id ""
     if { [qf_is_natural_number $table_id] } {
         set count [qss_tips_field_defs_maps_set $table_id t_arr l_arr "" "" "" field_labels_list]
