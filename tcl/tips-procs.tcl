@@ -108,17 +108,17 @@ ad_proc -private qss_tips_field_defs_maps_set {
         set set_field_type_label_arr_p 1
     }         
     set set_field_id_label_arr_p 0
-    if { [regexp -all -nocase -- {^[^a-z0-9\_]+$} $field_id_of_label_array_name ] } {
+    if { [regexp -all -nocase -- {^[a-z0-9\_]+$} $field_id_of_label_array_name ] } {
         upvar 1 $field_id_of_label_array_name field_id_label_arr
         set set_field_id_label_arr_p 1
     }
     set set_field_type_id_arr_p 0
-    if { [regexp -all -nocase -- {^[^a-z0-9\_]+$} $field_type_of_id_array_name ] } {
+    if { [regexp -all -nocase -- {^[a-z0-9\_]+$} $field_type_of_id_array_name ] } {
         upvar 1 $field_type_of_id_array_name field_type_id_arr
         set set_field_type_id_arr_p 1
     }         
     set set_field_label_id_arr_p 0
-    if { [regexp -all -nocase -- {^[^a-z0-9\_]+$} $field_label_of_id_array_name ] } {
+    if { [regexp -all -nocase -- {^[a-z0-9\_]+$} $field_label_of_id_array_name ] } {
         upvar 1 $field_label_of_id_array_name field_label_id_arr
         set set_field_label_id_arr_p 1
     }
@@ -906,7 +906,9 @@ ad_proc -public qss_tips_row_create {
                     if { $label in $field_labels_list && $value ne "" } {
                         set field_id $l_arr(${label})
                         set field_type $t_arr(${label})
+                        set trashed_p 0
                         qss_tips_set_by_field_type $field_type $value f_nbr f_txt f_vc1k
+                        ns_log Notice "qss_tips_row_create.911: field_type '${field_type}' value '${value}' f_nbr '${f_nbr}' f_txt '${f_txt}' f_vc1k '${f_vc1k}'"
                         db_dml qss_tips_field_values_row_cr_1f { insert into qss_tips_field_values
                             (instance_id,table_id,row_id,trashed_p,created,user_id,field_id,f_vc1k,f_nbr,f_txt)
                             values (:instance_id,:table_id,:new_id,:trashed_p,now(),:user_id,:field_id,:f_vc1k,:f_nbr,:f_txt)
@@ -931,7 +933,7 @@ ad_proc -private qss_tips_value_of_field_type {
 } {
     Returns value based on field_type
 } {
-    switch -exact -- $type_arr(${field_id}) {
+    switch -exact -- $field_type {
         vc1k { set v $f_vc1k }
         nbr  { set v $f_nbr }
         txt  { set v $f_txt }
@@ -955,7 +957,8 @@ ad_proc -private qss_tips_set_by_field_type {
     upvar 1 $nbr_var_name f_nbr
     upvar 1 $txt_var_name f_txt
     upvar 1 $vc1k_var_name f_vc1k
-    switch -exact $field_type -- {
+    set success_p 1
+    switch -exact -- $field_type {
         vc1k {
             set f_nbr ""
             set f_txt ""
@@ -976,9 +979,11 @@ ad_proc -private qss_tips_set_by_field_type {
             set f_nbr ""
             set f_txt $value
             set f_vc1k ""
+            set success_p 0
         }
     }
-    return $v
+    ns_log Notice "qss_tips_set_by_field_type.984: field_type '${field_type}' value '${value}' f_nbr '${f_nbr}' f_txt '${f_txt}' f_vc1k '${f_vc1k}'"
+    return $success_p
 }
 
 
@@ -1034,7 +1039,7 @@ ad_proc -public qss_tips_row_id_of_table_label_value {
         set count [qss_tips_field_defs_maps_set $table_id "" "" type_arr label_arr ]
         if { $count > 0 } {
             set sort_sql ""
-            switch -exact $if_multiple -- {
+            switch -exact -- $if_multiple {
                 -1 { set vc1k_search_sql "na" }
                 1 { set sort_sql "order by created des" }
                 0 -
