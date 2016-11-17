@@ -224,17 +224,17 @@ ad_proc -private qss_tips_row_id_exists_q {
     upvar 1 instance_id instance_id
     if { ![qf_is_true $trashed_p ] } {
         set exists_p [db_0or1row qss_tips_trashed_row_id_exists {
-            select id from qss_tips_table_field_values
+            select row_id from qss_tips_field_values
             where row_id=:row_id
             and table_id=:table_id
-            and instance_id=:instance_id } ]
+            and instance_id=:instance_id limit 1} ]
     } else {
         set exists_p [db_0or1row qss_tips_untrashed_row_id_exists {
-            select id from qss_tips_table_field_values
+            select row_id from qss_tips_field_values
             where row_id=:row_id
             and table_id=:table_id
             and instance_id=:instance_id
-            and trashed_p!='1' } ]
+            and trashed_p!='1' limit 1 } ]
     }
     return $exists_p
 }
@@ -887,6 +887,7 @@ ad_proc -public qss_tips_row_create {
     set new_id ""
     if { [qf_is_natural_number $table_id] } {
         set count [qss_tips_field_defs_maps_set $table_id t_arr l_arr "" "" "" field_labels_list]
+        # field_labels_list defined.
         if { $count > 0 } {
             qss_tips_user_id_set
             set new_id [db_nextval qss_tips_id_seq]
@@ -904,7 +905,11 @@ ad_proc -public qss_tips_row_create {
                     }
                 }
             }
+        } else {
+            ns_log Notice "qss_tips_row_create.908: No fields defined for table_id '${table_id}'."
         }
+    } else {
+        ns_log Notice "qss_tips_row_create.911: table_id '${table_id}' not a valid number."
     }
     return $new_id
 }

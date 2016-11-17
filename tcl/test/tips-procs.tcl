@@ -329,10 +329,10 @@ aa_register_case -cats {api smoke} qss_tips_check {
                     }
                 }
                 set f_value_arr($j) $value
-                lappend label_value_list $f_label_arr(${i}) $value
+                lappend label_value_list $f_label_arr(${j}) $value
             }
             #  qss_tips_row_create
-            set f_row_id [qss_tips_row_create t_id_arr(${i}) $label_value_list]
+            set f_row_id [qss_tips_row_create $t_id_arr(${i}) $label_value_list]
             if { $f_row_id ne "" } {
                 set success_p 1
             } else {
