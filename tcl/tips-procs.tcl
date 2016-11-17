@@ -91,32 +91,40 @@ ad_proc -private qss_tips_field_defs_maps_set {
 
     If field_ids_list_name is nonempty, returns a list of field ids in calling environment.
 } {
-    set fields_lists [qss_tips_field_def_read $table_id $field_labels]
+    upvar 1 instance_id instance_id
+    set fields_lists [qss_tips_field_def_read $table_id $filter_by_label_list]
+    ns_log Notice "qss_tips_field_defs_maps_set.96: fields_lists '${fields_lists}'"
+    if { $field_ids_list_name ne "" } {
+        upvar 1 $field_ids_list_name field_ids_list
+    }
+    if { $field_labels_list_name ne "" } {
+        upvar 1 $field_labels_list_name field_labels_list
+    }
     set field_labels_list [list ]
     set field_ids_list [list ]
     set set_field_type_label_arr_p 0
-    if { [regsub -all -nocase -- {[^a-z0-9\_]+} $field_type_of_label_array_name {} field_type_label_arr_nam ] } {
-        upvar $field_type_label_arr_nam field_type_label_arr
+    if { [regexp -all -nocase -- {^[a-z0-9\_]+$} $field_type_of_label_array_name] } {
+        upvar 1 $field_type_of_label_array_name field_type_label_arr
         set set_field_type_label_arr_p 1
     }         
     set set_field_id_label_arr_p 0
-    if { [regsub -all -nocase -- {[^a-z0-9\_]+} $field_id_of_label_array_name {} field_id_label_arr_nam ] } {
-        upvar $field_id_label_arr_nam field_id_label_arr
+    if { [regexp -all -nocase -- {^[^a-z0-9\_]+$} $field_id_of_label_array_name ] } {
+        upvar 1 $field_id_of_label_array_name field_id_label_arr
         set set_field_id_label_arr_p 1
     }
     set set_field_type_id_arr_p 0
-    if { [regsub -all -nocase -- {[^a-z0-9\_]+} $field_type_of_id_array_name {} field_type_id_arr_nam ] } {
-        upvar $field_type_id_arr_nam field_type_id_arr
+    if { [regexp -all -nocase -- {^[^a-z0-9\_]+$} $field_type_of_id_array_name ] } {
+        upvar 1 $field_type_of_id_array_name field_type_id_arr
         set set_field_type_id_arr_p 1
     }         
     set set_field_label_id_arr_p 0
-    if { [regsub -all -nocase -- {[^a-z0-9\_]+} $field_label_of_id_array_name {} field_label_id_arr_nam ] } {
-        upvar $field_label_id_arr_nam field_label_id_arr
+    if { [regexp -all -nocase -- {^[^a-z0-9\_]+$} $field_label_of_id_array_name ] } {
+        upvar 1 $field_label_of_id_array_name field_label_id_arr
         set set_field_label_id_arr_p 1
     }
     if { [llength $fields_lists ] > 0 } {
-        foreach field_list $field_lists {
-            foreach {field_id label name def_val tdt_type field_type} $fields_list {
+        foreach field_list $fields_lists {
+            foreach {field_id label name def_val tdt_type field_type} $field_list {
                 lappend field_labels_list $label
                 lappend field_ids_list $field_id
                 lappend field_label_type_list $label $field_type
@@ -126,16 +134,20 @@ ad_proc -private qss_tips_field_defs_maps_set {
             }
         }
         if { $set_field_type_label_arr_p } {
-            array set $field_type_label_arr_nam $field_label_type_list
+            array set field_type_label_arr $field_label_type_list
+            ns_log Notice "qss_tips_field_defs_maps_set.137: field_label_type_list '${field_label_type_list}'"
         }
         if { $set_field_id_label_arr_p } {
-            array set $field_id_label_arr_nam $field_label_id_list
+            array set field_id_label_arr $field_label_id_list
+            ns_log Notice "qss_tips_field_defs_maps_set.140: field_label_id_list '${field_label_id_list}'"
         }
         if { $set_field_type_id_arr_p } {
-            array set $field_type_id_arr_nam $field_id_type_list
+            array set field_type_id_arr $field_id_type_list
+            ns_log Notice "qss_tips_field_defs_maps_set.145: field_id_type_list '${field_id_type_list}'"
         }
         if { $set_field_label_id_arr_p } {
-            array set $field_label_id_arr_nam $field_id_label_list
+            array set field_label_id_arr $field_id_label_list
+            ns_log Notice "qss_tips_field_defs_maps_set.140: field_id_label_list '${field_id_label_list}'"
         }
     }
     set count [llength $field_labels_list]
@@ -370,7 +382,7 @@ ad_proc -public qss_tips_table_def_update {
             if { $arg in $field_list } {
                 set changed_p 1
                 set $arg $val
-                if { $arg  in $field_len_limit_list } {
+                if { $arg in $field_len_limit_list } {
                     ##code
                     if { [string length $val] > 39 } {
                         set i 2
@@ -380,7 +392,6 @@ ad_proc -public qss_tips_table_def_update {
                         } elseif { $arg eq "label" } {
                             set label_orig [qf_abbreviate $val $chars_max "" "_"]
                             set label $label_orig
-                            append label "-" $i
                             set existing_id [qss_tips_table_id_of_label $label]
                             while { ( $existing_id ne "" && $existing_id ne $table_id ) && $i < 1000 } {
                                 incr i
@@ -882,8 +893,6 @@ ad_proc -public qss_tips_row_create {
         set label_value_list $arg1
     }
     set label_value_list [concat $label_value_list $args]
-
-
     set new_id ""
     if { [qf_is_natural_number $table_id] } {
         set count [qss_tips_field_defs_maps_set $table_id t_arr l_arr "" "" "" field_labels_list]
