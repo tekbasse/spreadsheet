@@ -342,10 +342,11 @@ aa_register_case -cats {api smoke} qss_tips_check {
             #  qss_tips_row_id_exists_q
             set f_row_id_ck [qss_tips_row_id_exists_q $f_row_id $t_id_arr(${i})]
             aa_true "Test.${i} qss_tips_row_id_exists_q for row_id '${f_row_id}' table_id '$t_id_arr(${i})'" $f_row_id_ck
-
+            #  qss_tips_row_read
+            set row_list [qss_tips_row_read $t_id_arr(${i}) ${f_row_id}]
 
 #  qss_tips_row_id_of_table_label_value
-#  qss_tips_row_read
+
 #  qss_tips_row_trash
 #  qss_tips_row_update
 #  qss_tips_rows_read

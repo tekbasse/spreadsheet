@@ -1158,7 +1158,7 @@ ad_proc -public qss_tips_row_read {
     table_id
     row_id
 } {
-    Reads a row from table_label as a name_value_list
+    Reads a row from table_id as a name_value_list of field_label1 field_value1 field_label2 field_label2..
 } {
     upvar 1 instance_id instance_id
     set row_list [list ]
