@@ -1021,19 +1021,26 @@ ad_proc -public qss_tips_row_update {
 }
 
 
-ad_proc -public qss_tips_row_id_of_table_label_value {
+
+ad_proc -public qss_tips_row_of_table_label_value {
     table_id
     {vc1k_search_label_val_list ""}
     {if_multiple "1"}
+    {row_id_var_name ""}
 } {
     Reads a row from table_label as a name_value_list.
     If more than one row matches, returns 1 row based on value of choose1:
     -1 = return empty row
     0 = row based on earliest value of label
     1 = row based on latest value of label
+    If row_id_var_name is not empty string, assigns the row_id to that variable name.
     @return name_value_list
 } {
     upvar 1 instance_id instance_id
+    if { $row_id_var_name ne "" } {
+        upvar 1 $row_id_var_name return_row_id
+    }
+    set return_row_id ""
     set row_list [list ]
     if { [qf_is_natural_number $table_id] } {
         set count [qss_tips_field_defs_maps_set $table_id "" "" type_arr label_arr ]
@@ -1069,17 +1076,13 @@ ad_proc -public qss_tips_row_id_of_table_label_value {
                     where instance_id=:instance_id and table_id=:table_id and trashed_p!='1' ${vc1k_search_sql} ${sort_sql} limit 1"]
                 # get row id, then row
                 if { $exists_p } {
-                    set values_lists [db_list_of_lists qss_tips_field_values_r1m "select field_id, row_id, f_vc1k, f_nbr, f_txt from qss_tips_field_values 
-        where table_id=:table_id
-        and instance_id=:instance_id
-        and trashed_p!='1'
-        and row_id=:row_id"]
-                    
-                    set values_lists [db_list_of_lists qss_tips_field_values_r {select field_id, row_id, f_vc1k, f_nbr, f_txt from qss_tips_field_values 
+                    set return_row_id $row_id
+                    set values_lists [db_list_of_lists qss_tips_field_values_r1m {select field_id, row_id, f_vc1k, f_nbr, f_txt from qss_tips_field_values 
                         where table_id=:table_id
                         and row_id=:row_id
                         and instance_id=:instance_id
                         and trashed_p!='1'}]
+
                     foreach row $values_lists {
                         foreach {field_id row_id f_vc1k f_nbr f_txt} {
                             if { [info exists type_arr(${field_id}) ] } {
@@ -1227,7 +1230,8 @@ ad_proc -public qss_tips_cell_read {
     "which_row" accepts tcl ref math, such as "end-1" for example.
 } {
     set table_id [qss_tips_table_id_of_name $table_label]
-    set row_id [qss_tips_row_id_of_table_label_value $table_id $vc1k_search_label_val_list $which_row]
+    ##code  This should be re-worked to minimize db calls.
+    set label_value_list [qss_tips_row_of_table_label_value $table_id $vc1k_search_label_val_list $which_row row_id]
     set field_id_list [qss_tips_field_ids_of_labels $return_val_label_list]
     set values_list [qss_tips_cell_read_by_id $table_id $row_id $field_id_list]
     return $return_val
