@@ -1163,13 +1163,14 @@ ad_proc -public qss_tips_row_read {
     upvar 1 instance_id instance_id
     set row_list [list ]
     if { [qf_is_natural_number $table_id ] } {
-        set count [qss_tips_field_defs_maps_set $table_id "" "" type_arr label_arr ]
+        set count [qss_tips_field_defs_maps_set $table_id "" "" type_arr label_arr field_ids_list ]
         if { $count > 0 } {
             set values_lists [db_list_of_lists qss_tips_field_values_r {select field_id, row_id, f_vc1k, f_nbr, f_txt from qss_tips_field_values 
                 where table_id=:table_id
                 and row_id=:row_id
                 and instance_id=:instance_id
                 and trashed_p!='1'}]
+            set used_fields_list [list ]
             foreach row $values_lists {
                 foreach {field_id row_id f_vc1k f_nbr f_txt} $row {
                     if { [info exists type_arr(${field_id}) ] } {
@@ -1179,8 +1180,12 @@ ad_proc -public qss_tips_row_read {
                     }
                     # label $label_arr(${field_id})
                     lappend row_list $label_arr(${field_id}) $v
-
+                    lappend used_fields_list $field_id
                 }
+            }
+            set_difference_named_v field_ids_list $used_fields_list
+            foreach field_id $field_ids_list {
+                lappend row_list $label_arr(${field_id}) ""
             }
         }
     }

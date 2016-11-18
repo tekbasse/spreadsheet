@@ -292,7 +292,8 @@ aa_register_case -cats {api smoke} qss_tips_check {
                 incr j
                 set name "Data for "
                 append name [string toupper $field_type]
-                regsub -all { } [string tolower $name] {_} label
+                set label [string tolower $name]
+                regsub -all -- { } $label {_} label
                 set f_name_arr($j) $name
                 set f_label_arr($j) $label
                 set f_field_type_arr($j) $field_type
@@ -315,6 +316,7 @@ aa_register_case -cats {api smoke} qss_tips_check {
 # data rows
 
             set label_value_list [list ]
+            set field_label_list [list ]
             # make some data
             for {set j 1} {$j < 4} {incr j} {
                 switch -exact $f_field_type_arr($j) {
@@ -329,7 +331,10 @@ aa_register_case -cats {api smoke} qss_tips_check {
                     }
                 }
                 set f_value_arr($j) $value
-                lappend label_value_list $f_label_arr(${j}) $value
+                set label $f_label_arr($j)
+                set row1ck_arr(${label}) $value
+                lappend label_value_list $label $value
+                lappend field_label_list $label
             }
             #  qss_tips_row_create
             set f_row_id [qss_tips_row_create $t_id_arr(${i}) $label_value_list]
@@ -343,9 +348,52 @@ aa_register_case -cats {api smoke} qss_tips_check {
             set f_row_id_ck [qss_tips_row_id_exists_q $f_row_id $t_id_arr(${i})]
             aa_true "Test.${i} qss_tips_row_id_exists_q for row_id '${f_row_id}' table_id '$t_id_arr(${i})'" $f_row_id_ck
             #  qss_tips_row_read
+            aa_log "Test.${i} qss_tips_row_create fed: '${label_value_list}'"
             set row_list [qss_tips_row_read $t_id_arr(${i}) ${f_row_id}]
+            aa_log "Test.${i} qss_tips_row_read results: '${row_list}'"
+            array set row1_arr $row_list
+            foreach label $field_label_list {
+                if { $row1ck_arr(${label}) eq $row1_arr(${label}) } {
+                    set success_p 1
+                } else {
+                    set success_p 0
+                }
+                aa_true "Test.${i} qss_tips_row_read for row_id '${f_row_id}' label '${label}'" $success_p
+            }
 
-#  qss_tips_row_id_of_table_label_value
+            # make some more data rows
+            set f_row_id_arr(1) $f_row_id
+            set label_value_larr(1) $label_value_list
+            for {set r 2} {$r < 40} {incr r} {
+                set label_value_larr(${r}) [list ]
+                for {set j 1} {$j < 4} {incr j} {
+                    switch -exact $f_field_type_arr($j) {
+                        txt {
+                            set value [qal_namelur [randomRange 20]]
+                        }
+                        vc1k {
+                            set value [string range [qal_namelur [randomRange 10]] 0 38]
+                        }
+                        nbr {
+                            set value [clock microseconds]
+                        }
+                    }
+                    set label $f_label_arr($j)
+                    set row${r}ck_arr(${label}) $value
+                    lappend label_value_list $label $value
+                }
+                #  qss_tips_row_create
+                set f_row_id_arr(${r}) [qss_tips_row_create $t_id_arr(${i}) $label_value_larr(${r})]
+                if { $f_row_id_arr(${r}) ne "" } {
+                    set success_p 1
+                } else {
+                    set success_p 0
+                }
+                aa_true "Test.${i} row ${r} created for table_id '$t_id_arr(${i})'" $success_p
+            }
+
+            #  qss_tips_row_id_of_table_label_value
+            
 
 #  qss_tips_row_trash
 #  qss_tips_row_update
