@@ -332,7 +332,7 @@ aa_register_case -cats {api smoke} qss_tips_check {
                 }
                 set f_value_arr($j) $value
                 set label $f_label_arr($j)
-                set row1ck_arr(${label}) $value
+                set rowck_arr(1,${label}) $value
                 lappend label_value_list $label $value
                 lappend field_label_list $label
             }
@@ -351,9 +351,11 @@ aa_register_case -cats {api smoke} qss_tips_check {
             aa_log "Test.${i} qss_tips_row_create fed: '${label_value_list}'"
             set row_list [qss_tips_row_read $t_id_arr(${i}) ${f_row_id}]
             aa_log "Test.${i} qss_tips_row_read results: '${row_list}'"
-            array set row1_arr $row_list
+            foreach {k v} $row_list {
+                set row1ck_arr(${k}) $v
+            }
             foreach label $field_label_list {
-                if { $row1ck_arr(${label}) eq $row1_arr(${label}) } {
+                if { $rowck_arr(1,${label}) eq $row1ck_arr(${label}) } {
                     set success_p 1
                 } else {
                     set success_p 0
@@ -379,7 +381,8 @@ aa_register_case -cats {api smoke} qss_tips_check {
                         }
                     }
                     set label $f_label_arr($j)
-                    set row${r}ck_arr(${label}) $value
+                    # retained values by RC reference:
+                    set rowck_arr(${r},${label}) $value
                     lappend label_value_list $label $value
                 }
                 #  qss_tips_row_create
@@ -391,9 +394,20 @@ aa_register_case -cats {api smoke} qss_tips_check {
                 }
                 aa_true "Test.${i} row ${r} created for table_id '$t_id_arr(${i})'" $success_p
             }
+            # row to check
+            set r_ck [randomRange 38]
+            incr r_ck
+            # to check value, get a label
+            set field_label_list_len [llength $field_label_list]
+            incr field_label_list_len -1
+            set l_idx [randomRange $field_label_list_len]
+            set l_ck [lindex $field_label_list $l_idx]
+            # actual value to test: 
+            set v_ck $rowck_arr(${r_ck},${l_ck})
+            set row_label_value_list [qss_tips_row_of_table_label_value $t_id_arr(${i}) $v_ck]
+            set v [dict get $row_label_value_list $l_ck]
+            aa_true "Test.${i} qss_tips_row_of_table_label_value for table_id '$t_id_arr(${i})' label '${l_ck}'" $v $v_ck
 
-            #  qss_tips_row_id_of_table_label_value
-            
 
 #  qss_tips_row_trash
 #  qss_tips_row_update
