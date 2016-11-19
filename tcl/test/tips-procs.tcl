@@ -325,6 +325,8 @@ aa_register_case -cats {api smoke} qss_tips_check {
                     }
                     vc1k {
                         set value [string range [qal_namelur [randomRange 10]] 0 38]
+                        # next value used in a later test that builds on this row.
+                        set row1_vc1k $value
                     }
                     nbr {
                         set value [clock microseconds]
@@ -367,7 +369,30 @@ aa_register_case -cats {api smoke} qss_tips_check {
             # make some more data rows
             set f_row_id_arr(1) $f_row_id
             set label_value_larr(1) $label_value_list
-            for {set r 2} {$r < 40} {incr r} {
+            set r_count_max 39
+            # set the value for vc1k to unique values, except add a duplicate or more to test some api features
+            set duplicate_count [rangeRandom 3]
+            incr duplicate_count
+            set unique_count [expr { $r_count_max - $duplicate_count } ]
+            set r 2
+            set vc1k_val_list [list $row1_vc1k]
+            while { $r < $unique_count } {
+                set value [string range [qal_namelur [randomRange 10]] 0 38]
+                lappend vc1k_val_list $value
+                set vc1k_val_list [lsort -unique $vc1k_val_list]
+                set r [llength $vc1k_val_list]
+            }
+            # chose one value to duplicate
+            set dup_idx [randomRange $unique_count]
+            set duplicate_val [lindex $vc1k_val_list $dup_idx]
+            # yeah, there's a proc for repeating, but I'm not on the web or have a local doc to find it
+            ##code
+            for {set ii 1} { $ii <= $duplicate_count } {
+                lappend vc1k_val_list $duplicate_val
+            }
+            ##code a shuffle list (qf_list_shuffle? )
+            
+            for {set r 2} {$r <= $r_count_max } {incr r} {
                 set label_value_larr(${r}) [list ]
                 for {set j 1} {$j < 4} {incr j} {
                     switch -exact $f_field_type_arr($j) {
@@ -375,7 +400,9 @@ aa_register_case -cats {api smoke} qss_tips_check {
                             set value [qal_namelur [randomRange 20]]
                         }
                         vc1k {
-                            set value [string range [qal_namelur [randomRange 10]] 0 38]
+                    #        set value [string range [qal_namelu [randomRange 10]] 0 38]
+                            # pre calculated for testing 
+                            set value [lindex $vc1k_val_list $r]
                         }
                         nbr {
                             set value [clock microseconds]
