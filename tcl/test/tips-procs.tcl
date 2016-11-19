@@ -354,6 +354,7 @@ aa_register_case -cats {api smoke} qss_tips_check {
             foreach {k v} $row_list {
                 set row1ck_arr(${k}) $v
             }
+            ns_log Notice "test/tips-procs.tcl.357. field_label_list '${field_label_list}'"
             foreach label $field_label_list {
                 if { $rowck_arr(1,${label}) eq $row1ck_arr(${label}) } {
                     set success_p 1
@@ -400,13 +401,29 @@ aa_register_case -cats {api smoke} qss_tips_check {
             # to check value, get a label
             set field_label_list_len [llength $field_label_list]
             incr field_label_list_len -1
-            set l_idx [randomRange $field_label_list_len]
+            # l_idx cannot be random right now. only 1 vc1k field exists. Use it.
+            #set l_idx \[randomRange $field_label_list_len\]
+            # txt vc1k nbr
+            set l_idx [lsearch -glob $field_label_list "*vc1k*"]
+            # set l_idx 1
             set l_ck [lindex $field_label_list $l_idx]
             # actual value to test: 
             set v_ck $rowck_arr(${r_ck},${l_ck})
-            set row_label_value_list [qss_tips_row_of_table_label_value $t_id_arr(${i}) $v_ck]
-            set v [dict get $row_label_value_list $l_ck]
-            aa_true "Test.${i} qss_tips_row_of_table_label_value for table_id '$t_id_arr(${i})' label '${l_ck}'" $v $v_ck
+            set row_label_value_list [qss_tips_row_of_table_label_value $t_id_arr(${i}) [list $l_ck $v_ck]]
+            aa_log "diagnostic info: field_label_list '${field_label_list}' l_idx '${l_idx}'"
+            aa_log "diagnostic info: qss_tips_row_of_table_label_value '$t_id_arr(${i})' '${l_ck}' '${v_ck}' : '${row_label_value_list}'"
+            # Following errors if label not found..
+            # set v \[dict get $row_label_value_list $l_ck\]
+            set l_ck2_idx [lsearch -exact $row_label_value_list $l_ck]
+            if { $l_ck2_idx > -1 } {
+                set l_ck2 [lindex $row_label_value_list $l_ck2_idx]
+                incr l_ck2_idx
+                set v [lindex $row_label_value_list $l_ck2_idx]
+            } else {
+                set l_ck2 ""
+                set v ""
+            }
+            aa_equals "Test.${i} qss_tips_row_of_table_label_value for table_id '$t_id_arr(${i})' label '${l_ck2}'" $v $v_ck
 
 
 #  qss_tips_row_trash

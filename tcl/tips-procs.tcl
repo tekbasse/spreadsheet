@@ -458,9 +458,8 @@ ad_proc -public qss_tips_table_read_as_array {
     If row_id_list contains row_ids, only returns ids that are supplied in row_id_list.
 } {
     # Returns an array instead of list of lists in order to avoid sorting row_ids.
-    # And because maybe not every field is defined in every row.
 
-    # Trashed_p = 1 doesn't make sense, because row_id and field_id are same ref..
+    # Querying Trashed_p = 1 doesn't make sense, because row_id and field_id are same ref..
     # trashed_p only makes sense if calling up history of a single cell, row, or table.. by activity.
     upvar 1 instance_id instance_id
     upvar 1 $name_array n_arr
@@ -481,14 +480,15 @@ ad_proc -public qss_tips_table_read_as_array {
                 }
             }
             set vc1k_search_sql ""
-            if { $vc1k_search_label_val ne "" } {
+            if { $vc1k_search_label_val_list ne "" } {
                 # search scope
-                foreach {label vc1k_search_val} $vc1k_search_label_val_list {
+                set vc1k_search_lv_list [qf_listify $vc1k_search_label_val_list]
+                foreach {label vc1k_search_val} $vc1k_search_lv_list {
                     if { [info exists field_id_arr(${label}) ] && $vc1k_search_sql ne "na" } {
                         set field_id $field_id_arr(${label})
                         append vk1k_search_sql " and (field_id='${field_id}' and f_vc1k='${vc1k_search_val}')"
                     } else {
-                        ns_log Warning "qss_tips_read.37: no field_id for search label '${label}' table_label '${table_label}' "
+                        ns_log Warning "qss_tips_read.492: no field_id for search label '${label}' table_label '${table_label}' "
                         set vc1k_search_sql "na"
                     }
                 }
@@ -538,7 +538,6 @@ ad_proc -public qss_tips_table_read {
     Returns only untrashed cells and rows.
     If row_id_list contains row_ids, only returns ids that are supplied in row_id_list.
 } {
-    # Returns an array instead of list of lists in order to avoid sorting row_ids.
     upvar 1 instance_id instance_id
     set table_id [qss_tips_table_id_of_name $table_label]
     set success_p 0
@@ -559,14 +558,15 @@ ad_proc -public qss_tips_table_read {
                 }
             }
             set vc1k_search_sql ""
-            if { $vc1k_search_label_val ne "" } {
+            if { $vc1k_search_label_val_list ne "" } {
                 # search scope
-                foreach {label vc1k_search_val} $vc1k_search_label_val_list {
+                set vc1k_search_lv_list [qf_listify $vc1k_search_label_val_list]
+                foreach {label vc1k_search_val} $vc1k_search_lv_list {
                     if { [info exists field_id_arr(${label}) ] && $vc1k_search_sql ne "na" } {
                         set field_id $field_id_arr(${label})
                         append vk1k_search_sql " and (field_id='${field_id}' and f_vc1k='${vc1k_search_val}')"
                     } else {
-                        ns_log Warning "qss_tips_read.37: no field_id for search label '${label}' table_label '${table_label}' "
+                        ns_log Warning "qss_tips_read.571: no field_id for search label '${label}' table_label '${table_label}' "
                         set vc1k_search_sql "na"
                     }
                 }
@@ -1028,8 +1028,8 @@ ad_proc -public qss_tips_row_of_table_label_value {
     {if_multiple "1"}
     {row_id_var_name ""}
 } {
-    Reads a row from table_label as a name_value_list.
-    If more than one row matches, returns 1 row based on value of choose1:
+    Reads a row from table_id as a name_value_list.
+    If more than one row matches, returns 1 row based on value of choosen:
     -1 = return empty row
     0 = row based on earliest value of label
     1 = row based on latest value of label
@@ -1043,25 +1043,27 @@ ad_proc -public qss_tips_row_of_table_label_value {
     set return_row_id ""
     set row_list [list ]
     if { [qf_is_natural_number $table_id] } {
-        set count [qss_tips_field_defs_maps_set $table_id "" "" type_arr label_arr ]
-        if { $count > 0 } {
+
+        set label_ids_list_len [qss_tips_field_defs_maps_set $table_id "" field_id_arr type_arr label_arr ]
+        if { $label_ids_list_len > 0 } {
             set sort_sql ""
             switch -exact -- $if_multiple {
                 -1 { set vc1k_search_sql "na" }
-                1 { set sort_sql "order by created des" }
+                1 { set sort_sql "order by created desc" }
                 0 -
                 default  { set sort_sql "order by created asc" }
             }
             
             set vc1k_search_sql ""
-            if { $vc1k_search_label_val ne "" } {
+            if { $vc1k_search_label_val_list ne "" } {
                 # search scope
-                foreach {label vc1k_search_val} $vc1k_search_label_val_list {
+                set vc1k_search_lv_list [qf_listify $vc1k_search_label_val_list]
+                foreach {label vc1k_search_val} $vc1k_search_lv_list {
                     if { [info exists field_id_arr(${label}) ] && $vc1k_search_sql ne "na" } {
                         #set field_id $field_id_arr(${label})
-                        append vk1k_search_sql " and (field_id='$field_id_arr(${label})' and f_vc1k='${vc1k_search_val}')"
+                        append vk1k_search_sql " and (field_id='" $field_id_arr(${label}) "' and f_vc1k='" ${vc1k_search_val} "')"
                     } else {
-                        ns_log Warning "qss_tips_read.37: no field_id for search label '${label}' table_label '${table_label}' "
+                        ns_log Warning "qss_tips_row_of_table_label_value.1067: no field_id for search label '${label}' table_id '${table_id}' "
                         set vc1k_search_sql "na"
                     }
                 }
@@ -1084,19 +1086,25 @@ ad_proc -public qss_tips_row_of_table_label_value {
                         and trashed_p!='1'}]
 
                     foreach row $values_lists {
-                        foreach {field_id row_id f_vc1k f_nbr f_txt} {
+                        foreach {field_id row_id f_vc1k f_nbr f_txt} $row {
                             if { [info exists type_arr(${field_id}) ] } {
                                 set v [qss_tips_value_of_field_type $type_arr(${field_id}) $f_nbr $f_txt $f_vc1k]
                             } else {
-                                ns_log Warning "qss_tips_read_from_id.848: field_id does not have a field_type. table_label '${table_label}' field_id '${field_id}' row_id '${row_id}'"
+                                ns_log Warning "qss_tips_row_of_table_label_value.1092: field_id does not have a field_type. table_id '${table_id}' field_id '${field_id}' row_id '${row_id}'"
                             }
                             # label $label_arr(${field_id})
                             lappend row_list $label_arr(${field_id}) $v
                         }
                     }
+                } else {
+                    ns_log Notice "qss_tips_row_of_table_label_value.1099: row not found for search '${vc1k_search_label_val_list}'."
                 }
             }
+        } else {
+            ns_log Notice "qss_tips_row_of_table_label_value.1101: no fields defined for table_id '${table_id}'"
         }
+    } else {
+        ns_log_ Notice "qss_tips_row_of_table_label_value.1104: table_id '${table_id}' not a natural number."
     }
     return $row_list
 }
