@@ -387,7 +387,8 @@ aa_register_case -cats {api smoke} qss_tips_check {
             set duplicate_val [lindex $vc1k_val_list $dup_idx]
             lappend vc1k_val_list [lrepeat $duplicate_count $duplicate_val]
             set vc1k_val_list [acc_fin::shuffle_list $vc1k_val_list]
-
+            set duplicate_idx_first ""
+            set duplicate_idx_last ""
 
             for {set r 2} {$r <= $r_count_max } {incr r} {
                 set label_value_larr(${r}) [list ]
@@ -397,11 +398,16 @@ aa_register_case -cats {api smoke} qss_tips_check {
                             set value [qal_namelur [randomRange 20]]
                         }
                         vc1k {
-                            ##code  Save first and last occurrance of duplicate_val for testing position later.            
-
                     #        set value [string range [qal_namelu [randomRange 10]] 0 38]
                             # pre calculated for testing 
                             set value [lindex $vc1k_val_list $r]
+                            # Save first and last occurrance of duplicate_val for testing position later. 
+                            if { $value eq $duplicate_val } {
+                                if { $duplicate_idx_first eq "" } {
+                                    set duplicate_idx_first $r
+                                }
+                                set duplicate_idx_last $r
+                            }
                         }
                         nbr {
                             set value [clock microseconds]
@@ -413,9 +419,11 @@ aa_register_case -cats {api smoke} qss_tips_check {
                     lappend label_value_list $label $value
                 }
                 #  qss_tips_row_create
-                set f_row_id_arr(${r}) [qss_tips_row_create $t_id_arr(${i}) $label_value_larr(${r})]
-                if { $f_row_id_arr(${r}) ne "" } {
+                set row_id_new [qss_tips_row_create $t_id_arr(${i}) $label_value_larr(${r})]
+                if { $row_id_new ne "" } {
                     set success_p 1
+                    set f_row_id_arr(${r}) $row_id_new
+                    lappend f_row_nbr_arr(${row_id_new}) $r
                 } else {
                     set success_p 0
                 }
@@ -435,7 +443,10 @@ aa_register_case -cats {api smoke} qss_tips_check {
             set l_ck [lindex $field_label_list $l_idx]
             # actual value to test: 
             set v_ck $rowck_arr(${r_ck},${l_ck})
-            set row_label_value_list [qss_tips_row_of_table_label_value $t_id_arr(${i}) [list $l_ck $v_ck]]
+            set row_label_value_list__1 [qss_tips_row_of_table_label_value $t_id_arr(${i}) [list $l_ck $v_ck -1 row_id__1]]
+            set row_label_value_list_0 [qss_tips_row_of_table_label_value $t_id_arr(${i}) [list $l_ck $v_ck 0 row_id_0]]
+            set row_label_value_list_1 [qss_tips_row_of_table_label_value $t_id_arr(${i}) [list $l_ck $v_ck 1 row_id_1]]
+            # compare row_id_* with mapped values f_row_nbr_arr(row_id) and if duplicate, from duplicate_idx_first, duplicate_idx_last
             aa_log "diagnostic info: field_label_list '${field_label_list}' l_idx '${l_idx}'"
             aa_log "diagnostic info: qss_tips_row_of_table_label_value '$t_id_arr(${i})' '${l_ck}' '${v_ck}' : '${row_label_value_list}'"
             # Following errors if label not found..
@@ -449,7 +460,8 @@ aa_register_case -cats {api smoke} qss_tips_check {
                 set l_ck2 ""
                 set v ""
             }
-            aa_equals "Test.${i} qss_tips_row_of_table_label_value for table_id '$t_id_arr(${i})' label '${l_ck2}'" $v $v_ck
+
+            aa_equals "Test.${i} qss_tips_row_of_table_label_value for table_id '$t_id_arr(${i})' label '${l_ck2}'" $v $v_ck 
 
 
 #  qss_tips_row_trash
