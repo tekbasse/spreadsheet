@@ -385,13 +385,10 @@ aa_register_case -cats {api smoke} qss_tips_check {
             # chose one value to duplicate
             set dup_idx [randomRange $unique_count]
             set duplicate_val [lindex $vc1k_val_list $dup_idx]
-            # yeah, there's a proc for repeating, but I'm not on the web or have a local doc to find it
-            ##code
-            for {set ii 1} { $ii <= $duplicate_count } {
-                lappend vc1k_val_list $duplicate_val
-            }
-            ##code a shuffle list (qf_list_shuffle? )
-            
+            lappend vc1k_val_list [lrepeat $duplicate_count $duplicate_val]
+            set vc1k_val_list [acc_fin::shuffle_list $vc1k_val_list]
+
+
             for {set r 2} {$r <= $r_count_max } {incr r} {
                 set label_value_larr(${r}) [list ]
                 for {set j 1} {$j < 4} {incr j} {
@@ -400,6 +397,8 @@ aa_register_case -cats {api smoke} qss_tips_check {
                             set value [qal_namelur [randomRange 20]]
                         }
                         vc1k {
+                            ##code  Save first and last occurrance of duplicate_val for testing position later.            
+
                     #        set value [string range [qal_namelu [randomRange 10]] 0 38]
                             # pre calculated for testing 
                             set value [lindex $vc1k_val_list $r]
