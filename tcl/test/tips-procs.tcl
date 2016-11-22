@@ -371,7 +371,7 @@ aa_register_case -cats {api smoke} qss_tips_check {
             set label_value_larr(1) $label_value_list
             set r_count_max 39
             # set the value for vc1k to unique values, except add a duplicate or more to test some api features
-            set duplicate_count [rangeRandom 3]
+            set duplicate_count [randomRange 3]
             incr duplicate_count
             set unique_count [expr { $r_count_max - $duplicate_count } ]
             set r 2
@@ -382,6 +382,7 @@ aa_register_case -cats {api smoke} qss_tips_check {
                 set vc1k_val_list [lsort -unique $vc1k_val_list]
                 set r [llength $vc1k_val_list]
             }
+
             # chose one value to duplicate
             set dup_idx [randomRange $unique_count]
             set duplicate_val [lindex $vc1k_val_list $dup_idx]
@@ -429,41 +430,53 @@ aa_register_case -cats {api smoke} qss_tips_check {
                 }
                 aa_true "Test.${i} row ${r} created for table_id '$t_id_arr(${i})'" $success_p
             }
-            # row to check
-            set r_ck [randomRange 38]
-            incr r_ck
-            # to check value, get a label
-            set field_label_list_len [llength $field_label_list]
-            incr field_label_list_len -1
-            # l_idx cannot be random right now. only 1 vc1k field exists. Use it.
-            #set l_idx \[randomRange $field_label_list_len\]
-            # txt vc1k nbr
-            set l_idx [lsearch -glob $field_label_list "*vc1k*"]
-            # set l_idx 1
-            set l_ck [lindex $field_label_list $l_idx]
-            # actual value to test: 
-            set v_ck $rowck_arr(${r_ck},${l_ck})
-            set row_label_value_list__1 [qss_tips_row_of_table_label_value $t_id_arr(${i}) [list $l_ck $v_ck -1 row_id__1]]
-            set row_label_value_list_0 [qss_tips_row_of_table_label_value $t_id_arr(${i}) [list $l_ck $v_ck 0 row_id_0]]
-            set row_label_value_list_1 [qss_tips_row_of_table_label_value $t_id_arr(${i}) [list $l_ck $v_ck 1 row_id_1]]
-            # compare row_id_* with mapped values f_row_nbr_arr(row_id) and if duplicate, from duplicate_idx_first, duplicate_idx_last
-            aa_log "diagnostic info: field_label_list '${field_label_list}' l_idx '${l_idx}'"
-            aa_log "diagnostic info: qss_tips_row_of_table_label_value '$t_id_arr(${i})' '${l_ck}' '${v_ck}' : '${row_label_value_list}'"
-            # Following errors if label not found..
-            # set v \[dict get $row_label_value_list $l_ck\]
-            set l_ck2_idx [lsearch -exact $row_label_value_list $l_ck]
-            if { $l_ck2_idx > -1 } {
-                set l_ck2 [lindex $row_label_value_list $l_ck2_idx]
-                incr l_ck2_idx
-                set v [lindex $row_label_value_list $l_ck2_idx]
-            } else {
-                set l_ck2 ""
-                set v ""
+
+            # # # check a row from nonduplicates, and check each duplicate case.
+            set value_ck $duplicate_val
+            while { $value_ck eq $duplicate_val } {
+                set unique_idx [randomRange 38]
+                set value_ck [lindex $vc1k_val_list $unique_idx]
             }
+            set val_ck_list [list $value_ck $duplicate_val]
 
-            aa_equals "Test.${i} qss_tips_row_of_table_label_value for table_id '$t_id_arr(${i})' label '${l_ck2}'" $v $v_ck 
+            foreach v $val_ck_list {
+                if { $v eq $duplicate_val } {
+                    set is_duplicate_p 1
+                } else {
+                    set is_duplicate_p 0
+                }
+         
+                # check each value for expected value
+                for {set j 1} {$j < 4} {incr j} {
+                    set label $f_label_arr($j)
+                    
+                    for {set if_multiple -1} {$if_multiple < 2} {incr if_multiple} {
+
+                        set row_label_value_list [qss_tips_row_of_table_label_value $t_id_arr(${i}) [list $l_ck $v_ck $if_multiple row_id]]
+                        set v_ck $rowck_arr(${row_id},${l_ck})
+                        if { $is_duplicate } {
+                            # value depends on if_multiple
+                        } else {
+                            # value depends on row_id only
+                        }
+                        aa_equals "Test.${i} qss_tips_row_of_table_label_value for table_id '$t_id_arr(${i})' vc1k_label '${l_ck2}' if_mupltiple '${if_multiple}'" $v $v_ck 
+                    }
 
 
+
+                set l_ck2_idx [lsearch -exact $row_label_value_list $l_ck]
+                if { $l_ck2_idx > -1 } {
+                    set l_ck2 [lindex $row_label_value_list $l_ck2_idx]
+                    incr l_ck2_idx
+                    set v [lindex $row_label_value_list $l_ck2_idx]
+                } else {
+                    set l_ck2 ""
+                    set v ""
+                }
+
+
+              
+            }
 #  qss_tips_row_trash
 #  qss_tips_row_update
 #  qss_tips_rows_read
