@@ -1046,15 +1046,16 @@ ad_proc -public qss_tips_row_of_table_label_value {
         # field_ids_list and field_labels_list are coorelated 1:1
         set label_ids_list_len [qss_tips_field_defs_maps_set $table_id "" field_id_arr type_arr label_arr "" field_labels_list]
         if { $label_ids_list_len > 0 } {
+            set vc1k_search_sql ""
             set sort_sql ""
             switch -exact -- $if_multiple {
-                -1 { set vc1k_search_sql "na" }
                 1 { set sort_sql "order by created desc" }
+                -1 -
                 0 -
                 default  { set sort_sql "order by created asc" }
             }
             
-            set vc1k_search_sql ""
+
             if { $vc1k_search_label_val_list ne "" } {
                 # search scope
                 set vc1k_search_lv_list [qf_listify $vc1k_search_label_val_list]
@@ -1074,9 +1075,23 @@ ad_proc -public qss_tips_row_of_table_label_value {
             if { $vc1k_search_sql eq "na" } {
                 # do nothing
             } else {
-                set exists_p [db_0or1row qss_tips_field_values_row_id_search "select row_id from qss_tips_field_values 
-                    where instance_id=:instance_id and table_id=:table_id and trashed_p!='1' ${vc1k_search_sql} ${sort_sql} limit 1"]
                 # get row id, then row
+                set row_ids_list [db_list qss_tips_field_values_row_id_search "select row_id from qss_tips_field_values 
+                    where instance_id=:instance_id and table_id=:table_id and trashed_p!='1' ${vc1k_search_sql} ${sort_sql}"]
+                set row_id [lindex $row_ids_list 0]
+                if { $row_id ne "" } {
+                    set exists_p 1
+                } else {
+                    set exists_p 0
+                }
+                if { $exists_p && $if_multiple eq "-1" } {
+                    set row_ids_unique_list [lsort -unique -integer -increasing $row_ids_list]
+                    if { [llength $row_ids_unique_list] > 1 } {
+                        set row_id ""
+                        set exists_p 0
+                    }
+                }
+
                 if { $exists_p } {
                     set return_row_id $row_id
                     set values_lists [db_list_of_lists qss_tips_field_values_r1m {select field_id, row_id, f_vc1k, f_nbr, f_txt from qss_tips_field_values 

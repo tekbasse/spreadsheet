@@ -450,18 +450,31 @@ aa_register_case -cats {api smoke} qss_tips_check {
                             for {set if_multiple -1} {$if_multiple < 2} {incr if_multiple} {
                                 # have to use the original label value in the search.
                                 set row_label_value_list [qss_tips_row_of_table_label_value $t_id_arr(${i}) [list $vc1k_label $v] $if_multiple row_id]
-                                aa_log "Test.${i} qss_tips_row_of_table_label_value for row_id '${f_row_id}' table_id '$t_id_arr(${i})' row_label_value_list '${row_label_value_list}'"
+                                aa_log "Test.${i}.row_id '${f_row_id}' of qss_tips_row_of_table_label_value table_id '$t_id_arr(${i})' if_multiple '${if_multiple}' row_label_value_list '${row_label_value_list}'"
                                 if { $row_id in $data_row_id_list } {
                                     set valid_row_id_p 1
                                 } else { 
                                     set valid_row_id_p 0
                                 }
-                                if { [llength $row_label_value_list ] > 0 && $if_multiple ne "-1" } {
+                                set row_label_value_list_len [llength $row_label_value_list]
+                                if { $row_label_value_list_len > 0 } {
+                                    set data_row_exists_p 1
                                     set expect_row_id_p 1
                                 } else {
+                                    set data_row_exists_p 0
                                     set expect_row_id_p 0
                                 }
-                                aa_equals "Test.${i} qss_tips_row_of_table_label_value returns a row_id in row_ids of dataset or no row as expected." $valid_row_id_p $expect_row_id_p
+                                set data_row_id_list_len [llength $data_row_id_list ]
+                                if { $data_row_id_list_len > 0 } {
+                                    set multiple_rows_match_p 1
+                                } else {
+                                    set multiple_rows_match_p 0
+                                }
+
+                                if { $multiple_rows_match_p && $if_multiple eq "-1" } {
+                                    set expect_row_id_p 0
+                                }
+                                aa_equals "Test.${i}.if_multiple '${if_multiple}' multiple_rows_match_p '${multiple_rows_match_p}' qss_tips_row_of_table_label_value returns a row_id in row_ids of dataset or no row as expected." $valid_row_id_p $expect_row_id_p
                                 # check each value for expected value
                                 for {set j 1} {$j < 4} {incr j} {
                                     set label $f_label_arr($j)
