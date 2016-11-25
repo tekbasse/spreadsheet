@@ -467,6 +467,7 @@ aa_register_case -cats {api smoke} qss_tips_check {
                                     set label $f_label_arr($j)
                                     
                                     # following doesn't work for if_multiple = -1, because no rows are returned.
+                                    # if dict fails,  qss_tips_row_of_table_value failed to return an expected field
                                     if { [llength $row_label_value_list] > 0 } {
                                         set v [dict get $row_label_value_list $label] 
                                     } else {
@@ -479,7 +480,7 @@ aa_register_case -cats {api smoke} qss_tips_check {
                                     
                                     if { $is_duplicate_p } {
                                         # row_id depends on if_multiple and row_
-                                        switch -exact -- $if_multple {
+                                        switch -exact -- $if_multiple {
                                             -1 {
                                                 # does not return anything when if_multiple = -1
                                                 set row_nbr ""

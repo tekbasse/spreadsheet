@@ -1098,7 +1098,7 @@ ad_proc -public qss_tips_row_of_table_label_value {
                         }
                     }
                     # add cases that are blank ie not returned via db.
-                    set labels_remaining_list [set_difference $lables_w_values_list $field_labels_list]
+                    set labels_remaining_list [set_difference $field_labels_list $labels_w_values_list]
                     foreach label $labels_remaining_list {
                         lappend row_list $label ""
                     }
