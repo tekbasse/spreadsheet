@@ -1043,8 +1043,8 @@ ad_proc -public qss_tips_row_of_table_label_value {
     set return_row_id ""
     set row_list [list ]
     if { [qf_is_natural_number $table_id] } {
-
-        set label_ids_list_len [qss_tips_field_defs_maps_set $table_id "" field_id_arr type_arr label_arr ]
+        # field_ids_list and field_labels_list are coorelated 1:1
+        set label_ids_list_len [qss_tips_field_defs_maps_set $table_id "" field_id_arr type_arr label_arr "" field_labels_list]
         if { $label_ids_list_len > 0 } {
             set sort_sql ""
             switch -exact -- $if_multiple {
@@ -1084,17 +1084,23 @@ ad_proc -public qss_tips_row_of_table_label_value {
                         and row_id=:row_id
                         and instance_id=:instance_id
                         and trashed_p!='1'}]
-
                     foreach row $values_lists {
+                        set labels_w_values_list [list ]
                         foreach {field_id row_id f_vc1k f_nbr f_txt} $row {
                             if { [info exists type_arr(${field_id}) ] } {
                                 set v [qss_tips_value_of_field_type $type_arr(${field_id}) $f_nbr $f_txt $f_vc1k]
                             } else {
                                 ns_log Warning "qss_tips_row_of_table_label_value.1092: field_id does not have a field_type. table_id '${table_id}' field_id '${field_id}' row_id '${row_id}'"
                             }
-                            # label $label_arr(${field_id})
-                            lappend row_list $label_arr(${field_id}) $v
+                            set label $label_arr(${field_id})
+                            lappend row_list $label $v
+                            lappend labels_w_values_list $label
                         }
+                    }
+                    # add cases that are blank ie not returned via db.
+                    set labels_remaining_list [set_difference $lables_w_values_list $field_labels_list]
+                    foreach label $labels_remaining_list {
+                        lappend row_list $label ""
                     }
                 } else {
                     ns_log Notice "qss_tips_row_of_table_label_value.1099: row not found for search '${vc1k_search_label_val_list}'."
