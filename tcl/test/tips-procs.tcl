@@ -357,7 +357,7 @@ aa_register_case -cats {api smoke} qss_tips_check {
                         set f_row_id_ck [qss_tips_row_id_exists_q $f_row_id $t_id_arr(${i})]
                         aa_true "Test.AL${i} qss_tips_row_id_exists_q for row_id '${f_row_id}' table_id '$t_id_arr(${i})'" $f_row_id_ck
                         #  qss_tips_row_read
-                        aa_log "Test.AM${i} qss_tips_row_create fed: '${label_value_list}'"
+                        aa_log "Test.AM${i} qss_tips_row_create fed to row_id '${f_row_id}': '${label_value_list}'"
                         set row_list [qss_tips_row_read $t_id_arr(${i}) ${f_row_id}]
                         aa_log "Test.AN${i} qss_tips_row_read results: '${row_list}'"
                         foreach {k v} $row_list {
@@ -395,7 +395,7 @@ aa_register_case -cats {api smoke} qss_tips_check {
                         set duplicate_val [lindex $vc1k_val_list $dup_idx]
                         lappend vc1k_val_list [lrepeat $duplicate_count $duplicate_val]
                         set vc1k_val_list [acc_fin::shuffle_list $vc1k_val_list]
-
+                        
                         for {set r 2} {$r <= $r_count_max } {incr r} {
                             set label_value_larr(${r}) [list ]
                             for {set j 1} {$j < 4} {incr j} {
@@ -415,7 +415,7 @@ aa_register_case -cats {api smoke} qss_tips_check {
                                 set label $f_label_arr($j)
                                 # retained values by RC reference:
                                 set rowck_arr(${r},${label}) $value
-                                lappend label_value_list $label $value
+                                lappend label_value_larr(${r}) $label $value
                             }
                             #  qss_tips_row_create
                             set row_id_new [qss_tips_row_create $t_id_arr(${i}) $label_value_larr(${r})]
@@ -430,7 +430,7 @@ aa_register_case -cats {api smoke} qss_tips_check {
                             } else {
                                 set success_p 0
                             }
-                            aa_true "Test.AP${i} row ${r} qss_tips_row_create row_id '${row_id_new}' table_id '$t_id_arr(${i})'" $success_p
+                            aa_true "Test.AP${i} row ${r} qss_tips_row_create row_id '${row_id_new}' table_id '$t_id_arr(${i})' data '$label_value_larr(${r})'" $success_p
                             
                         }
 
@@ -442,6 +442,8 @@ aa_register_case -cats {api smoke} qss_tips_check {
                         }
 
                         set val_ck_list [list $value_ck $duplicate_val]
+                        set val_dup_ck_list [list 0 1]
+                        set vdcli 0
                         set vc1k_label [lindex $field_label_list 1]
                         aa_log "val_ck_list '${val_ck_list}'"
                         foreach v $val_ck_list {
@@ -450,7 +452,9 @@ aa_register_case -cats {api smoke} qss_tips_check {
                             } else {
                                 set is_duplicate_p 0
                             }
-                            aa_log "v is '${v}'  is_duplicate_p '${is_duplicate_p}'"
+                            aa_equals "TEST.AQ2-${i} v is '${v}'  is/isn't_duplicate_p '${is_duplicate_p}'" $is_duplicate_p [lindex $val_dup_ck_list $vdcli]
+                            incr vdcli
+
                             for {set if_multiple -1} {$if_multiple < 2} {incr if_multiple} {
                                 # have to use the original label value in the search.
                                 
@@ -469,8 +473,10 @@ aa_register_case -cats {api smoke} qss_tips_check {
                                     set data_row_exists_p 0
                                     set expect_row_id_p 0
                                 }
-                                set data_row_id_list_len [llength $data_row_id_list ]
-                                if { $data_row_id_list_len > 0 } {
+                                aa_log "f_row_nbr_larr(${row_id}) '$f_row_nbr_larr(${row_id})'"
+                                ##code  following f_row_nbr_larr is not the right list to check..
+                                set data_row_id_list_len [llength $f_row_nbr_larr(${row_id}) ]
+                                if { $data_row_id_list_len > 1 } {
                                     set multiple_rows_match_p 1
                                 } else {
                                     set multiple_rows_match_p 0
@@ -479,7 +485,7 @@ aa_register_case -cats {api smoke} qss_tips_check {
                                 if { $multiple_rows_match_p && $if_multiple eq "-1" } {
                                     set expect_row_id_p 0
                                 }
-                                aa_equals "Test.AR${i}.if_multiple '${if_multiple}' multiple_rows_match_p '${multiple_rows_match_p}' qss_tips_row_of_table_label_value returns a row_id in row_ids of dataset or no row as expected." $valid_row_id_p $expect_row_id_p
+                                aa_equals "Test.AR${i}.if_multiple '${if_multiple}' multiple_rows_match_p '${multiple_rows_match_p}' qss_tips_row_of_table_label_value returns a row_id '${row_id}' in row_ids of dataset or no row as expected." $valid_row_id_p $expect_row_id_p
                                 # check each value for expected value
                                 for {set j 1} {$j < 4} {incr j} {
                                     set label $f_label_arr($j)
