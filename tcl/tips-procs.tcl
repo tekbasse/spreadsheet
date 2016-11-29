@@ -1064,10 +1064,16 @@ ad_proc -public qss_tips_row_of_table_label_value {
             if { $vc1k_search_label_val_list ne "" } {
                 # search scope
                 set vc1k_search_lv_list [qf_listify $vc1k_search_label_val_list]
+                ns_log Notice "qss_tips_row_of_table_label_value.1056: vc1k_search_label_val_list '${vc1k_search_label_val_list}' vc1k_search_lv_list '${vc1k_search_lv_list}'"
                 foreach {label vc1k_search_val} $vc1k_search_lv_list {
                     if { [info exists field_id_arr(${label}) ] && $vc1k_search_sql ne "na" } {
+                        ##code  This does not work for cases where vc1k_search_val is empty string
+                        ## because those fields are not saved. Edited fields where values are
+                        ## changed will have an empty value in order to record changes.
+                        ## So, how to search for empty string in a value?
+
                         #set field_id $field_id_arr(${label})
-                        append vk1k_search_sql " and (field_id='" $field_id_arr(${label}) "' and f_vc1k='" ${vc1k_search_val} "')"
+                        append vc1k_search_sql " and (field_id='" $field_id_arr(${label}) "' and f_vc1k='" ${vc1k_search_val} "')"
                     } else {
                         ns_log Warning "qss_tips_row_of_table_label_value.1067: no field_id for search label '${label}' table_id '${table_id}' "
                         set vc1k_search_sql "na"
@@ -1081,6 +1087,7 @@ ad_proc -public qss_tips_row_of_table_label_value {
                 # do nothing
             } else {
                 # get row id, then row
+                ns_log Notice "qss_tips_row_of_table_label_value.1084: vc1k_search_sql '${vc1k_search_sql}' sort_sql '${sort_sql}'"
                 set row_ids_list [db_list qss_tips_field_values_row_id_search "select row_id from qss_tips_field_values 
                     where instance_id=:instance_id and table_id=:table_id and trashed_p!='1' ${vc1k_search_sql} ${sort_sql}"]
                 set row_id [lindex $row_ids_list 0]

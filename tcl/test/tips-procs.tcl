@@ -473,9 +473,14 @@ aa_register_case -cats {api smoke} qss_tips_check {
                                     set data_row_exists_p 0
                                     set expect_row_id_p 0
                                 }
-                                aa_log "f_row_nbr_larr(${row_id}) '$f_row_nbr_larr(${row_id})'"
-                                ##code  following f_row_nbr_larr is not the right list to check..
-                                set data_row_id_list_len [llength $f_row_nbr_larr(${row_id}) ]
+                                if { $valid_row_id_p } {
+                                    aa_log "f_row_nbr_larr(${row_id}) '$f_row_nbr_larr(${row_id})'"
+
+                                    ##code  following f_row_nbr_larr is not the right list to check..
+                                    set data_row_id_list_len [llength $f_row_nbr_larr(${row_id}) ]
+                                } else {
+                                    set data_row_id_list_len 0
+                                }
                                 if { $data_row_id_list_len > 1 } {
                                     set multiple_rows_match_p 1
                                 } else {
@@ -501,34 +506,35 @@ aa_register_case -cats {api smoke} qss_tips_check {
                                     # mapping of row_id and r
                                     #set f_row_id_arr(${r}) $row_id
                                     #lappend f_row_nbr_larr(${row_id_new}) $r
-                                    
-                                    if { $is_duplicate_p } {
-                                        # row_id depends on if_multiple and row
-                                        switch -exact -- $if_multiple {
-                                            -1 {
-                                                # does not return anything when if_multiple = -1
-                                                set row_nbr ""
-                                                set ck_row_id ""
-                                                set v_ck ""
-                                                
-                                            }
-                                            0 {
-                                                set row_nbr [lindex $f_row_nbr_larr(${row_id}) 0]
+                                    if { $valid_row_id_p } {
+                                        if { $is_duplicate_p } {
+                                            # row_id depends on if_multiple and row
+                                            switch -exact -- $if_multiple {
+                                                -1 {
+                                                    # does not return anything when if_multiple = -1
+                                                    set row_nbr ""
+                                                    set ck_row_id ""
+                                                    set v_ck ""
+                                                    
+                                                }
+                                                0 {
+                                                    set row_nbr [lindex $f_row_nbr_larr(${row_id}) 0]
+                                                    set ck_row_id $f_row_id_arr(${row_nbr})
+                                                    set v_ck $rowck_arr(${row_nbr},${label})
+                                                }
+                                                1 {
+                                                    set row_nbr [lindex $f_row_nbr_larr(${row_id}) end]
                                                 set ck_row_id $f_row_id_arr(${row_nbr})
-                                                set v_ck $rowck_arr(${row_nbr},${label})
+                                                    set v_ck $rowck_arr(${row_nbr},${label})
+                                                }
                                             }
-                                            1 {
-                                                set row_nbr [lindex $f_row_nbr_larr(${row_id}) end]
-                                                set ck_row_id $f_row_id_arr(${row_nbr})
-                                                set v_ck $rowck_arr(${row_nbr},${label})
-                                            }
+                                            
+                                        } else {
+                                            # value depends on row_id only
+                                            set row_nbr [lindex $f_row_nbr_larr(${row_id}) 0]
+                                            set ck_row_id $f_row_id_arr(${row_nbr})
+                                            set v_ck $rowck_arr(${row_nbr},${label})
                                         }
-                                        
-                                    } else {
-                                        # value depends on row_id only
-                                        set row_nbr [lindex $f_row_nbr_larr(${row_id}) 0]
-                                        set ck_row_id $f_row_id_arr(${row_nbr})
-                                        set v_ck $rowck_arr(${row_nbr},${label})
                                     }
                                     aa_equals "Test.AS${i} qss_tips_row_of_table_label_value for table_id '$t_id_arr(${i})' vc1k_label '${vc1k_label}' if_mupltiple '${if_multiple}' row_id check" $row_id $ck_row_id
                                     aa_equals "Test.AT${i} qss_tips_row_of_table_label_value for table_id '$t_id_arr(${i})' vc1k_label '${vc1k_label}' if_mupltiple '${if_multiple}' label '${label}' value '${v_ck}'" $v $v_ck 
