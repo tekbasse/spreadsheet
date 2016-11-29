@@ -41,7 +41,7 @@ aa_register_case -cats {api smoke} qss_tips_check {
                             } else {
                                 set t_id_exists_p 0
                             }
-                            aa_true "Test.${i} table def. created table_id '$t_id_arr(${i})' label '${labelized}' title ${title}" $t_id_exists_p
+                            aa_true "Test.A${i} table def. created table_id '$t_id_arr(${i})' label '${labelized}' title ${title}" $t_id_exists_p
                             set t_larr(${i}) [qss_tips_table_def_read_by_id $t_id_arr(${i})] 
                             set t_i_id ""
                             set t_i_label ""
@@ -51,15 +51,15 @@ aa_register_case -cats {api smoke} qss_tips_check {
                             foreach {t_i_id t_i_label t_i_name t_i_flags t_i_trashed_p} $t_larr(${i}) {
                                 # set vars
                             }
-                            aa_equals "Test.${i} table def. create/read id" $t_i_id $t_id_arr(${i})
-                            aa_equals "Test.${i} table def. create/read label" [string range $t_i_label 0 36] [string range $t_label_arr(${i}) 0 36]
+                            aa_equals "Test.B${i} table def. create/read id" $t_i_id $t_id_arr(${i})
+                            aa_equals "Test.C${i} table def. create/read label" [string range $t_i_label 0 36] [string range $t_label_arr(${i}) 0 36]
                             set tin_max [expr { [string length $t_i_name] - 3 } ]
-                            aa_equals "Test.${i} table def. create/read name" [string range $t_i_name 0 $tin_max] [string range $t_name_arr(${i}) 0 $tin_max]
-                            aa_equals "Test.${i} table def. create/read flags" $t_i_flags $t_flags_arr(${i})
-                            aa_equals "Test.${i} table def. create/read trashed_p" $t_i_trashed_p $t_trashed_p_arr(${i})
+                            aa_equals "Test.D${i} table def. create/read name" [string range $t_i_name 0 $tin_max] [string range $t_name_arr(${i}) 0 $tin_max]
+                            aa_equals "Test.E${i} table def. create/read flags" $t_i_flags $t_flags_arr(${i})
+                            aa_equals "Test.F${i} table def. create/read trashed_p" $t_i_trashed_p $t_trashed_p_arr(${i})
                             if { ${i} == 1 } {
                                 set success_p [qss_tips_table_def_trash $t_i_id]
-                                aa_true "Test.${i} table def. trashed ok" $success_p
+                                aa_true "Test.G${i} table def. trashed ok" $success_p
                             }
                             if { ${i} == 2 } {
                                 set word_count [randomRange 10]
@@ -85,11 +85,11 @@ aa_register_case -cats {api smoke} qss_tips_check {
                                 foreach {t_i_id t_i_label t_i_name t_i_flags t_i_trashed_p} $t_larr(${i}) {
                                     # set vars
                                 }
-                                aa_equals "Test.${i} table def. update/read label by param" [string range $t_i_label 0 36] [string range $t_label_arr(${i}) 0 36]
+                                aa_equals "Test.H${i} table def. update/read label by param" [string range $t_i_label 0 36] [string range $t_label_arr(${i}) 0 36]
                                 set tin_max [expr { [string length $t_i_name] - 3 } ]
-                                aa_equals "Test.${i} table def. update/read name by param" [string range $t_i_name 0 $tin_max] [string range $t_name_arr(${i}) 0 $tin_max]
-                                aa_equals "Test.${i} table def. update/read flags by param" $t_i_flags $t_flags_arr(${i})
-                                aa_equals "Test.${i} table def. update/read trashed_p by param" $t_i_trashed_p $t_trashed_p_arr(${i})
+                                aa_equals "Test.I${i} table def. update/read name by param" [string range $t_i_name 0 $tin_max] [string range $t_name_arr(${i}) 0 $tin_max]
+                                aa_equals "Test.J${i} table def. update/read flags by param" $t_i_flags $t_flags_arr(${i})
+                                aa_equals "Test.K${i} table def. update/read trashed_p by param" $t_i_trashed_p $t_trashed_p_arr(${i})
                                 
                             }
                             if { ${i} == 3 } {
@@ -116,23 +116,23 @@ aa_register_case -cats {api smoke} qss_tips_check {
                                 foreach {t_i_id t_i_label t_i_name t_i_flags t_i_trashed_p} $t_larr(${i}) {
                                     # set vars
                                 }
-                                aa_equals "Test.${i} table def. update/read label by list" [string range $t_i_label 0 36] [string range $t_label_arr(${i}) 0 36]
+                                aa_equals "Test.L${i} table def. update/read label by list" [string range $t_i_label 0 36] [string range $t_label_arr(${i}) 0 36]
                                 set tin_max [expr { [string length $t_i_name] - 3 } ]
-                                aa_equals "Test.${i} table def. update/read name by list" [string range $t_i_name 0 $tin_max] [string range $t_name_arr(${i}) 0 $tin_max]
-                                aa_equals "Test.${i} table def. update/read flags by list" $t_i_flags $t_flags_arr(${i})
-                                aa_equals "Test.${i} table def. update/read trashed_p by list" $t_i_trashed_p $t_trashed_p_arr(${i})
+                                aa_equals "Test.M${i} table def. update/read name by list" [string range $t_i_name 0 $tin_max] [string range $t_name_arr(${i}) 0 $tin_max]
+                                aa_equals "Test.N${i} table def. update/read flags by list" $t_i_flags $t_flags_arr(${i})
+                                aa_equals "Test.O${i} table def. update/read trashed_p by list" $t_i_trashed_p $t_trashed_p_arr(${i})
                             }
 
                             incr i
                         }
                         incr i -1
                         set exists_p [qss_tips_table_id_exists_q $t_i_id]
-                        aa_true "Test.${i} table def. exists_q" $exists_p
+                        aa_true "Test.P${i} table def. exists_q" $exists_p
                         # we have to grab t_i_label to test because create may have modified label..
                         set table_list [qss_tips_table_def_read_by_id $t_i_id]
                         set t_i_label [lindex $table_list 1]
                         set test_t_id [qss_tips_table_id_of_label $t_i_label]
-                        aa_equals "Test.${i} table_id_of_label" $test_t_id $t_i_id
+                        aa_equals "Test.Q${i} table_id_of_label" $test_t_id $t_i_id
 
 
 
@@ -173,7 +173,7 @@ aa_register_case -cats {api smoke} qss_tips_check {
                             } else {
                                 set success_p 0
                             }
-                            aa_true "Test.${i}-${j} field_def created label ${label} of type ${field_type} for table_id '$t_id_arr(${i})'" $success_p
+                            aa_true "Test.R${i}-${j} field_def created label ${label} of type ${field_type} for table_id '$t_id_arr(${i})'" $success_p
                             #  qss_tips_field_def_read
                             set f_def1_list [qss_tips_field_def_read $t_id_arr(${i}) "" $f_def_id]
                             set f_def2_list [qss_tips_field_def_read $t_id_arr(${i}) $label]
@@ -182,14 +182,14 @@ aa_register_case -cats {api smoke} qss_tips_check {
                             } else {
                                 set success_p 0
                             }
-                            aa_true "Test.${i}-${j} field_def read via label ${label} VS. via field_id matches" $success_p
+                            aa_true "Test.S${i}-${j} field_def read via label ${label} VS. via field_id matches" $success_p
                             lappend field_defs_by_ones_list $f_def_id
                         }
                         #  field_id,label,name,default_val,tdt_data_type,field_type or empty list if not found
                         set f_def_lists [qss_tips_field_def_read $t_id_arr(${i}) ]
                         set f_def_lists_len [llength $f_def_lists]
                         set field_defs_by_ones_list_len [llength $field_defs_by_ones_list]
-                        aa_equals "Test.${i}. qss_tips_field_def_read. Quantity of all same as adding each one" $f_def_lists_len $field_defs_by_ones_list_len
+                        aa_equals "Test.T${i}. qss_tips_field_def_read. Quantity of all same as adding each one" $f_def_lists_len $field_defs_by_ones_list_len
                         foreach f_list $f_def_lists {
                             set f_def_id_ck [lindex $f_list 0]
                             if { $f_def_id_ck in $field_defs_by_ones_list } {
@@ -197,7 +197,7 @@ aa_register_case -cats {api smoke} qss_tips_check {
                             } else {
                                 set success_p 0
                             }
-                            aa_true "Test.${i} field_def_id '${f_def_id_ck}' from single read in bulk read also" $success_p
+                            aa_true "Test.U${i} field_def_id '${f_def_id_ck}' from single read in bulk read also" $success_p
                         }
                         foreach f_list $f_def_lists {
                             set f_def_id_i [lindex $f_list 0]
@@ -205,7 +205,7 @@ aa_register_case -cats {api smoke} qss_tips_check {
                             set name_new $f_field_type
                             append name_new "_test"
                             set success_p [qss_tips_field_def_update $t_id_arr(${i}) field_id $f_def_id_i name_new $name_new]
-                            aa_true "Test.${i} field_def_id '${f_def_id_i}' name change to '${name_new}'" $success_p
+                            aa_true "Test.V${i} field_def_id '${f_def_id_i}' name change to '${name_new}'" $success_p
                             set f2_list [qss_tips_field_def_read $t_id_arr(${i}) "" $f_def_id_i ]
                             set f2_name [lindex [lindex $f2_list 0] 2]
                             if { $f2_name eq $name_new } {
@@ -213,12 +213,12 @@ aa_register_case -cats {api smoke} qss_tips_check {
                             } else {
                                 set success_p 0
                             }
-                            aa_true "Test.${i} field_def_id '${f_def_id_i}' confirmed name changed to '${name_new}'" $success_p
+                            aa_true "Test.W${i} field_def_id '${f_def_id_i}' confirmed name changed to '${name_new}'" $success_p
 
                             set label_new $f_field_type
                             append label_new "_" $f_def_id_i
                             set success_p [qss_tips_field_def_update $t_id_arr(${i}) field_id $f_def_id_i label_new $label_new]
-                            aa_true "Test.${i} field_def_id '${f_def_id_i}' label change to '${label_new}'" $success_p
+                            aa_true "Test.X${i} field_def_id '${f_def_id_i}' label change to '${label_new}'" $success_p
                             set f2_list [qss_tips_field_def_read $t_id_arr(${i}) $label_new ]
                             set f2_label [lindex [lindex $f2_list 0] 1]
                             if { $f2_label eq $label_new } {
@@ -226,7 +226,7 @@ aa_register_case -cats {api smoke} qss_tips_check {
                             } else {
                                 set success_p 0
                             }
-                            aa_true "Test.${i} field_def_id '${f_def_id_i}' confirmed label changed to '${label_new}'" $success_p
+                            aa_true "Test.Y${i} field_def_id '${f_def_id_i}' confirmed label changed to '${label_new}'" $success_p
                         }
                         foreach field_type [list txt vc1k nbr] {
                             #  qss_tips_field_def_create some new ones
@@ -239,20 +239,20 @@ aa_register_case -cats {api smoke} qss_tips_check {
                             foreach {f_def_id2 label2 name2 default_val2 tdt_data_type2 field_type2} $f_def1_list {
                                 # loading vars
                             }
-                            aa_equals "Test.${i}. qss_tips_field_def_create confirm id" $f_def_id2 $f_def_id
-                            aa_equals "Test.${i}. qss_tips_field_def_create confirm label" $label2 $label
-                            aa_equals "Test.${i}. qss_tips_field_def_create confirm name" $name2 $name
-                            aa_equals "Test.${i}. qss_tips_field_def_create confirm default_val" $default_val2 ""
-                            aa_equals "Test.${i}. qss_tips_field_def_create confirm tdt_data_type" $tdt_data_type2 ""
-                            aa_equals "Test.${i}. qss_tips_field_def_create confirm field_type" $field_type2 $field_type
+                            aa_equals "Test.Z${i}. qss_tips_field_def_create confirm id" $f_def_id2 $f_def_id
+                            aa_equals "Test.AA${i}. qss_tips_field_def_create confirm label" $label2 $label
+                            aa_equals "Test.AB${i}. qss_tips_field_def_create confirm name" $name2 $name
+                            aa_equals "Test.AC${i}. qss_tips_field_def_create confirm default_val" $default_val2 ""
+                            aa_equals "Test.AD${i}. qss_tips_field_def_create confirm tdt_data_type" $tdt_data_type2 ""
+                            aa_equals "Test.AE${i}. qss_tips_field_def_create confirm field_type" $field_type2 $field_type
                         }
                         #  qss_tips_field_def_trash the old ones
                         set field_id [lindex $field_defs_by_ones_list 0]
                         set field_ids_list [lrange $field_defs_by_ones_list 1 end]
                         set success1_p [qss_tips_field_def_trash $field_id $t_id_arr(${i})]
-                        aa_true "Test.${i}. qss_tips_field_def_trash one id '${field_id}'" $success1_p
+                        aa_true "Test.AF${i}. qss_tips_field_def_trash one id '${field_id}'" $success1_p
                         set success2_p [qss_tips_field_def_trash $field_ids_list $t_id_arr(${i})]
-                        aa_true "Test.${i}. qss_tips_field_def_trash list of ids '${field_ids_list}'" $success2_p
+                        aa_true "Test.AG${i}. qss_tips_field_def_trash list of ids '${field_ids_list}'" $success2_p
                         # qss_tips_field_def_read to confirm
                         set defs_lists [qss_tips_field_def_read $t_id_arr(${i}) ]
                         set success_p 1
@@ -262,7 +262,7 @@ aa_register_case -cats {api smoke} qss_tips_check {
                                 set success_p 0
                             } 
                         }
-                        aa_true "Test.${i}. qss_tips_field_def_trash confirm old ones deleted" $success_p
+                        aa_true "Test.AH${i}. qss_tips_field_def_trash confirm old ones deleted" $success_p
 
                         #  qss_tips_field_defs_maps_set  (Ignore, because this is intrinsic to other proc operations)
                         #  qss_tips_field_id_name_list
@@ -285,7 +285,7 @@ aa_register_case -cats {api smoke} qss_tips_check {
                         } else {
                             set success_p 0
                         }
-                        aa_true "Test.${i}. qss_tips_table_def_create for '${labelized}'" $success_p
+                        aa_true "Test.AI${i}. qss_tips_table_def_create for '${labelized}'" $success_p
                         set j 0
                         set field_defs_by_ones_list [list ]
                         foreach field_type [list txt vc1k nbr] {
@@ -306,7 +306,7 @@ aa_register_case -cats {api smoke} qss_tips_check {
                             } else {
                                 set success_p 0
                             }
-                            aa_true "Test.${i}-${j} field_def created label ${label} of type ${field_type} for table_id '$t_id_arr(${i})'" $success_p
+                            aa_true "Test.AJ${i}-${j} field_def created label ${label} of type ${field_type} for table_id '$t_id_arr(${i})'" $success_p
                             #  qss_tips_field_def_read
                             lappend field_defs_by_ones_list $f_def_id
                         }
@@ -352,14 +352,14 @@ aa_register_case -cats {api smoke} qss_tips_check {
                         } else {
                             set success_p 0
                         }
-                        aa_true "Test.${i} row created for table_id '$t_id_arr(${i})'" $success_p
+                        aa_true "Test.AK${i} row created for table_id '$t_id_arr(${i})'" $success_p
                         #  qss_tips_row_id_exists_q
                         set f_row_id_ck [qss_tips_row_id_exists_q $f_row_id $t_id_arr(${i})]
-                        aa_true "Test.${i} qss_tips_row_id_exists_q for row_id '${f_row_id}' table_id '$t_id_arr(${i})'" $f_row_id_ck
+                        aa_true "Test.AL${i} qss_tips_row_id_exists_q for row_id '${f_row_id}' table_id '$t_id_arr(${i})'" $f_row_id_ck
                         #  qss_tips_row_read
-                        aa_log "Test.${i} qss_tips_row_create fed: '${label_value_list}'"
+                        aa_log "Test.AM${i} qss_tips_row_create fed: '${label_value_list}'"
                         set row_list [qss_tips_row_read $t_id_arr(${i}) ${f_row_id}]
-                        aa_log "Test.${i} qss_tips_row_read results: '${row_list}'"
+                        aa_log "Test.AN${i} qss_tips_row_read results: '${row_list}'"
                         foreach {k v} $row_list {
                             set row1ck_arr(${k}) $v
                         }
@@ -370,7 +370,7 @@ aa_register_case -cats {api smoke} qss_tips_check {
                             } else {
                                 set success_p 0
                             }
-                            aa_true "Test.${i} qss_tips_row_read for row_id '${f_row_id}' label '${label}'" $success_p
+                            aa_true "Test.AO${i} qss_tips_row_read for table_id '$t_id_arr(${i})' row_id '${f_row_id}' label '${label}'" $success_p
                         }
 
                         # make some more data rows
@@ -420,15 +420,18 @@ aa_register_case -cats {api smoke} qss_tips_check {
                             #  qss_tips_row_create
                             set row_id_new [qss_tips_row_create $t_id_arr(${i}) $label_value_larr(${r})]
                             if { $row_id_new ne "" } {
-                                set success_p 1
-                                set f_row_id_arr(${r}) $row_id_new
-                                # first and last occurrance are determined by this ordered list of mapped ids. 0 is first..
-                                lappend f_row_nbr_larr(${row_id_new}) $r
-                                lappend data_row_id_list $row_id_new
+                                set success_p [qss_tips_row_id_exists_q $row_id_new $t_id_arr(${i})]
+                                if { $success_p } {
+                                    set f_row_id_arr(${r}) $row_id_new
+                                    # first and last occurrance are determined by this ordered list of mapped ids. 0 is first..
+                                    lappend f_row_nbr_larr(${row_id_new}) $r
+                                    lappend data_row_id_list $row_id_new
+                                }
                             } else {
                                 set success_p 0
                             }
-                            aa_true "Test.${i} row ${r} created for table_id '$t_id_arr(${i})'" $success_p
+                            aa_true "Test.AP${i} row ${r} qss_tips_row_create row_id '${row_id_new}' table_id '$t_id_arr(${i})'" $success_p
+                            
                         }
 
                         # # # check a row from nonduplicates, and check duplicate cases.
@@ -440,17 +443,19 @@ aa_register_case -cats {api smoke} qss_tips_check {
 
                         set val_ck_list [list $value_ck $duplicate_val]
                         set vc1k_label [lindex $field_label_list 1]
+                        aa_log "val_ck_list '${val_ck_list}'"
                         foreach v $val_ck_list {
                             if { $v eq $duplicate_val } {
                                 set is_duplicate_p 1
                             } else {
                                 set is_duplicate_p 0
                             }
-                            
+                            aa_log "v is '${v}'  is_duplicate_p '${is_duplicate_p}'"
                             for {set if_multiple -1} {$if_multiple < 2} {incr if_multiple} {
                                 # have to use the original label value in the search.
+                                
                                 set row_label_value_list [qss_tips_row_of_table_label_value $t_id_arr(${i}) [list $vc1k_label $v] $if_multiple row_id]
-                                aa_log "Test.${i}.row_id '${f_row_id}' of qss_tips_row_of_table_label_value table_id '$t_id_arr(${i})' if_multiple '${if_multiple}' row_label_value_list '${row_label_value_list}'"
+                                aa_log "Test.AQ${i}.row_id '${row_id}' of qss_tips_row_of_table_label_value table_id '$t_id_arr(${i})' if_multiple '${if_multiple}' row_label_value_list '${row_label_value_list}'"
                                 if { $row_id in $data_row_id_list } {
                                     set valid_row_id_p 1
                                 } else { 
@@ -474,7 +479,7 @@ aa_register_case -cats {api smoke} qss_tips_check {
                                 if { $multiple_rows_match_p && $if_multiple eq "-1" } {
                                     set expect_row_id_p 0
                                 }
-                                aa_equals "Test.${i}.if_multiple '${if_multiple}' multiple_rows_match_p '${multiple_rows_match_p}' qss_tips_row_of_table_label_value returns a row_id in row_ids of dataset or no row as expected." $valid_row_id_p $expect_row_id_p
+                                aa_equals "Test.AR${i}.if_multiple '${if_multiple}' multiple_rows_match_p '${multiple_rows_match_p}' qss_tips_row_of_table_label_value returns a row_id in row_ids of dataset or no row as expected." $valid_row_id_p $expect_row_id_p
                                 # check each value for expected value
                                 for {set j 1} {$j < 4} {incr j} {
                                     set label $f_label_arr($j)
@@ -492,7 +497,7 @@ aa_register_case -cats {api smoke} qss_tips_check {
                                     #lappend f_row_nbr_larr(${row_id_new}) $r
                                     
                                     if { $is_duplicate_p } {
-                                        # row_id depends on if_multiple and row_
+                                        # row_id depends on if_multiple and row
                                         switch -exact -- $if_multiple {
                                             -1 {
                                                 # does not return anything when if_multiple = -1
@@ -519,8 +524,8 @@ aa_register_case -cats {api smoke} qss_tips_check {
                                         set ck_row_id $f_row_id_arr(${row_nbr})
                                         set v_ck $rowck_arr(${row_nbr},${label})
                                     }
-                                    aa_equals "Test.${i} qss_tips_row_of_table_label_value for table_id '$t_id_arr(${i})' vc1k_label '${vc1k_label}' if_mupltiple '${if_multiple}' row_id check" $row_id $ck_row_id
-                                    aa_equals "Test.${i} qss_tips_row_of_table_label_value for table_id '$t_id_arr(${i})' vc1k_label '${vc1k_label}' if_mupltiple '${if_multiple}' label '${label}' value '${v_ck}'" $v $v_ck 
+                                    aa_equals "Test.AS${i} qss_tips_row_of_table_label_value for table_id '$t_id_arr(${i})' vc1k_label '${vc1k_label}' if_mupltiple '${if_multiple}' row_id check" $row_id $ck_row_id
+                                    aa_equals "Test.AT${i} qss_tips_row_of_table_label_value for table_id '$t_id_arr(${i})' vc1k_label '${vc1k_label}' if_mupltiple '${if_multiple}' label '${label}' value '${v_ck}'" $v $v_ck 
 
                                 }
                             }

@@ -1044,15 +1044,20 @@ ad_proc -public qss_tips_row_of_table_label_value {
     set row_list [list ]
     if { [qf_is_natural_number $table_id] } {
         # field_ids_list and field_labels_list are coorelated 1:1
-        set label_ids_list_len [qss_tips_field_defs_maps_set $table_id "" field_id_arr type_arr label_arr "" field_labels_list]
+        set label_ids_list_len [qss_tips_field_defs_maps_set $table_id "" field_id_arr type_arr label_arr field_ids_list ""]
         if { $label_ids_list_len > 0 } {
             set vc1k_search_sql ""
             set sort_sql ""
             switch -exact -- $if_multiple {
-                1 { set sort_sql "order by created desc" }
-                -1 -
+                1 { 
+                    set sort_sql "order by created desc"
+                }
+               -1 -
                 0 -
-                default  { set sort_sql "order by created asc" }
+                default  { 
+                    set sort_sql "order by created asc"
+                    set if_multiple "0" 
+                }
             }
             
 
@@ -1086,37 +1091,39 @@ ad_proc -public qss_tips_row_of_table_label_value {
                 }
                 if { $exists_p && $if_multiple eq "-1" } {
                     set row_ids_unique_list [lsort -unique -integer -increasing $row_ids_list]
+                    ns_log Notice "qss_Tips_row_of_table_label_value.1094: row_ids_list '${row_ids_list}' row_ids_unique_list '${row_ids_unique_list}'"
                     if { [llength $row_ids_unique_list] > 1 } {
-                        set row_id ""
+                        set return_row_id ""
                         set exists_p 0
                     }
                 }
 
                 if { $exists_p } {
+                    # duplicate core of qss_tips_row_read
                     set return_row_id $row_id
                     set values_lists [db_list_of_lists qss_tips_field_values_r1m {select field_id, row_id, f_vc1k, f_nbr, f_txt from qss_tips_field_values 
                         where table_id=:table_id
                         and row_id=:row_id
                         and instance_id=:instance_id
                         and trashed_p!='1'}]
+                    set used_fields_list [list ]
                     foreach row $values_lists {
-                        set labels_w_values_list [list ]
                         foreach {field_id row_id f_vc1k f_nbr f_txt} $row {
                             if { [info exists type_arr(${field_id}) ] } {
                                 set v [qss_tips_value_of_field_type $type_arr(${field_id}) $f_nbr $f_txt $f_vc1k]
                             } else {
                                 ns_log Warning "qss_tips_row_of_table_label_value.1092: field_id does not have a field_type. table_id '${table_id}' field_id '${field_id}' row_id '${row_id}'"
                             }
-                            set label $label_arr(${field_id})
-                            lappend row_list $label $v
-                            lappend labels_w_values_list $label
+                            # label $label_arr(${field_id})
+                            lappend row_list $label_arr(${field_id}) $v
+                            lappend used_fields_list $field_id
                         }
                     }
-                    # add cases that are blank ie not returned via db.
-                    set labels_remaining_list [set_difference $field_labels_list $labels_w_values_list]
-                    foreach label $labels_remaining_list {
-                        lappend row_list $label ""
+                    set_difference_named_v field_ids_list $used_fields_list
+                    foreach field_id $field_ids_list {
+                        lappend row_list $label_arr(${field_id}) ""
                     }
+
                 } else {
                     ns_log Notice "qss_tips_row_of_table_label_value.1099: row not found for search '${vc1k_search_label_val_list}'."
                 }
@@ -1208,7 +1215,7 @@ ad_proc -public qss_tips_row_read {
                     if { [info exists type_arr(${field_id}) ] } {
                         set v [qss_tips_value_of_field_type $type_arr(${field_id}) $f_nbr $f_txt $f_vc1k]
                     } else {
-                        ns_log Warning "qss_tips_read_from_id.848: field_id does not have a field_type. table_label '${table_label}' field_id '${field_id}' row_id '${row_id}'"
+                        ns_log Warning "qss_tips_row_read.848: field_id does not have a field_type. table_label '${table_label}' field_id '${field_id}' row_id '${row_id}'"
                     }
                     # label $label_arr(${field_id})
                     lappend row_list $label_arr(${field_id}) $v
