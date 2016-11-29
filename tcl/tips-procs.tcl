@@ -483,14 +483,17 @@ ad_proc -public qss_tips_table_read_as_array {
             if { $vc1k_search_label_val_list ne "" } {
                 # search scope
                 set vc1k_search_lv_list [qf_listify $vc1k_search_label_val_list]
+                set vref 0
                 foreach {label vc1k_search_val} $vc1k_search_lv_list {
+                    incr vref
                     if { [info exists field_id_arr(${label}) ] && $vc1k_search_sql ne "na" } {
                         set field_id $field_id_arr(${label})
                         if { $vc1k_search_val eq "" } {
                             append vc1k_search_sql " and (field_id='" $field_id "' and f_vc1k=null)"
                         } else {
                             #set field_id $field_id_arr(${label})
-                            append vc1k_search_sql " and (field_id='" $field_id "' and f_vc1k='" ${vc1k_search_val} "')" 
+                            set vc1k_val_${vref} $vc1k_search_val
+                            append vc1k_search_sql " and (field_id='" $field_id "' and f_vc1k=:vc1k_val_${vref})" 
                         }
                     } else {
                         ns_log Warning "qss_tips_read.492: no field_id for search label '${label}' table_label '${table_label}' "
@@ -566,14 +569,17 @@ ad_proc -public qss_tips_table_read {
             if { $vc1k_search_label_val_list ne "" } {
                 # search scope
                 set vc1k_search_lv_list [qf_listify $vc1k_search_label_val_list]
+                set vref 0
                 foreach {label vc1k_search_val} $vc1k_search_lv_list {
+                    incr vref
                     if { [info exists field_id_arr(${label}) ] && $vc1k_search_sql ne "na" } {
                         set field_id $field_id_arr(${label})
 
                         if { $vc1k_search_val eq "" } {
                             append vc1k_search_sql " and (field_id='" $field_id "' and f_vc1k=null)"
                         } else {
-                            append vc1k_search_sql " and (field_id='" $field_id "' and f_vc1k='" ${vc1k_search_val} "')" 
+                            set vc1k_val_${vref} $vc1k_search_val
+                            append vc1k_search_sql " and (field_id='" $field_id "' and f_vc1k=:vc1k_val_${vref})" 
                         }
                     } else {
                         ns_log Warning "qss_tips_read.571: no field_id for search label '${label}' table_label '${table_label}' "
@@ -1075,17 +1081,16 @@ ad_proc -public qss_tips_row_of_table_label_value {
                 # search scope
                 set vc1k_search_lv_list [qf_listify $vc1k_search_label_val_list]
                 ns_log Notice "qss_tips_row_of_table_label_value.1056: vc1k_search_label_val_list '${vc1k_search_label_val_list}' vc1k_search_lv_list '${vc1k_search_lv_list}'"
+                set vref 0
                 foreach {label vc1k_search_val} $vc1k_search_lv_list {
+                    incr vref
                     if { [info exists field_id_arr(${label}) ] && $vc1k_search_sql ne "na" } {
-                        ##code  This does not work for cases where vc1k_search_val is empty string
-                        ## because those fields are not saved. 
-                        ## So, how to search for empty string in a value?
-                        ## use null.
                         if { $vc1k_search_val eq "" } {
                             append vc1k_search_sql " and (field_id='" $field_id_arr(${label}) "' and f_vc1k=null)"
                         } else {
                             #set field_id $field_id_arr(${label})
-                            append vc1k_search_sql " and (field_id='" $field_id_arr(${label}) "' and f_vc1k='" ${vc1k_search_val} "')" 
+                            set vc1k_val_${vref} $vc1k_search_val
+                            append vc1k_search_sql " and (field_id='" $field_id_arr(${label}) "' and f_vc1k=:vc1k_val_${vref})" 
                         }
                     } else {
                         ns_log Warning "qss_tips_row_of_table_label_value.1067: no field_id for search label '${label}' table_id '${table_id}' "
