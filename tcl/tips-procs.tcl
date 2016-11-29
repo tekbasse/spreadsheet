@@ -486,7 +486,12 @@ ad_proc -public qss_tips_table_read_as_array {
                 foreach {label vc1k_search_val} $vc1k_search_lv_list {
                     if { [info exists field_id_arr(${label}) ] && $vc1k_search_sql ne "na" } {
                         set field_id $field_id_arr(${label})
-                        append vk1k_search_sql " and (field_id='${field_id}' and f_vc1k='${vc1k_search_val}')"
+                        if { $vc1k_search_val eq "" } {
+                            append vc1k_search_sql " and (field_id='" $field_id "' and f_vc1k=null)"
+                        } else {
+                            #set field_id $field_id_arr(${label})
+                            append vc1k_search_sql " and (field_id='" $field_id "' and f_vc1k='" ${vc1k_search_val} "')" 
+                        }
                     } else {
                         ns_log Warning "qss_tips_read.492: no field_id for search label '${label}' table_label '${table_label}' "
                         set vc1k_search_sql "na"
@@ -564,7 +569,12 @@ ad_proc -public qss_tips_table_read {
                 foreach {label vc1k_search_val} $vc1k_search_lv_list {
                     if { [info exists field_id_arr(${label}) ] && $vc1k_search_sql ne "na" } {
                         set field_id $field_id_arr(${label})
-                        append vk1k_search_sql " and (field_id='${field_id}' and f_vc1k='${vc1k_search_val}')"
+
+                        if { $vc1k_search_val eq "" } {
+                            append vc1k_search_sql " and (field_id='" $field_id "' and f_vc1k=null)"
+                        } else {
+                            append vc1k_search_sql " and (field_id='" $field_id "' and f_vc1k='" ${vc1k_search_val} "')" 
+                        }
                     } else {
                         ns_log Warning "qss_tips_read.571: no field_id for search label '${label}' table_label '${table_label}' "
                         set vc1k_search_sql "na"
@@ -1068,12 +1078,15 @@ ad_proc -public qss_tips_row_of_table_label_value {
                 foreach {label vc1k_search_val} $vc1k_search_lv_list {
                     if { [info exists field_id_arr(${label}) ] && $vc1k_search_sql ne "na" } {
                         ##code  This does not work for cases where vc1k_search_val is empty string
-                        ## because those fields are not saved. Edited fields where values are
-                        ## changed will have an empty value in order to record changes.
+                        ## because those fields are not saved. 
                         ## So, how to search for empty string in a value?
-
-                        #set field_id $field_id_arr(${label})
-                        append vc1k_search_sql " and (field_id='" $field_id_arr(${label}) "' and f_vc1k='" ${vc1k_search_val} "')"
+                        ## use null.
+                        if { $vc1k_search_val eq "" } {
+                            append vc1k_search_sql " and (field_id='" $field_id_arr(${label}) "' and f_vc1k=null)"
+                        } else {
+                            #set field_id $field_id_arr(${label})
+                            append vc1k_search_sql " and (field_id='" $field_id_arr(${label}) "' and f_vc1k='" ${vc1k_search_val} "')" 
+                        }
                     } else {
                         ns_log Warning "qss_tips_row_of_table_label_value.1067: no field_id for search label '${label}' table_id '${table_id}' "
                         set vc1k_search_sql "na"
