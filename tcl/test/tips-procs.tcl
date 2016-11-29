@@ -474,10 +474,12 @@ aa_register_case -cats {api smoke} qss_tips_check {
                                     set expect_row_id_p 0
                                 }
                                 if { $valid_row_id_p } {
-                                    aa_log "f_row_nbr_larr(${row_id}) '$f_row_nbr_larr(${row_id})'"
-
-                                    ##code  following f_row_nbr_larr is not the right list to check..
-                                    set data_row_id_list_len [llength $f_row_nbr_larr(${row_id}) ]
+                                    
+                                    set r_indexes_list [lsearch -all $vc1k_val_list $v]
+                                    #aa_log "f_row_nbr_larr(${row_id}) '$f_row_nbr_larr(${row_id})'"
+                                    aa_log "r_indexes_list '${r_indexes_list}' vc1k_val_list '${vc1k_val_list}'"
+                                    
+                                    set data_row_id_list_len [llength $r_indexes_list]
                                 } else {
                                     set data_row_id_list_len 0
                                 }
