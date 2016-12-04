@@ -455,7 +455,10 @@ aa_register_case -cats {api smoke} qss_tips_check {
                             } else {
                                 set is_duplicate_p 0
                             }
-                            aa_equals "TEST.AQ2-${i} v is '${v}'  is/isn't_duplicate_p '${is_duplicate_p}'" $is_duplicate_p [lindex $val_dup_ck_list $vdcli]
+                            aa_log "\r\r
+
+BEGIN TEST LOOP for value '${v}'"
+                            aa_equals "TEST.AQ0-${i} v is '${v}'  is/isn't_duplicate_p '${is_duplicate_p}'" $is_duplicate_p [lindex $val_dup_ck_list $vdcli]
                             incr vdcli
 
                             for {set if_multiple -1} {$if_multiple < 2} {incr if_multiple} {
