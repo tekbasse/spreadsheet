@@ -384,9 +384,12 @@ aa_register_case -cats {api smoke} qss_tips_check {
                         set r 2
                         set vc1k_val_list [list $row1_vc1k]
                         while { $r < $unique_count } {
-                            set value [string range [qal_namelur [randomRange 10]] 0 38]
+                            set value [randomRange 10]
+                            append value [string range [qal_namelur [randomRange 10]] [randomRange 10] 38]
+                            ns_log Notice "test/tips-procs.tcl appended vc1k_val_list with element value '${value}"
+                            aa_log "i $i r $r Appending vc1k_val_list with element value '${value}'"
                             lappend vc1k_val_list $value
-                            set vc1k_val_list [lsort -unique $vc1k_val_list]
+                            set vc1k_val_list [qf_uniques_of $vc1k_val_list]
                             set r [llength $vc1k_val_list]
                         }
 
@@ -457,7 +460,9 @@ aa_register_case -cats {api smoke} qss_tips_check {
 
                             for {set if_multiple -1} {$if_multiple < 2} {incr if_multiple} {
                                 # have to use the original label value in the search.
-                                
+                                if { [info exists row_id] } {
+                                    unset row_id
+                                }
                                 set row_label_value_list [qss_tips_row_of_table_label_value $t_id_arr(${i}) [list $vc1k_label $v] $if_multiple row_id]
                                 aa_log "Test.AQ${i}.row_id '${row_id}' of qss_tips_row_of_table_label_value table_id '$t_id_arr(${i})' if_multiple '${if_multiple}' row_label_value_list '${row_label_value_list}'"
                                 if { $row_id in $data_row_id_list } {
@@ -475,7 +480,7 @@ aa_register_case -cats {api smoke} qss_tips_check {
                                 }
                                 if { $valid_row_id_p } {
                                     
-                                    set r_indexes_list [lsearch -all $vc1k_val_list $v]
+                                    set r_indexes_list [lsearch -all -exact $vc1k_val_list $v]
                                     #aa_log "f_row_nbr_larr(${row_id}) '$f_row_nbr_larr(${row_id})'"
                                     aa_log "r_indexes_list '${r_indexes_list}' vc1k_val_list '${vc1k_val_list}'"
                                     
@@ -526,8 +531,11 @@ aa_register_case -cats {api smoke} qss_tips_check {
                                                 }
                                                 1 {
                                                     set row_nbr [lindex $f_row_nbr_larr(${row_id}) end]
-                                                set ck_row_id $f_row_id_arr(${row_nbr})
+                                                    set ck_row_id $f_row_id_arr(${row_nbr})
                                                     set v_ck $rowck_arr(${row_nbr},${label})
+                                                }
+                                                default {
+                                                    ns_log Warning "spreadsheet/tcl/test/tips-procs.tcl.535: This should not happen"
                                                 }
                                             }
                                             

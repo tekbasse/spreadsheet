@@ -489,7 +489,7 @@ ad_proc -public qss_tips_table_read_as_array {
                     if { [info exists field_id_arr(${label}) ] && $vc1k_search_sql ne "na" } {
                         set field_id $field_id_arr(${label})
                         if { $vc1k_search_val eq "" } {
-                            append vc1k_search_sql " and (field_id='" $field_id "' and f_vc1k=null)"
+                            append vc1k_search_sql " and (field_id='" $field_id "' and f_vc1k is null)"
                         } else {
                             #set field_id $field_id_arr(${label})
                             set vc1k_val_${vref} $vc1k_search_val
@@ -576,7 +576,7 @@ ad_proc -public qss_tips_table_read {
                         set field_id $field_id_arr(${label})
 
                         if { $vc1k_search_val eq "" } {
-                            append vc1k_search_sql " and (field_id='" $field_id "' and f_vc1k=null)"
+                            append vc1k_search_sql " and (field_id='" $field_id "' and f_vc1k is null)"
                         } else {
                             set vc1k_val_${vref} $vc1k_search_val
                             append vc1k_search_sql " and (field_id='" $field_id "' and f_vc1k=:vc1k_val_${vref})" 
@@ -878,7 +878,7 @@ ad_proc -private qss_tips_field_def_read {
         if { $field_id_list_len > 0 || $field_label_list_len > 0 } {
             set field_idx_list [concat $field_id_idx_list $field_label_idx_list]
             # remove duplicates
-            set field_idx_list [lsort -unique $field_idx_list]
+            set field_idx_list [qf_uniques_of $field_idx_list]
             # scope fields_lists to just the filtered ones
             set filtered_lists [list ]
             foreach fid $field_idx_list {
@@ -1086,7 +1086,7 @@ ad_proc -public qss_tips_row_of_table_label_value {
                     incr vref
                     if { [info exists field_id_arr(${label}) ] && $vc1k_search_sql ne "na" } {
                         if { $vc1k_search_val eq "" } {
-                            append vc1k_search_sql " and (field_id='" $field_id_arr(${label}) "' and f_vc1k=null)"
+                            append vc1k_search_sql " and (field_id='" $field_id_arr(${label}) "' and f_vc1k is null)"
                         } else {
                             #set field_id $field_id_arr(${label})
                             set vc1k_val_${vref} $vc1k_search_val
@@ -1115,10 +1115,10 @@ ad_proc -public qss_tips_row_of_table_label_value {
                     set exists_p 0
                 }
                 if { $exists_p && $if_multiple eq "-1" } {
-                    set row_ids_unique_list [lsort -unique -integer -increasing $row_ids_list]
-                    ns_log Notice "qss_Tips_row_of_table_label_value.1094: row_ids_list '${row_ids_list}' row_ids_unique_list '${row_ids_unique_list}'"
+                    set row_ids_unique_list [qf_uniques_of $row_ids_list]
+                    ns_log Notice "qss_tips_row_of_table_label_value.1094: row_ids_list '${row_ids_list}' row_ids_unique_list '${row_ids_unique_list}'"
                     if { [llength $row_ids_unique_list] > 1 } {
-                        set return_row_id ""
+                        #set return_row_id ""
                         set exists_p 0
                     }
                 }
