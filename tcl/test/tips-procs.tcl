@@ -600,15 +600,18 @@ BEGIN TEST LOOP for value '${v}'"
                                         # following doesn't work if no rows are returned.
                                         # if dict fails,  qss_tips_row_of_table_value failed to return an expected field
                                         set v [dict get $ck2_update_label_val_list $label] 
+                                        set label_exists_p 1
                                     } else {
                                         set v ""
+                                        set label_exists_p 0
                                     }
-                                    aa_equals "Test.BB${i} check label '${label}' value" $v $v_ck
+                                    aa_true "Test.BB${i}. label '${label}' exists" $label_exists_p
+                                    aa_equals "Test.BC${i} check label '${label}' value" $v $v_ck
                                 }
                                 
                                 #  qss_tips_row_trash
                                 set success_p [qss_tips_row_trash $t_id_arr(${i}) $row_id]
-                                aa_true "Test.BC${i} qss_tips_row_trash table_id '$t_id_arr(${i})' row_id '${row_id}' success_p" $success_p
+                                aa_true "Test.BD${i} qss_tips_row_trash table_id '$t_id_arr(${i})' row_id '${row_id}' success_p" $success_p
 
                                 #  qss_tips_row_id_exists_q
                                 set exists_p [qss_tips_row_id_exists_q $row_id $t_id_arr(${i})]
@@ -617,7 +620,7 @@ BEGIN TEST LOOP for value '${v}'"
                                 } else {
                                     set not_exists_p 1
                                 }
-                                aa_true "Test.BC${i} qss_tips_row_trash table_id '$t_id_arr(${i})' row_id '${row_id}' not_exists_p" $not_exists_p
+                                aa_true "Test.BE{i} qss_tips_row_trash table_id '$t_id_arr(${i})' row_id '${row_id}' not_exists_p" $not_exists_p
 
 
                             }
