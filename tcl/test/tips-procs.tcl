@@ -396,7 +396,7 @@ aa_register_case -cats {api smoke} qss_tips_check {
                         # chose one value to duplicate
                         set dup_idx [randomRange $unique_count]
                         set duplicate_val [lindex $vc1k_val_list $dup_idx]
-                        lappend vc1k_val_list [lrepeat $duplicate_count $duplicate_val]
+                        set vc1k_val_list [concat $vc1k_val_list [lrepeat $duplicate_count $duplicate_val]]
                         set vc1k_val_list [acc_fin::shuffle_list $vc1k_val_list]
                         
                         for {set r 2} {$r <= $r_count_max } {incr r} {
@@ -446,23 +446,26 @@ aa_register_case -cats {api smoke} qss_tips_check {
 
                         set val_ck_list [list $value_ck $duplicate_val]
                         set val_dup_ck_list [list 0 1]
-                        set vdcli 0
+                        set vdcli -1
                         set vc1k_label [lindex $field_label_list 1]
                         aa_log "val_ck_list '${val_ck_list}'"
                         foreach v $val_ck_list {
+                            incr vdcli
+
                             if { $v eq $duplicate_val } {
                                 set is_duplicate_p 1
                             } else {
                                 set is_duplicate_p 0
                             }
+
                             aa_log "\r\r
 
 BEGIN TEST LOOP for value '${v}'"
                             aa_equals "TEST.AQ0-${i} v is '${v}'  is/isn't_duplicate_p '${is_duplicate_p}'" $is_duplicate_p [lindex $val_dup_ck_list $vdcli]
-                            incr vdcli
 
                             for {set if_multiple -1} {$if_multiple < 2} {incr if_multiple} {
                                 # have to use the original label value in the search.
+
                                 if { [info exists row_id] } {
                                     unset row_id
                                 }
@@ -508,9 +511,9 @@ BEGIN TEST LOOP for value '${v}'"
                                     # following doesn't work for if_multiple = -1, because no rows are returned.
                                     # if dict fails,  qss_tips_row_of_table_value failed to return an expected field
                                     if { [llength $row_label_value_list] > 0 } {
-                                        set v [dict get $row_label_value_list $label] 
+                                        set vx [dict get $row_label_value_list $label] 
                                     } else {
-                                        set v ""
+                                        set vx ""
                                     }
 
                                     # mapping of row_id and r
@@ -550,7 +553,7 @@ BEGIN TEST LOOP for value '${v}'"
                                         }
                                     }
                                     aa_equals "Test.AS${i} qss_tips_row_of_table_label_value for table_id '$t_id_arr(${i})' vc1k_label '${vc1k_label}' if_mupltiple '${if_multiple}' row_id check" $row_id $ck_row_id
-                                    aa_equals "Test.AT${i} qss_tips_row_of_table_label_value for table_id '$t_id_arr(${i})' vc1k_label '${vc1k_label}' if_mupltiple '${if_multiple}' label '${label}' value '${v_ck}'" $v $v_ck 
+                                    aa_equals "Test.AT${i} qss_tips_row_of_table_label_value for table_id '$t_id_arr(${i})' vc1k_label '${vc1k_label}' if_mupltiple '${if_multiple}' label '${label}' value '${v_ck}'" $vx $v_ck 
 
                                 }
                             }
