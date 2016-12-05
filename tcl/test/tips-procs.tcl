@@ -519,37 +519,41 @@ BEGIN TEST LOOP for value '${v}'"
                                     # mapping of row_id and r
                                     #set f_row_id_arr(${r}) $row_id
                                     #lappend f_row_nbr_larr(${row_id_new}) $r
-                                    if { $valid_row_id_p } {
-                                        if { $is_duplicate_p } {
-                                            # row_id depends on if_multiple and row
-                                            switch -exact -- $if_multiple {
-                                                -1 {
-                                                    # does not return anything when if_multiple = -1
-                                                    set row_nbr ""
-                                                    set ck_row_id ""
-                                                    set v_ck ""
-                                                    
-                                                }
-                                                0 {
-                                                    set row_nbr [lindex $f_row_nbr_larr(${row_id}) 0]
-                                                    set ck_row_id $f_row_id_arr(${row_nbr})
-                                                    set v_ck $rowck_arr(${row_nbr},${label})
-                                                }
-                                                1 {
-                                                    set row_nbr [lindex $f_row_nbr_larr(${row_id}) end]
-                                                    set ck_row_id $f_row_id_arr(${row_nbr})
-                                                    set v_ck $rowck_arr(${row_nbr},${label})
-                                                }
-                                                default {
-                                                    ns_log Warning "spreadsheet/tcl/test/tips-procs.tcl.535: This should not happen"
-                                                }
+                                    if { $is_duplicate_p } {
+                                        # row_id depends on if_multiple and row
+                                        switch -exact -- $if_multiple {
+                                            -1 {
+                                                # does not return anything when if_multiple = -1
+                                                set row_nbr ""
+                                                set ck_row_id ""
+                                                set v_ck ""
+                                                
                                             }
-                                            
-                                        } else {
+                                            0 {
+                                                set row_nbr [lindex $f_row_nbr_larr(${row_id}) 0]
+                                                set ck_row_id $f_row_id_arr(${row_nbr})
+                                                set v_ck $rowck_arr(${row_nbr},${label})
+                                            }
+                                            1 {
+                                                set row_nbr [lindex $f_row_nbr_larr(${row_id}) end]
+                                                set ck_row_id $f_row_id_arr(${row_nbr})
+                                                set v_ck $rowck_arr(${row_nbr},${label})
+                                            }
+                                            default {
+                                                ns_log Warning "spreadsheet/tcl/test/tips-procs.tcl.535: This should not happen"
+                                            }
+                                        }
+                                        
+                                    } else {
+                                        if { $valid_row_id_p } {
                                             # value depends on row_id only
                                             set row_nbr [lindex $f_row_nbr_larr(${row_id}) 0]
                                             set ck_row_id $f_row_id_arr(${row_nbr})
                                             set v_ck $rowck_arr(${row_nbr},${label})
+                                        } else {
+                                            set row_nbr ""
+                                            set ck_row_id ""
+                                            set v_ck ""
                                         }
                                     }
                                     aa_equals "Test.AS${i} qss_tips_row_of_table_label_value for table_id '$t_id_arr(${i})' vc1k_label '${vc1k_label}' if_mupltiple '${if_multiple}' row_id check" $row_id $ck_row_id
