@@ -1066,11 +1066,16 @@ ad_proc -public qss_tips_row_of_table_label_value {
             set sort_sql ""
             switch -exact -- $if_multiple {
                 1 { 
+                    # FIFO
                     set sort_sql "order by created desc"
                 }
-               -1 -
+                -1 {
+                    # Reject multiple
+                    set sort_sql "order by created asc"
+                }
                 0 -
                 default  { 
+                    # LIFO is safest/most reliable. No?
                     set sort_sql "order by created asc"
                     set if_multiple "0" 
                 }
@@ -1116,13 +1121,14 @@ ad_proc -public qss_tips_row_of_table_label_value {
                 }
                 if { $exists_p && $if_multiple eq "-1" } {
                     set row_ids_unique_list [qf_uniques_of $row_ids_list]
-                    ns_log Notice "qss_tips_row_of_table_label_value.1094: row_ids_list '${row_ids_list}' row_ids_unique_list '${row_ids_unique_list}'"
+                    
                     if { [llength $row_ids_unique_list] > 1 } {
+                        ns_log Notice "qss_tips_row_of_table_label_value.1094: Rejecting row_id, because if_multiple=-1: row_ids_list '${row_ids_list}' row_ids_unique_list '${row_ids_unique_list}'"
                         #set return_row_id ""
                         set exists_p 0
                     }
                 }
-
+                
                 if { $exists_p } {
                     # duplicate core of qss_tips_row_read
                     set return_row_id $row_id
