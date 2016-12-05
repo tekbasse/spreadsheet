@@ -1004,19 +1004,17 @@ ad_proc -private qss_tips_set_by_field_type {
 
 
 ad_proc -public qss_tips_row_update {
-    label_value_list
-    table_label
+    table_id
     row_id
+    label_value_list
 } {
     Updates a record into table_label. 
     @return 1 if successful, otherwise return 0.
 } {
     upvar 1 instance_id instance_id
-    upvar 1 __qss_tips_cell_arr 
-    set success_p [qss_tips_row_id_exists_q $row_id $table_id ]
-    if { $success_p } {
-        set table_id [qss_tips_table_id_of_name $table_label]
-        if { [qf_is_natural_number $table_id] } {
+    if { [qf_is_natural_number $table_id] && [qf_is_natural_number $row_id ] } {
+        set success_p [qss_tips_row_id_exists_q $row_id $table_id ]
+        if { $success_p } {
             set count [qss_tips_field_defs_maps_set $table_id t_arr l_arr "" "" "" field_labels_list ]
             if { $count > 0 } { 
                 qss_tips_user_id_set
@@ -1026,12 +1024,14 @@ ad_proc -public qss_tips_row_update {
                             #set field_id $l_arr(${label})
                             #set field_type $t_arr(${label})
                             qss_tips_set_by_field_type $t_arr(${label}) $value f_nbr f_txt f_vc1k
-                            qss_tips_cell_update $table_id $larr(${label}) $row_id $value
+                            qss_tips_cell_update $table_id $row_id $larr(${label}) $value
                         }
                     }
                 }
             }
         }
+    } else {
+        ns_log Warning "qss_tips_row_udpate.1035: table_id '${table_id}' or row_id '${row_id}' is not a number."
     }
     return $success_p
 }
@@ -1262,8 +1262,8 @@ ad_proc -public qss_tips_row_read {
 }
 
 ad_proc -public qss_tips_row_trash {
-    row_id
     table_id
+    row_id
 } {
     Trashes a record of table_id. Returns 1 if successful, otherwise 0.
 } {
@@ -1325,8 +1325,8 @@ ad_proc -public qss_tips_cell_read_by_id {
 
 ad_proc -public qss_tips_cell_update {
     table_id
-    field_id
     row_id
+    field_id
     new_value
 } {
     Updates a cell value.

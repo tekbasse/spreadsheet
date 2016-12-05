@@ -561,16 +561,71 @@ BEGIN TEST LOOP for value '${v}'"
 
                                 }
                             }
+                            # back to context of row loop only 
+
+                            # if row_id exists and expected, perform some more tests
+                            set ck_update_label_val_list [list ]
+                            if { $ck_row_id eq $row_id } {
+
+                                # for each label type, check a case
+                                for {set j 1} {$j < 4} {incr j} {
+                                    switch -exact $f_field_type_arr($j) {
+                                        txt {
+                                            set value [qal_namelur [randomRange 20]]
+                                        }
+                                        vc1k {
+                                            #        set value [string range [qal_namelu [randomRange 10]] 0 38]
+                                            # pre calculated for testing 
+                                            set value [lindex $vc1k_val_list $r]
+                                        }
+                                        nbr {
+                                            set value [clock microseconds]
+                                        }
+                                    }
+                                    set label $f_label_arr($j)
+                                    lappend ck_update_label_val_list $label $value
+                                }
+                                
+                                #  qss_tips_row_update
+                                set success_p [qss_tips_row_update $t_id_arr(${i}) $row_id $ck_update_label_val_list ]
+                                aa_true "Test.BA${i} qss_tips_row_update table_id '$t_id_arr(${i})' row_id '${row_id}' success_p" $success_p
+
+                                #  qss_tips_rows_read
+                                set ck2_update_label_val_list [qss_tips_row_read $t_id_arr(${i}) $row_id]
+                                # for each label type, check a case
+                                for {set j 1} {$j < 4} {incr j} {
+                                    set label $f_label_arr($j)
+                                    set v_ck [dict get $ck_update_label_value_list $label] 
+                                    if { [llength $ck2_update_label_value_list] > 0 } {
+                                        # following doesn't work if no rows are returned.
+                                        # if dict fails,  qss_tips_row_of_table_value failed to return an expected field
+                                        set v [dict get $ck2_update_label_value_list $label] 
+                                    } else {
+                                        set v ""
+                                    }
+                                    aa_equals "Test.BB${i} check label '${label}' value" $v $v_ck
+                                }
+                                
+                                #  qss_tips_row_trash
+                                set success_p [qss_tips_row_trash $table_id $row_id]
+                                aa_true "Test.BC${i} qss_tips_row_trash table_id '$t_id_arr(${i})' row_id '${row_id}' success_p" $success_p
+
+                                #  qss_tips_row_id_exists_q
+                                set exists_p [qss_tips_row_id_exists_q $row_id $table_id]
+                                if { $exists_p } {
+                                    set not_exists_p 0
+                                } else {
+                                    set not_exists_p 1
+                                }
+                                aa_true "Test.BC${i} qss_tips_row_trash table_id '$t_id_arr(${i})' row_id '${row_id}' not_exists_p" $not_exists_p
+
+
+                            }
                         }
-                        #  qss_tips_row_trash
-                        #  qss_tips_row_update
-                        #  qss_tips_rows_read
-                        # create
-                        # read
-                        # update
-                        # read
-                        # trash
-                        # read
+
+
+
+
 
                         # # #
                         # cells
