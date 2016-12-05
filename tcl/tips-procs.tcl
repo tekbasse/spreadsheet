@@ -1024,7 +1024,9 @@ ad_proc -public qss_tips_row_update {
                             #set field_id $l_arr(${label})
                             #set field_type $t_arr(${label})
                             qss_tips_set_by_field_type $t_arr(${label}) $value f_nbr f_txt f_vc1k
-                            qss_tips_cell_update $table_id $row_id $larr(${label}) $value
+                            qss_tips_cell_update $table_id $row_id $l_arr(${label}) $value
+                        } else {
+                            ns_log Notice "qss_tips_row_update.1031 label '${label}' not in table_id '${table_id}'. update to value '${value}' ignored."
                         }
                     }
                 }
@@ -1303,24 +1305,56 @@ ad_proc -public qss_tips_cell_read {
     return $return_val
 }
 
+ad_proc -private qss_tips_cell_id_exists_q {
+    table_id
+    row_id
+    field_id
+} {
+    Returns 1 if cell exists, otherwise returns 0.
+} {
+    upvar 1 instance_id instance_id
+    set exists_p [db_0or1row qss_tips_field_values_c1_by_id {select f_vc1k, f_nbr, f_txt from qss_tips_field_values
+        where row_id=:row_id
+        and field_id=:field_id
+        and table_id=:table_id
+        and instance_id=:instance_id
+        and trashed_p!='1'} ]
+    return $exists_p
+}
+
 ad_proc -public qss_tips_cell_read_by_id {
     table_id
     row_id
     field_id_list
 } {
-    Returns the values of the field labels in return_val_label_list in order in list.
+    Returns the values of fields in field_id_list in same order as field_id(s) in list.
+    Field_ids without values return empty string.
+    Returns the same number of elements in a list as there are in field_id_list.
 } {
     upvar 1 instance_id instance_id
-    set exists_p [db_0or1row qss_tips_field_values_r1_by_id {select f_vc1k, f_nbr, f_txt from qss_tips_field_values
+    set field_id_filtered_list [hf_list_filter_by_natural_number $field_id_list]
+    set field_id_values_lists [db_list_of_lists qss_tips_cell_read_by_id "select field_id,f_vc1k,f_nbr,f_txt from qss_tips_field_values
         where row_id=:row_id
         and table_id=:table_id
         and instance_id=:instance_id
-        and trashed_p!='1'} ]
-    ##code
-    if { $exists_p } {
-        set field_value [qal_first_nonempty_in_list [list $f_vc1k $f_nbr $f_txt] ]
+        and trashed_p!='1'
+    and field_id in ([template::util::tcl_to_sql_list $field_id_filtered_list]) "]
+    foreach row_list $field_id_values_lists {
+        foreach {field_id f_vc1k f_nbr f_txt} $row_list {
+            # It's faster to assume one value, than query db for field_type
+            set field_value [qal_first_nonempty_in_list [list $f_vc1k $f_nbr $f_txt] ]
+            set v_arr(${field_id}) $field_value
+        }
     }
-    return $return_val
+    foreach field_id $field_id_list {
+        set field_value ""
+        if { [info exists v_arr(${field_id}) ] } {
+            lappend value_list $field_value
+        } else {
+            lappend value_list ""
+        }
+    }
+    return $value_list
 }
 
 ad_proc -public qss_tips_cell_update {
@@ -1332,21 +1366,22 @@ ad_proc -public qss_tips_cell_update {
     Updates a cell value.
 } {
     upvar 1 instance_id instance_id
+    set success_p 0
     set field_info_list [qss_tips_field_def_read $table_id "" $field_id]
     if { [llength $field_info_list] > 0 } {
         set field_type [lindex $field_info_list 5]
-        qss_tips_set_by_field_type $field_type $value f_nbr f_txt f_vc1k
+        qss_tips_set_by_field_type $field_type $new_value f_nbr f_txt f_vc1k
         qss_tips_user_id_set
         set trashed_p 0
         db_transaction {
-            qss_tips_cell_trash $table_id $row_id $field_id
+            set success_p [qss_tips_cell_trash $table_id $row_id $field_id ]
             db_dml qss_tips_field_values_row_up_1f { insert into qss_tips_field_values
                 (instance_id,table_id,row_id,trashed_p,created,user_id,field_id,f_vc1k,f_nbr,f_txt)
                 values (:instance_id,:table_id,:row_id,:trashed_p,now(),:user_id,:field_id,:f_vc1k,:f_nbr,:f_txt)
             }
         }
     }
-    return $return_val
+    return $success_p
 }
 
 ad_proc -public qss_tips_cell_trash {
@@ -1356,11 +1391,16 @@ ad_proc -public qss_tips_cell_trash {
 } {
     @return 1 if successful, otherwise 0
 } {
-    set exists_p db_dml qss_tips_field_values_cell_trash { update qss_tips_field_values
-        set trashed_p='1',trashed_by=:user_id,trashed_dt=now()
-        where instance_id=:instance_id
-        and table_id=:table_id
-        and row_id=:row_id
-        and field_id=:field_id }
+    upvar 1 instance_id instance_id
+    set exists_p [qss_tips_cell_id_exists_q $table_id $row_id $field_id]
+    if { $exists_p } {
+        qss_tips_user_id_set
+        db_dml qss_tips_field_values_cell_trash { update qss_tips_field_values
+            set trashed_p='1',trashed_by=:user_id,trashed_dt=now()
+            where instance_id=:instance_id
+            and table_id=:table_id
+            and row_id=:row_id
+            and field_id=:field_id }
+    }
     return $exists_p
 }

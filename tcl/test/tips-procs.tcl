@@ -595,11 +595,11 @@ BEGIN TEST LOOP for value '${v}'"
                                 # for each label type, check a case
                                 for {set j 1} {$j < 4} {incr j} {
                                     set label $f_label_arr($j)
-                                    set v_ck [dict get $ck_update_label_value_list $label] 
-                                    if { [llength $ck2_update_label_value_list] > 0 } {
+                                    set v_ck [dict get $ck_update_label_val_list $label] 
+                                    if { [llength $ck2_update_label_val_list] > 0 } {
                                         # following doesn't work if no rows are returned.
                                         # if dict fails,  qss_tips_row_of_table_value failed to return an expected field
-                                        set v [dict get $ck2_update_label_value_list $label] 
+                                        set v [dict get $ck2_update_label_val_list $label] 
                                     } else {
                                         set v ""
                                     }
@@ -607,11 +607,11 @@ BEGIN TEST LOOP for value '${v}'"
                                 }
                                 
                                 #  qss_tips_row_trash
-                                set success_p [qss_tips_row_trash $table_id $row_id]
+                                set success_p [qss_tips_row_trash $t_id_arr(${i}) $row_id]
                                 aa_true "Test.BC${i} qss_tips_row_trash table_id '$t_id_arr(${i})' row_id '${row_id}' success_p" $success_p
 
                                 #  qss_tips_row_id_exists_q
-                                set exists_p [qss_tips_row_id_exists_q $row_id $table_id]
+                                set exists_p [qss_tips_row_id_exists_q $row_id $t_id_arr(${i})]
                                 if { $exists_p } {
                                     set not_exists_p 0
                                 } else {
