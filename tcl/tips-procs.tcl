@@ -234,7 +234,7 @@ ad_proc -private qss_tips_row_id_exists_q {
     Set trashed_p to 1 to check all cases.
 } {
     upvar 1 instance_id instance_id
-    if { ![qf_is_true $trashed_p ] } {
+    if { [qf_is_true $trashed_p ] } {
         set exists_p [db_0or1row qss_tips_trashed_row_id_exists {
             select row_id from qss_tips_field_values
             where row_id=:row_id
