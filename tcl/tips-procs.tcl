@@ -870,7 +870,7 @@ ad_proc -private qss_tips_field_def_read {
                 lappend id_search_list [lindex $field_list 0]
             }
             foreach id $field_id_list {
-                set indexes [lsearch -exact -integer $id_search_list $id]
+                set indexes [lsearch -exact -all -integer $id_search_list $id]
                 set field_id_idx_list [concat $field_id_idx_list $indexes]
             }
         }
@@ -1012,6 +1012,7 @@ ad_proc -public qss_tips_row_update {
     @return 1 if successful, otherwise return 0.
 } {
     upvar 1 instance_id instance_id
+    set success_p 0
     if { [qf_is_natural_number $table_id] && [qf_is_natural_number $row_id ] } {
         set success_p [qss_tips_row_id_exists_q $row_id $table_id ]
         if { $success_p } {
@@ -1023,6 +1024,7 @@ ad_proc -public qss_tips_row_update {
                         if { $label in $field_labels_list } {
                             #set field_id $l_arr(${label})
                             #set field_type $t_arr(${label})
+                            ns_log Notice "qss_tips_row_update.1027 table_id '${table_id}' row_id '${row_id}' label '${label}' t_arr(${label}) '$t_arr(${label})'"
                             qss_tips_set_by_field_type $t_arr(${label}) $value f_nbr f_txt f_vc1k
                             qss_tips_cell_update $table_id $row_id $l_arr(${label}) $value
                         } else {
@@ -1367,9 +1369,17 @@ ad_proc -public qss_tips_cell_update {
 } {
     upvar 1 instance_id instance_id
     set success_p 0
-    set field_info_list [qss_tips_field_def_read $table_id "" $field_id]
-    if { [llength $field_info_list] > 0 } {
-        set field_type [lindex $field_info_list 5]
+    #set field_info_list \[qss_tips_field_def_read $table_id "" $field_id\]
+    #ns_log Notice "qss_tips_cell_update.1373: field_info_list '${field_info_list}'"
+    #if llength $field_info_list > 0 
+    set exists_p [db_0or1row qss_tips_field_def_read_ft {
+        select field_type from qss_tips_field_defs
+        where instance_id=:instance_id
+        and table_id=:table_id
+        and id=:field_id
+        and trashed_p!='1'}]
+    if { $exists_p } {
+        #set field_type \[lindex \[lindex $field_info_list 0\] 5\]
         qss_tips_set_by_field_type $field_type $new_value f_nbr f_txt f_vc1k
         qss_tips_user_id_set
         set trashed_p 0

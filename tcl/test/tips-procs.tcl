@@ -566,9 +566,14 @@ BEGIN TEST LOOP for value '${v}'"
                             # if row_id exists and expected, perform some more tests
                             set ck_update_label_val_list [list ]
                             if { $ck_row_id eq $row_id } {
-
-                                # for each label type, check a case
+                                set j_list [list ]
+                                # for each label type, check a case. Shuffle list for diagnostics.
                                 for {set j 1} {$j < 4} {incr j} {
+                                    lappend j_list $j
+                                }
+                                set j_list [acc_fin::shuffle_list $j_list]
+                                ns_log Notice "test/tips-procs.tcl.575: shuffled j_list '${j_list}'"
+                                foreach j $j_list {
                                     switch -exact $f_field_type_arr($j) {
                                         txt {
                                             set value [qal_namelur [randomRange 20]]
@@ -588,12 +593,14 @@ BEGIN TEST LOOP for value '${v}'"
                                 
                                 #  qss_tips_row_update
                                 set success_p [qss_tips_row_update $t_id_arr(${i}) $row_id $ck_update_label_val_list ]
-                                aa_true "Test.BA${i} qss_tips_row_update table_id '$t_id_arr(${i})' row_id '${row_id}' success_p" $success_p
+                                aa_true "Test.BA${i} qss_tips_row_update table_id '$t_id_arr(${i})' row_id '${row_id}' update_label_val_list '${ck_update_label_val_list}' success_p" $success_p
 
                                 #  qss_tips_rows_read
                                 set ck2_update_label_val_list [qss_tips_row_read $t_id_arr(${i}) $row_id]
                                 # for each label type, check a case
-                                for {set j 1} {$j < 4} {incr j} {
+                                set j_list [acc_fin::shuffle_list $j_list]
+                                ns_log Notice "test/tips-procs.tcl.601: shuffled j_list '${j_list}'"
+                                foreach j $j_list {
                                     set label $f_label_arr($j)
                                     set v_ck [dict get $ck_update_label_val_list $label] 
                                     if { [llength $ck2_update_label_val_list] > 0 } {
@@ -605,8 +612,8 @@ BEGIN TEST LOOP for value '${v}'"
                                         set v ""
                                         set label_exists_p 0
                                     }
-                                    aa_true "Test.BB${i}. label '${label}' exists" $label_exists_p
-                                    aa_equals "Test.BC${i} check label '${label}' value" $v $v_ck
+                                    aa_true "Test.BB${i}. j '${j}' label '${label}' exists" $label_exists_p
+                                    aa_equals "Test.BC${i} j '${j}' check label '${label}'s value" $v $v_ck
                                 }
                                 
                                 #  qss_tips_row_trash
@@ -620,7 +627,7 @@ BEGIN TEST LOOP for value '${v}'"
                                 } else {
                                     set not_exists_p 1
                                 }
-                                aa_true "Test.BE{i} qss_tips_row_trash table_id '$t_id_arr(${i})' row_id '${row_id}' not_exists_p" $not_exists_p
+                                aa_true "Test.BE${i} qss_tips_row_trash table_id '$t_id_arr(${i})' row_id '${row_id}' not_exists_p" $not_exists_p
 
 
                             }
