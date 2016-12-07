@@ -379,7 +379,8 @@ aa_register_case -cats {api smoke} qss_tips_check {
                         set r_count_max 39
                         # set the value for vc1k to unique values, except add a duplicate or more to test some api features
                         set duplicate_count [randomRange 3]
-                        incr duplicate_count
+                        # Add an extra duplicate, because there is a random chance a duplicate row is deleted later in the testing
+                        incr duplicate_count 2
                         set unique_count [expr { $r_count_max - $duplicate_count } ]
                         set r 2
                         set vc1k_val_list [list $row1_vc1k]
