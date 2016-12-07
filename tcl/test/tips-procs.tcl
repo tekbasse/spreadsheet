@@ -640,16 +640,19 @@ BEGIN TEST LOOP for value '${v}'"
 
                         # # #
                         # cells
+
+                        # get a list of table row ids
+
                         #  qss_tips_cell_read
                         #  qss_tips_cell_read_by_id
-                        #  qss_tips_cell_trash
+
                         #  qss_tips_cell_update
-                        # read
-                        # update
-                        # read
-                        # trash
-                        # read
-                        # read modified row and check for consistency
+                        #qss_tips_cell_read_by_id to confirm
+
+                        #  qss_tips_cell_trash
+                        #qss_tips_cell_read_by_id to confirm
+
+
 
                         # table read, compare to existing
                         #  qss_tips_table_read
