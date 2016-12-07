@@ -1175,7 +1175,8 @@ ad_proc -public qss_tips_rows_read {
     table_id
     row_ids_list
 } {
-    Reads rows from table_id as a list of lists, where first list is field labels.
+    Reads rows from table_id as a list of lists. 
+    The first row consists of a list of ordered field (ie column) labels for subsequent lists.
     row_ids_list is a list of row_ids of table_id.
     Returns empty list if table not found.
 } {
