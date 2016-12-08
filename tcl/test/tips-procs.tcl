@@ -301,8 +301,10 @@ aa_register_case -cats {api smoke} qss_tips_check {
                             set f_default_value_arr($j) ""
                             #  qss_tips_field_def_create
                             set f_def_id [qss_tips_field_def_create table_id $t_id_arr(${i}) label $label name $name field_type $field_type]
+
                             if { [qf_is_natural_number $f_def_id] } {
                                 set success_p 1
+                                set field_id_of_label_arr(${label}) $f_def_id
                             } else {
                                 set success_p 0
                             }
@@ -411,6 +413,7 @@ aa_register_case -cats {api smoke} qss_tips_check {
                                         #        set value [string range [qal_namelu [randomRange 10]] 0 38]
                                         # pre calculated for testing 
                                         set value [lindex $vc1k_val_list $r]
+                                        set h_vc1k_at_r_arr(${r}) $value
                                     }
                                     nbr {
                                         set value [clock microseconds]
@@ -646,10 +649,12 @@ BEGIN TEST LOOP for value '${v}'"
                         # $rowck_arr(r,$label) returns initial cell value  
                         # $label_value_larr(r) returns label_value_list for row 
                         # $f_row_id_arr(r) returns row_id for row
-                        # $f_row_nbr_larr(r) returns row_id for row r
+                        # $f_row_nbr_larr(r) returns row number(s) for row_id
                         # data_row_id_list is a list of all row_id
                         # tested_row_id_list is a list of row_ids used in prior tests (ie don't reuse)
-
+                        # $field_id_of_label_arr(label)
+                        # $t_label_arr(${i}) is table label for case i 
+                        # $h_vc1k_at_r_arr(r) is value of vc1k field for row r
                         # choose an untested row_id
                         set test_idx [randomRange $data_row_id_list_len]
                         set test_row_id [lindex $data_row_id_list $test_idx]
@@ -659,13 +664,19 @@ BEGIN TEST LOOP for value '${v}'"
                         }
                         lappend tested_row_id_list $test_row_id
 
+                        set r [lindex $f_row_nbr_larr(${test_row_id}) 0]
+                        set vc1k_search_val $h_vc1k_at_r_arr(${r})
+
                         # test for each data type, ie cell in the row
                         foreach j $j_list {
                             set label $f_label_arr($j)
+                            set field_id $field_id_of_label_arr(${label})
 
+                            #This will always fail for the case where search field is the same as the field changed,
+                            #so for the vc1k test field (and subsequent cell tests, update vc1k_search_val
+                            #  qss_tips_cell_read
+                            set val_case1 [qss_tips_cell_read $t_label_arr(${i}) [list $label $vc1k_search_val] 
 
-                        
-                        #  qss_tips_cell_read
                         #  qss_tips_cell_read_by_id
 
                         #  qss_tips_cell_update
