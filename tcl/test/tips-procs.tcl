@@ -330,7 +330,7 @@ aa_register_case -cats {api smoke} qss_tips_check {
                                     set value [string range [qal_namelur [randomRange 10]] 0 38]
                                     # next value used in a later test that builds on this row.
                                     set row1_vc1k $value
-                                    
+                                    set row1_vc1k_idx $j
                                 }
                                 nbr {
                                     set value [clock microseconds]
@@ -656,6 +656,7 @@ BEGIN TEST LOOP for value '${v}'"
                         # $t_label_arr(${i}) is table label for case i 
                         # $h_vc1k_at_r_arr(r) is value of vc1k field for row r
                         # choose an untested row_id
+                        # $row1_vc1k_idx value of loop index j for vc1k label
                         set test_idx [randomRange $data_row_id_list_len]
                         set test_row_id [lindex $data_row_id_list $test_idx]
                         while { $test_row_idx in $tested_row_id_list } {
@@ -675,7 +676,8 @@ BEGIN TEST LOOP for value '${v}'"
                             #This will always fail for the case where search field is the same as the field changed,
                             #so for the vc1k test field (and subsequent cell tests, update vc1k_search_val
                             #  qss_tips_cell_read
-                            set val_case1 [qss_tips_cell_read $t_label_arr(${i}) [list $label $vc1k_search_val] 
+                            set val_case1 [qss_tips_cell_read $t_label_arr(${i}) [list $f_label_arr(${row1_vc1k_idx}) $vc1k_search_val] $label]
+                            aa_equals "Test.CA${i} j '${j}' check qss_tips_cell_read label '${label}'s value" $val_case1 $rowck_arr(${r},${label})
 
                         #  qss_tips_cell_read_by_id
 
