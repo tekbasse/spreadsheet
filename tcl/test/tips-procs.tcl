@@ -449,6 +449,7 @@ aa_register_case -cats {api smoke} qss_tips_check {
                         set val_dup_ck_list [list 0 1]
                         set vdcli -1
                         set vc1k_label [lindex $field_label_list 1]
+                        set test_row_id_list [list ]
                         aa_log "val_ck_list '${val_ck_list}'"
                         foreach v $val_ck_list {
                             incr vdcli
@@ -471,9 +472,11 @@ BEGIN TEST LOOP for value '${v}'"
                                     unset row_id
                                 }
                                 set row_label_value_list [qss_tips_row_of_table_label_value $t_id_arr(${i}) [list $vc1k_label $v] $if_multiple row_id]
+
                                 aa_log "Test.AQ${i}.row_id '${row_id}' of qss_tips_row_of_table_label_value table_id '$t_id_arr(${i})' if_multiple '${if_multiple}' row_label_value_list '${row_label_value_list}'"
                                 if { $row_id in $data_row_id_list } {
                                     set valid_row_id_p 1
+                                    lappend tested_row_id_list $row_id
                                 } else { 
                                     set valid_row_id_p 0
                                 }
@@ -633,16 +636,35 @@ BEGIN TEST LOOP for value '${v}'"
 
                             }
                         }
-
-
-
+                        set tested_row_id_list [qf_uniques_of $tested_row_id_list]
+                        aa_log "tested_row_id_list '${tested_row_id_list}'"
+                       
 
 
                         # # #
                         # cells
+                        # $rowck_arr(r,$label) returns initial cell value  
+                        # $label_value_larr(r) returns label_value_list for row 
+                        # $f_row_id_arr(r) returns row_id for row
+                        # $f_row_nbr_larr(r) returns row_id for row r
+                        # data_row_id_list is a list of all row_id
+                        # tested_row_id_list is a list of row_ids used in prior tests (ie don't reuse)
 
-                        # get a list of table row ids
+                        # choose an untested row_id
+                        set test_idx [randomRange $data_row_id_list_len]
+                        set test_row_id [lindex $data_row_id_list $test_idx]
+                        while { $test_row_idx in $tested_row_id_list } {
+                            set test_idx [randomRange $data_row_id_list_len]
+                            set test_row_id [lindex $data_row_id_list $test_idx]
+                        }
+                        lappend tested_row_id_list $test_row_id
 
+                        # test for each data type, ie cell in the row
+                        foreach j $j_list {
+                            set label $f_label_arr($j)
+
+
+                        
                         #  qss_tips_cell_read
                         #  qss_tips_cell_read_by_id
 
@@ -652,6 +674,8 @@ BEGIN TEST LOOP for value '${v}'"
                         #  qss_tips_cell_trash
                         #qss_tips_cell_read_by_id to confirm
 
+
+                        }
 
 
                         # table read, compare to existing

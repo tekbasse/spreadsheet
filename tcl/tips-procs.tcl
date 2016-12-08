@@ -1292,18 +1292,15 @@ ad_proc -public qss_tips_cell_read {
     {vc1k_search_label_val_list ""}
     {if_multiple "1"}
     {return_val_label_list ""}
-    {which_row "0"}
 } {
     Returns the values of the field labels in return_val_label_list in order in list.
-    If more than one record matches search_value for search_label, value of "which_row"
-    determines which one is chosen. Cases assume chronological order and
-    are "0" for first, integer N for Nth, or "end" for more recent one.
-    "which_row" accepts tcl ref math, such as "end-1" for example.
+    If more than one record matches search_value for search_label, if_multiple
+    determines which one is chosen; @see qss_tips_row_of_table_label_value 
 } {
     set table_id [qss_tips_table_id_of_name $table_label]
-    ##code  This should be re-worked to minimize db calls.
-    set label_value_list [qss_tips_row_of_table_label_value $table_id $vc1k_search_label_val_list $which_row row_id]
-    set field_id_list [qss_tips_field_ids_of_labels $return_val_label_list]
+    set label_value_list [qss_tips_row_of_table_label_value $table_id $vc1k_search_label_val_list $if_multiple row_id]
+    ##code use qss_tips_fied_defs_maps_set
+    #set field_id_list \[qss_tips_field_ids_of_labels $return_val_label_list\]
     set values_list [qss_tips_cell_read_by_id $table_id $row_id $field_id_list]
     return $return_val
 }
