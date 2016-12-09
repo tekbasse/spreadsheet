@@ -673,19 +673,31 @@ BEGIN TEST LOOP for value '${v}'"
                             set label $f_label_arr($j)
                             set field_id $field_id_of_label_arr(${label})
 
-                            #This will always fail for the case where search field is the same as the field changed,
-                            #so for the vc1k test field (and subsequent cell tests, update vc1k_search_val
                             #  qss_tips_cell_read
                             set val_case1 [qss_tips_cell_read $t_label_arr(${i}) [list $f_label_arr(${row1_vc1k_idx}) $vc1k_search_val] $label]
                             aa_equals "Test.CA${i} j '${j}' check qss_tips_cell_read label '${label}'s value" $val_case1 $rowck_arr(${r},${label})
 
-                        #  qss_tips_cell_read_by_id
+                            #  qss_tips_cell_read_by_id
+                            set value_by_id [qss_tips_cell_read_by_id $t_label_arr(${i}) $test_row_id $field_id]
+                            aa_equals "Test.CB${i} j '${j}' check qss_tips_cell_read label '${label}'s value" $val_by_id $rowck_arr(${r},${label})
 
-                        #  qss_tips_cell_update
-                        #qss_tips_cell_read_by_id to confirm
+                            #  qss_tips_cell_update
 
-                        #  qss_tips_cell_trash
-                        #qss_tips_cell_read_by_id to confirm
+
+                            #qss_tips_cell_read_by_id to confirm
+
+                            #The following read/check will always fail for the case where search field is the same as the field changed,
+                            #so for the vc1k test field (and subsequent cell tests, update vc1k_search_val
+                            # to new value
+                            if { $f_label_arr(${row1_vc1k_idx}) eq $label } {
+                                ## new value
+                                set vc1k_search_val 
+                            }
+
+
+                            #  qss_tips_cell_trash
+
+                            #qss_tips_cell_read_by_id to confirm
 
 
                         }
