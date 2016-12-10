@@ -682,7 +682,20 @@ BEGIN TEST LOOP for value '${v}'"
                             aa_equals "Test.CB${i} j '${j}' check qss_tips_cell_read label '${label}'s value" $val_by_id $rowck_arr(${r},${label})
 
                             #  qss_tips_cell_update
-
+                            # create a new value of same type.
+                            switch -exact $f_field_type_arr($j) {
+                                txt {
+                                    set value [qal_namelur [randomRange 20]]
+                                }
+                                vc1k {
+                                    set value_len [randomRange 20]
+                                    set value [ad_generate_random_string $value_len]
+                                    
+                                }
+                                nbr {
+                                    set value [clock microseconds]
+                                }
+                            }
 
                             #qss_tips_cell_read_by_id to confirm
 
@@ -690,8 +703,8 @@ BEGIN TEST LOOP for value '${v}'"
                             #so for the vc1k test field (and subsequent cell tests, update vc1k_search_val
                             # to new value
                             if { $f_label_arr(${row1_vc1k_idx}) eq $label } {
-                                ## new value
-                                set vc1k_search_val 
+                                # new vc1k value
+                                set vc1k_search_val $value
                             }
 
 
