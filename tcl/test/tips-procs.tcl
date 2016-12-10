@@ -526,6 +526,7 @@ BEGIN TEST LOOP for value '${v}'"
                                     # mapping of row_id and r
                                     #set f_row_id_arr(${r}) $row_id
                                     #lappend f_row_nbr_larr(${row_id_new}) $r
+                                    aa_log "row_id '$row_id' "
                                     if { $is_duplicate_p } {
                                         # row_id depends on if_multiple and row
                                         switch -exact -- $if_multiple {
@@ -659,7 +660,7 @@ BEGIN TEST LOOP for value '${v}'"
                         # $row1_vc1k_idx value of loop index j for vc1k label
                         set test_idx [randomRange $data_row_id_list_len]
                         set test_row_id [lindex $data_row_id_list $test_idx]
-                        while { $test_row_idx in $tested_row_id_list } {
+                        while { $test_row_id in $tested_row_id_list } {
                             set test_idx [randomRange $data_row_id_list_len]
                             set test_row_id [lindex $data_row_id_list $test_idx]
                         }
@@ -712,11 +713,22 @@ BEGIN TEST LOOP for value '${v}'"
                             set value_by_id_ck [qss_tips_cell_read_by_id $t_label_arr(${i}) $test_row_id $field_id]
                             aa_equals "Test.CC${i} j '${j}' check qss_tips_cell_read label '${label}'s value" $value_by_id $value_by_id_ck
 
-
                             #  qss_tips_cell_trash
+                            set cell_trashed_p [qss_tips_cell_trash $t_label_arr(${i}) $test_row_id $field_id]
+                            aa_true "Test.CD${i} j '${j}' check qss_tips_cell_trash feedback succeeded" $cell_trashed_p
 
                             #qss_tips_cell_read_by_id to confirm
+                            set value_by_id_ck [qss_tips_cell_read_by_id $t_label_arr(${i}) $test_row_id $field_id]
+                            aa_equals "Test.CE${i} j '${j}' check qss_tips_cell_read label '${label}'s value" $value_by_id_ck ""
 
+                            #  qss_tips_cell_trash a trashed
+                            set cell_trashed_p [qss_tips_cell_trash $t_label_arr(${i}) $test_row_id $field_id]
+                            if { $cell_trashed_p } {
+                                set cell_trashed_p 0
+                            } else {
+                                set cell_trashed_p 1
+                            }
+                            aa_true "Test.CF${i} j '${j}' check qss_tips_cell_trash feedback failed" $cell_trashed_p
 
                         }
 

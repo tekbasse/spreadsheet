@@ -463,7 +463,7 @@ ad_proc -public qss_tips_table_read_as_array {
     # trashed_p only makes sense if calling up history of a single cell, row, or table.. by activity.
     upvar 1 instance_id instance_id
     upvar 1 $name_array n_arr
-    set table_id [qss_tips_table_id_of_name $table_label]
+    set table_id [qss_tips_table_id_of_label $table_label]
     set success_p 0
 
     if { [qf_is_natural_number $table_id] } {
@@ -547,7 +547,7 @@ ad_proc -public qss_tips_table_read {
     If row_id_list contains row_ids, only returns ids that are supplied in row_id_list.
 } {
     upvar 1 instance_id instance_id
-    set table_id [qss_tips_table_id_of_name $table_label]
+    set table_id [qss_tips_table_id_of_label $table_label]
     set success_p 0
     set table_lists [list ]
     if { [qf_is_natural_number $table_id] } {
@@ -1299,11 +1299,14 @@ ad_proc -public qss_tips_cell_read {
 
     @see qss_tips_row_of_table_label_value 
 } {
+    upvar 1 instance_id instance_id
     set return_val_list [list ]
     set return_val_label_list [qf_listify $return_vals_labels_list]
     if { [llength $return_val_label_list] > 0 } {
-        set table_id [qss_tips_table_id_of_name $table_label]
+        set table_id [qss_tips_table_id_of_label $table_label]
         set label_value_list [qss_tips_row_of_table_label_value $table_id $vc1k_search_label_val_list $if_multiple row_id]
+
+        ##code generate row_labels_list
         foreach label $return_val_label_list {
             if { $label in $row_labels_list } {
                 set label_val [dict get $label_value_list $label]
