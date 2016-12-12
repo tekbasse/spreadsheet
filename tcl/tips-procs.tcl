@@ -490,6 +490,8 @@ ad_proc -public qss_tips_table_read_as_array {
                         set field_id $field_id_arr(${label})
                         if { $vc1k_search_val eq "" } {
                             append vc1k_search_sql " and (field_id='" $field_id "' and f_vc1k is null)"
+                            ##code  Rework this to something like:
+#                            append vc1k_search_sql " and row_id in (select row_id from qss_tips_field_values where table_id=:table_id and trashed_p!='1' and row_id not in (select row_id from qss_tips_field_values where table_id=:table_id and f_vc1k is not null and field_id='" $field_id_arr(${label}) "' and trashed_p!='1') group by row_id)" 
                         } else {
                             #set field_id $field_id_arr(${label})
                             set vc1k_val_${vref} $vc1k_search_val
@@ -577,6 +579,9 @@ ad_proc -public qss_tips_table_read {
 
                         if { $vc1k_search_val eq "" } {
                             append vc1k_search_sql " and (field_id='" $field_id "' and f_vc1k is null)"
+##code
+# rework this to something like
+#                             append vc1k_search_sql " and row_id in (select row_id from qss_tips_field_values where table_id=:table_id and trashed_p!='1' and row_id not in (select row_id from qss_tips_field_values where table_id=:table_id and f_vc1k is not null and field_id='" $field_id_arr(${label}) "' and trashed_p!='1') group by row_id)" 
                         } else {
                             set vc1k_val_${vref} $vc1k_search_val
                             append vc1k_search_sql " and (field_id='" $field_id "' and f_vc1k=:vc1k_val_${vref})" 
@@ -1095,7 +1100,12 @@ ad_proc -public qss_tips_row_of_table_label_value {
                     incr vref
                     if { [info exists field_id_arr(${label}) ] && $vc1k_search_sql ne "na" } {
                         if { $vc1k_search_val eq "" } {
+                            ##code below does not work.
                             append vc1k_search_sql " and (field_id='" $field_id_arr(${label}) "' and f_vc1k is null)"
+                            #change to add an expression that limits results to row_ids from a general query of
+                            # row_ids less row_ids of field_id that have values.
+                            # because null and empty values don't exist in table's db.
+                            append vc1k_search_sql " and row_id in (select row_id from qss_tips_field_values where table_id=:table_id and trashed_p!='1' and row_id not in (select row_id from qss_tips_field_values where table_id=:table_id and f_vc1k is not null and field_id='" $field_id_arr(${label}) "' and trashed_p!='1') group by row_id)" 
                         } else {
                             #set field_id $field_id_arr(${label})
                             set vc1k_val_${vref} $vc1k_search_val
@@ -1302,11 +1312,11 @@ ad_proc -public qss_tips_cell_read {
     upvar 1 instance_id instance_id
     set return_val_list [list ]
     set return_val_label_list [qf_listify $return_vals_labels_list]
-    if { [llength $return_val_label_list] > 0 } {
+    set return_val_label_list_len [llength $return_val_label_list]
+    if { $return_val_label_list_len > 0 } {
         set table_id [qss_tips_table_id_of_label $table_label]
         set label_value_list [qss_tips_row_of_table_label_value $table_id $vc1k_search_label_val_list $if_multiple row_id]
-
-        ##code generate row_labels_list
+        set row_labels_list [dict keys $label_value_list]
         foreach label $return_val_label_list {
             if { $label in $row_labels_list } {
                 set label_val [dict get $label_value_list $label]
@@ -1316,7 +1326,18 @@ ad_proc -public qss_tips_cell_read {
             lappend return_val_list $label_val
         }
     }
-    return $return_val_list
+ 
+    # if label_val_label_list is one entry,  return a list element only
+    if { $return_val_label_list_len == 1 } {
+        if { [llength $return_val_list] == 0 } {
+            set return_val ""
+        } else {
+            set return_val [lindex $return_val_list 0]
+        }
+    } else {
+        set return_val $return_val_list
+    }
+    return $return_val
 }
 
 ad_proc -private qss_tips_cell_id_exists_q {

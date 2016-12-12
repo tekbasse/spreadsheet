@@ -331,6 +331,7 @@ aa_register_case -cats {api smoke} qss_tips_check {
                                     # next value used in a later test that builds on this row.
                                     set row1_vc1k $value
                                     set row1_vc1k_idx $j
+                                    set h_vc1k_at_r_arr(1) $value
                                 }
                                 nbr {
                                     set value [clock microseconds]
@@ -387,8 +388,7 @@ aa_register_case -cats {api smoke} qss_tips_check {
                         set r 2
                         set vc1k_val_list [list $row1_vc1k]
                         while { $r < $unique_count } {
-                            set value [randomRange 10]
-                            append value [string range [qal_namelur [randomRange 10]] [randomRange 10] 38]
+                            set value [string range [qal_namelur [randomRange 10]] [randomRange 10] 38]
                             ns_log Notice "test/tips-procs.tcl appended vc1k_val_list with element value '${value}"
                             aa_log "i $i r $r Appending vc1k_val_list with element value '${value}'"
                             lappend vc1k_val_list $value
@@ -466,7 +466,7 @@ aa_register_case -cats {api smoke} qss_tips_check {
                             aa_log "\r\r
 
 BEGIN TEST LOOP for value '${v}'"
-                            aa_equals "TEST.AQ0-${i} v is '${v}'  is/isn't_duplicate_p '${is_duplicate_p}'" $is_duplicate_p [lindex $val_dup_ck_list $vdcli]
+                            aa_equals "TEST.AQ0-${i} v is '${v}'  is_duplicate_p '${is_duplicate_p}'" $is_duplicate_p [lindex $val_dup_ck_list $vdcli]
 
                             for {set if_multiple -1} {$if_multiple < 2} {incr if_multiple} {
                                 # have to use the original label value in the search.
@@ -679,8 +679,8 @@ BEGIN TEST LOOP for value '${v}'"
                             aa_equals "Test.CA${i} j '${j}' check qss_tips_cell_read label '${label}'s value" $val_case1 $rowck_arr(${r},${label})
 
                             #  qss_tips_cell_read_by_id
-                            set value_by_id [qss_tips_cell_read_by_id $t_label_arr(${i}) $test_row_id $field_id]
-                            aa_equals "Test.CB${i} j '${j}' check qss_tips_cell_read label '${label}'s value" $value_by_id $rowck_arr(${r},${label})
+                            set value_by_id [qss_tips_cell_read_by_id $t_id_arr(${i}) $test_row_id $field_id]
+                            aa_equals "Test.CB${i} j '${j}' check qss_tips_cell_read_by_id id '${field_id} label '${label}'s value" $value_by_id $rowck_arr(${r},${label})
 
                             #  qss_tips_cell_update
                             # create a new value of same type.
@@ -710,19 +710,19 @@ BEGIN TEST LOOP for value '${v}'"
 
 
                             #The following read/check will always fail for the case where search field is the same as the field changed.
-                            set value_by_id_ck [qss_tips_cell_read_by_id $t_label_arr(${i}) $test_row_id $field_id]
-                            aa_equals "Test.CC${i} j '${j}' check qss_tips_cell_read label '${label}'s value" $value_by_id $value_by_id_ck
+                            set value_by_id_ck [qss_tips_cell_read_by_id $t_id_arr(${i}) $test_row_id $field_id]
+                            aa_equals "Test.CC${i} j '${j}' check qss_tips_cell_read_by_id id '${field_id}' label '${label}'s value" $value_by_id $value_by_id_ck
 
                             #  qss_tips_cell_trash
-                            set cell_trashed_p [qss_tips_cell_trash $t_label_arr(${i}) $test_row_id $field_id]
+                            set cell_trashed_p [qss_tips_cell_trash $t_id_arr(${i}) $test_row_id $field_id]
                             aa_true "Test.CD${i} j '${j}' check qss_tips_cell_trash feedback succeeded" $cell_trashed_p
 
                             #qss_tips_cell_read_by_id to confirm
-                            set value_by_id_ck [qss_tips_cell_read_by_id $t_label_arr(${i}) $test_row_id $field_id]
-                            aa_equals "Test.CE${i} j '${j}' check qss_tips_cell_read label '${label}'s value" $value_by_id_ck ""
+                            set value_by_id_ck [qss_tips_cell_read_by_id $t_id_arr(${i}) $test_row_id $field_id]
+                            aa_equals "Test.CE${i} j '${j}' check qss_tips_cell_read_by_id id '${id}' label '${label}'s value" $value_by_id_ck ""
 
                             #  qss_tips_cell_trash a trashed
-                            set cell_trashed_p [qss_tips_cell_trash $t_label_arr(${i}) $test_row_id $field_id]
+                            set cell_trashed_p [qss_tips_cell_trash $t_id_arr(${i}) $test_row_id $field_id]
                             if { $cell_trashed_p } {
                                 set cell_trashed_p 0
                             } else {
