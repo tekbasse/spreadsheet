@@ -1308,15 +1308,18 @@ ad_proc -public qss_tips_cell_read {
     set return_val_label_list_len [llength $return_val_label_list]
     if { $return_val_label_list_len > 0 } {
         set table_id [qss_tips_table_id_of_label $table_label]
-        set label_value_list [qss_tips_row_of_table_label_value $table_id $vc1k_search_label_val_list $if_multiple row_id]
-        set row_labels_list [dict keys $label_value_list]
-        foreach label $return_val_label_list {
-            if { $label in $row_labels_list } {
-                set label_val [dict get $label_value_list $label]
-            } else {
-                set label_val ""
+        if { $table_id ne "" } {
+            set label_value_list [qss_tips_row_of_table_label_value $table_id $vc1k_search_label_val_list $if_multiple row_id]
+            set row_labels_list [dict keys $label_value_list]
+            ns_log Notice "qss_tips_cell_read.1314: row_labels_list '${row_labels_list}' return_val_label_list '${return-val_label_list}'"
+            foreach label $return_val_label_list {
+                if { $label in $row_labels_list } {
+                    set label_val [dict get $label_value_list $label]
+                } else {
+                    set label_val ""
+                }
+                lappend return_val_list $label_val
             }
-            lappend return_val_list $label_val
         }
     }
  
