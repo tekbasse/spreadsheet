@@ -680,7 +680,7 @@ BEGIN TEST LOOP for value '${v}'"
 
                             #  qss_tips_cell_read_by_id
                             set value_by_id [qss_tips_cell_read_by_id $t_id_arr(${i}) $test_row_id $field_id]
-                            aa_equals "Test.CB${i} j '${j}' check qss_tips_cell_read_by_id id '${field_id} label '${label}'s value" $value_by_id $rowck_arr(${r},${label})
+                            aa_equals "Test.CB${i} j '${j}' check qss_tips_cell_read_by_id id '${field_id}' label '${label}'s value" $value_by_id $rowck_arr(${r},${label})
 
                             #  qss_tips_cell_update
                             # create a new value of same type.
@@ -697,9 +697,8 @@ BEGIN TEST LOOP for value '${v}'"
                                     set value [clock microseconds]
                                 }
                             }
-
+                            qss_tips_cell_update $t_id_arr(${i}) $test_row_id $field_id $value
                             #qss_tips_cell_read_by_id to confirm
-
 
                             #so for the vc1k test field (and subsequent cell tests, update vc1k_search_val
                             # to new value
@@ -711,7 +710,7 @@ BEGIN TEST LOOP for value '${v}'"
 
                             #The following read/check will always fail for the case where search field is the same as the field changed.
                             set value_by_id_ck [qss_tips_cell_read_by_id $t_id_arr(${i}) $test_row_id $field_id]
-                            aa_equals "Test.CC${i} j '${j}' check qss_tips_cell_read_by_id id '${field_id}' label '${label}'s value" $value_by_id $value_by_id_ck
+                            aa_equals "Test.CC${i} j '${j}' check cell update qss_tips_cell_read_by_id id '${field_id}' label '${label}'s value" $value_by_id $value_by_id_ck
 
                             #  qss_tips_cell_trash
                             set cell_trashed_p [qss_tips_cell_trash $t_id_arr(${i}) $test_row_id $field_id]

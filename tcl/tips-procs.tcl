@@ -383,7 +383,6 @@ ad_proc -public qss_tips_table_def_update {
                 set changed_p 1
                 set $arg $val
                 if { $arg in $field_len_limit_list } {
-                    ##code
                     if { [string length $val] > 39 } {
                         set i 2
                         set chars_max [expr { 38 - [string length $i] } ]
@@ -489,9 +488,7 @@ ad_proc -public qss_tips_table_read_as_array {
                     if { [info exists field_id_arr(${label}) ] && $vc1k_search_sql ne "na" } {
                         set field_id $field_id_arr(${label})
                         if { $vc1k_search_val eq "" } {
-                            append vc1k_search_sql " and (field_id='" $field_id "' and f_vc1k is null)"
-                            ##code  Rework this to something like:
-#                            append vc1k_search_sql " and row_id in (select row_id from qss_tips_field_values where table_id=:table_id and trashed_p!='1' and row_id not in (select row_id from qss_tips_field_values where table_id=:table_id and f_vc1k is not null and field_id='" $field_id_arr(${label}) "' and trashed_p!='1') group by row_id)" 
+                            append vc1k_search_sql " and row_id in (select row_id from qss_tips_field_values where table_id=:table_id and trashed_p!='1' and row_id not in (select row_id from qss_tips_field_values where table_id=:table_id and f_vc1k is not null and field_id='" $field_id "' and trashed_p!='1') group by row_id)" 
                         } else {
                             #set field_id $field_id_arr(${label})
                             set vc1k_val_${vref} $vc1k_search_val
@@ -578,10 +575,8 @@ ad_proc -public qss_tips_table_read {
                         set field_id $field_id_arr(${label})
 
                         if { $vc1k_search_val eq "" } {
-                            append vc1k_search_sql " and (field_id='" $field_id "' and f_vc1k is null)"
-##code
-# rework this to something like
-#                             append vc1k_search_sql " and row_id in (select row_id from qss_tips_field_values where table_id=:table_id and trashed_p!='1' and row_id not in (select row_id from qss_tips_field_values where table_id=:table_id and f_vc1k is not null and field_id='" $field_id_arr(${label}) "' and trashed_p!='1') group by row_id)" 
+                            # append vc1k_search_sql " and (field_id='" $field_id "' and f_vc1k is null)"
+                            append vc1k_search_sql " and row_id in (select row_id from qss_tips_field_values where table_id=:table_id and trashed_p!='1' and row_id not in (select row_id from qss_tips_field_values where table_id=:table_id and f_vc1k is not null and field_id='" $field_id "' and trashed_p!='1') group by row_id)" 
                         } else {
                             set vc1k_val_${vref} $vc1k_search_val
                             append vc1k_search_sql " and (field_id='" $field_id "' and f_vc1k=:vc1k_val_${vref})" 
@@ -1100,8 +1095,6 @@ ad_proc -public qss_tips_row_of_table_label_value {
                     incr vref
                     if { [info exists field_id_arr(${label}) ] && $vc1k_search_sql ne "na" } {
                         if { $vc1k_search_val eq "" } {
-                            ##code below does not work.
-                            append vc1k_search_sql " and (field_id='" $field_id_arr(${label}) "' and f_vc1k is null)"
                             #change to add an expression that limits results to row_ids from a general query of
                             # row_ids less row_ids of field_id that have values.
                             # because null and empty values don't exist in table's db.
@@ -1367,29 +1360,45 @@ ad_proc -public qss_tips_cell_read_by_id {
     Returns the same number of elements in a list as there are in field_id_list.
 } {
     upvar 1 instance_id instance_id
-    set field_id_filtered_list [hf_list_filter_by_natural_number $field_id_list]
-    set field_id_values_lists [db_list_of_lists qss_tips_cell_read_by_id "select field_id,f_vc1k,f_nbr,f_txt from qss_tips_field_values
+    set return_value_list [list ]
+    set field_id_filtered_list_len 0
+    if { [hf_natural_number_list_validate $field_id_list] } {
+        set field_id_filtered_list $field_id_list
+        set field_id_filtered_list_len [llength $field_id_filtered_list]
+        set field_id_values_lists [db_list_of_lists qss_tips_cell_read_by_id "select field_id,f_vc1k,f_nbr,f_txt from qss_tips_field_values
         where row_id=:row_id
         and table_id=:table_id
         and instance_id=:instance_id
         and trashed_p!='1'
     and field_id in ([template::util::tcl_to_sql_list $field_id_filtered_list]) "]
-    foreach row_list $field_id_values_lists {
-        foreach {field_id f_vc1k f_nbr f_txt} $row_list {
-            # It's faster to assume one value, than query db for field_type
-            set field_value [qal_first_nonempty_in_list [list $f_vc1k $f_nbr $f_txt] ]
-            set v_arr(${field_id}) $field_value
+        foreach row_list $field_id_values_lists {
+            foreach {field_id f_vc1k f_nbr f_txt} $row_list {
+                # It's faster to assume one value, than query db for field_type
+                set field_value [qal_first_nonempty_in_list [list $f_vc1k $f_nbr $f_txt] ]
+                set v_arr(${field_id}) $field_value
+            }
         }
-    }
-    foreach field_id $field_id_list {
-        set field_value ""
-        if { [info exists v_arr(${field_id}) ] } {
-            lappend value_list $field_value
+   
+        foreach field_id $field_id_filtered_list {
+            set field_value ""
+            if { [info exists v_arr(${field_id}) ] } {
+                lappend return_value_list $field_value
+            } else {
+                lappend return_value_list ""
+            }
+        }
+    } 
+    # if label_val_label_list is one entry,  return a list element only
+    if { $field_id_filtered_list_len == 1 } {
+        if { [llength $return_value_list] == 0 } {
+            set return_val ""
         } else {
-            lappend value_list ""
+            set return_val [lindex $return_value_list 0]
         }
+    } else {
+        set return_val $return_value_list
     }
-    return $value_list
+    return $return_val
 }
 
 ad_proc -public qss_tips_cell_update {
