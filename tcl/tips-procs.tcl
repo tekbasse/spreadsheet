@@ -1311,7 +1311,7 @@ ad_proc -public qss_tips_cell_read {
         if { $table_id ne "" } {
             set label_value_list [qss_tips_row_of_table_label_value $table_id $vc1k_search_label_val_list $if_multiple row_id]
             set row_labels_list [dict keys $label_value_list]
-            ns_log Notice "qss_tips_cell_read.1314: row_labels_list '${row_labels_list}' return_val_label_list '${return-val_label_list}'"
+            ns_log Notice "qss_tips_cell_read.1314: row_labels_list '${row_labels_list}' return_val_label_list '${return_val_label_list}'"
             foreach label $return_val_label_list {
                 if { $label in $row_labels_list } {
                     set label_val [dict get $label_value_list $label]
@@ -1364,16 +1364,14 @@ ad_proc -public qss_tips_cell_read_by_id {
 } {
     upvar 1 instance_id instance_id
     set return_value_list [list ]
-    set field_id_filtered_list_len 0
     if { [hf_natural_number_list_validate $field_id_list] } {
-        set field_id_filtered_list $field_id_list
-        set field_id_filtered_list_len [llength $field_id_filtered_list]
+        set field_id_list_len [llength $field_id_list]
         set field_id_values_lists [db_list_of_lists qss_tips_cell_read_by_id "select field_id,f_vc1k,f_nbr,f_txt from qss_tips_field_values
         where row_id=:row_id
         and table_id=:table_id
         and instance_id=:instance_id
         and trashed_p!='1'
-    and field_id in ([template::util::tcl_to_sql_list $field_id_filtered_list]) "]
+    and field_id in ([template::util::tcl_to_sql_list $field_id_list]) "]
         foreach row_list $field_id_values_lists {
             foreach {field_id f_vc1k f_nbr f_txt} $row_list {
                 # It's faster to assume one value, than query db for field_type
@@ -1382,7 +1380,7 @@ ad_proc -public qss_tips_cell_read_by_id {
             }
         }
    
-        foreach field_id $field_id_filtered_list {
+        foreach field_id $field_id_list {
             set field_value ""
             if { [info exists v_arr(${field_id}) ] } {
                 lappend return_value_list $field_value
@@ -1390,9 +1388,11 @@ ad_proc -public qss_tips_cell_read_by_id {
                 lappend return_value_list ""
             }
         }
+    } else {
+        set field_id_list_len 0
     } 
     # if label_val_label_list is one entry,  return a list element only
-    if { $field_id_filtered_list_len == 1 } {
+    if { $field_id_list_len == 1 } {
         if { [llength $return_value_list] == 0 } {
             set return_val ""
         } else {
