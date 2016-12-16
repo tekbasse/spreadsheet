@@ -668,15 +668,19 @@ BEGIN TEST LOOP for value '${v}'"
 
                         set r [lindex $f_row_nbr_larr(${test_row_id}) 0]
                         set vc1k_search_val $h_vc1k_at_r_arr(${r})
-
+                        set okay_to_v1ck_search_p 1
                         # test for each data type, ie cell in the row
                         foreach j $j_list {
                             set label $f_label_arr($j)
                             set field_id $field_id_of_label_arr(${label})
 
                             #  qss_tips_cell_read
-                            set val_case1 [qss_tips_cell_read $t_label_arr(${i}) [list $f_label_arr(${row1_vc1k_idx}) $vc1k_search_val] $label]
-                            aa_equals "Test.CA${i} j '${j}' check qss_tips_cell_read label '${label}'s value" $val_case1 $rowck_arr(${r},${label})
+                            if { $okay_to_v1ck_search_p } {
+                                set val_case1 [qss_tips_cell_read $t_label_arr(${i}) [list $f_label_arr(${row1_vc1k_idx}) $vc1k_search_val] $label]
+                                aa_equals "Test.CA${i} j '${j}' check qss_tips_cell_read label '${label}'s value by ref '$f_label_arr(${row1_vc1k_idx})' ${vc1k_search_val}" $val_case1 $rowck_arr(${r},${label})
+                            } else {
+                                aa_log "Test.CA not possible since vc1k field trashed for this row."
+                            }
 
                             #  qss_tips_cell_read_by_id
                             set value_by_id [qss_tips_cell_read_by_id $t_id_arr(${i}) $test_row_id $field_id]
@@ -697,27 +701,41 @@ BEGIN TEST LOOP for value '${v}'"
                                     set value [clock microseconds]
                                 }
                             }
+
                             qss_tips_cell_update $t_id_arr(${i}) $test_row_id $field_id $value
+                            set rowck_arr(${r},${label}) $value
                             #qss_tips_cell_read_by_id to confirm
 
                             #so for the vc1k test field (and subsequent cell tests, update vc1k_search_val
                             # to new value
                             if { $f_label_arr(${row1_vc1k_idx}) eq $label } {
                                 # new vc1k value
-                                aa_log "Changing vc1k_search_value to '${value}'"
+                                aa_log "Changing vc1k_search_value to '${value}', since $label is of type vc1k."
                                 set vc1k_search_val $value
                             }
 
 
-                            #The following read/check would always fail for the case where search field is the same as the field changed,
-                            # so referencing by row_id
                             set value_by_id_ck [qss_tips_cell_read_by_id $t_id_arr(${i}) $test_row_id $field_id]
                             aa_equals "Test.CC${i} j '${j}' check qss_tips_cell_update using  qss_tips_cell_read_by_id id '${field_id}' label '${label}'s value" $value $value_by_id_ck
+                            if { $okay_to_v1ck_search_p } {
+                                set val_case1 [qss_tips_cell_read $t_label_arr(${i}) [list $f_label_arr(${row1_vc1k_idx}) $vc1k_search_val] $label]
+                                aa_equals "Test.CC2${i} j '${j}' check qss_tips_cell_read label '${label}'s value by ref '$f_label_arr(${row1_vc1k_idx})' ${vc1k_search_val}" $val_case1 $rowck_arr(${r},${label})
+                            } else {
+                                aa_log "Test.CC2 not possible since vc1k field trashed for this row."
+                            }
+
+
 
                             #  qss_tips_cell_trash
                             set cell_trashed_p [qss_tips_cell_trash $t_id_arr(${i}) $test_row_id $field_id]
                             aa_true "Test.CD${i} j '${j}' check qss_tips_cell_trash feedback succeeded" $cell_trashed_p
-
+                            if { $field_id eq $row1_vc1k_idx } {
+                                # update search value for this cell to empty cell 
+                                set vc1k_search_val ""
+                                # But this won't work for many of the cases, because there are likely other empty cell cases.
+                                # so set a flag to skip these searches by label.
+                                set okay_to_v1ck_search_p 0
+                            }
                             #qss_tips_cell_read_by_id to confirm
                             set value_by_id_ck [qss_tips_cell_read_by_id $t_id_arr(${i}) $test_row_id $field_id]
                             aa_equals "Test.CE${i} j '${j}' check qss_tips_cell_read_by_id id '${id}' label '${label}'s value" $value_by_id_ck ""
