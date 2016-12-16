@@ -344,17 +344,22 @@ aa_register_case -cats {api smoke} qss_tips_check {
                             lappend field_label_list $label
                         }
                         #  qss_tips_row_create
+                        set r 1
                         set f_row_id [qss_tips_row_create $t_id_arr(${i}) $label_value_list]
                         if { $f_row_id ne "" } {
                             set success_p 1
-                            set f_row_id_arr(1) $f_row_id
+                            set f_row_id_arr(${r}) $f_row_id
                             # first and last occurrance are determined by this ordered list of mapped ids. 0 is first..
-                            lappend f_row_nbr_larr(${f_row_id}) 1
+                            lappend f_row_nbr_larr(${f_row_id}) $r
                             lappend data_row_id_list $f_row_id
                             set data_row_id_list [list $f_row_id]
                         } else {
                             set success_p 0
                         }
+                        set f_row_id_arr($r) $f_row_id
+                        set label_value_larr($r) $label_value_list
+
+                        aa_true "Test.AP0${i} row ${r} qss_tips_row_create row_id '${f_row_id}' table_id '$t_id_arr(${i})' data '$label_value_larr(${r})'" $success_p
                         aa_true "Test.AK${i} row created for table_id '$t_id_arr(${i})'" $success_p
                         #  qss_tips_row_id_exists_q
                         set f_row_id_ck [qss_tips_row_id_exists_q $f_row_id $t_id_arr(${i})]
@@ -377,8 +382,6 @@ aa_register_case -cats {api smoke} qss_tips_check {
                         }
 
                         # make some more data rows
-                        set f_row_id_arr(1) $f_row_id
-                        set label_value_larr(1) $label_value_list
                         set r_count_max 39
                         # set the value for vc1k to unique values, except add a duplicate or more to test some api features
                         set duplicate_count [randomRange 3]
@@ -641,7 +644,7 @@ BEGIN TEST LOOP for value '${v}'"
                             }
                         }
                         set tested_row_id_list [qf_uniques_of $tested_row_id_list]
-                        aa_log "tested_row_id_list '${tested_row_id_list}'"
+
                        
 
 
@@ -665,9 +668,10 @@ BEGIN TEST LOOP for value '${v}'"
                             set test_row_id [lindex $data_row_id_list $test_idx]
                         }
                         lappend tested_row_id_list $test_row_id
-
+                        aa_log "tested_row_id_list '${tested_row_id_list}'"
                         set r [lindex $f_row_nbr_larr(${test_row_id}) 0]
                         set vc1k_search_val $h_vc1k_at_r_arr(${r})
+                        aa_log "row_id '${test_row_id}' r '$r' vc1k_search_val '${vc1k_search_val}'"
                         set okay_to_v1ck_search_p 1
                         # test for each data type, ie cell in the row
                         foreach j $j_list {
@@ -677,7 +681,7 @@ BEGIN TEST LOOP for value '${v}'"
                             #  qss_tips_cell_read
                             if { $okay_to_v1ck_search_p } {
                                 set val_case1 [qss_tips_cell_read $t_label_arr(${i}) [list $f_label_arr(${row1_vc1k_idx}) $vc1k_search_val] $label]
-                                aa_equals "Test.CA${i} j '${j}' check qss_tips_cell_read label '${label}'s value by ref '$f_label_arr(${row1_vc1k_idx})' ${vc1k_search_val}" $val_case1 $rowck_arr(${r},${label})
+                                aa_equals "Test.CA${i} j '${j}' check qss_tips_cell_read label label '${label}'s value by ref '$f_label_arr(${row1_vc1k_idx})' vc1k_search_val '${vc1k_search_val}'" $val_case1 $rowck_arr(${r},${label})
                             } else {
                                 aa_log "Test.CA not possible since vc1k field trashed for this row."
                             }
@@ -716,7 +720,7 @@ BEGIN TEST LOOP for value '${v}'"
 
 
                             set value_by_id_ck [qss_tips_cell_read_by_id $t_id_arr(${i}) $test_row_id $field_id]
-                            aa_equals "Test.CC${i} j '${j}' check qss_tips_cell_update using  qss_tips_cell_read_by_id id '${field_id}' label '${label}'s value" $value $value_by_id_ck
+                            aa_equals "Test.CC${i} j '${j}' check qss_tips_cell_update using  qss_tips_cell_read_by_id field_id '${field_id}' label '${label}'s value" $value $value_by_id_ck
                             if { $okay_to_v1ck_search_p } {
                                 set val_case1 [qss_tips_cell_read $t_label_arr(${i}) [list $f_label_arr(${row1_vc1k_idx}) $vc1k_search_val] $label]
                                 aa_equals "Test.CC2${i} j '${j}' check qss_tips_cell_read label '${label}'s value by ref '$f_label_arr(${row1_vc1k_idx})' ${vc1k_search_val}" $val_case1 $rowck_arr(${r},${label})
@@ -729,7 +733,7 @@ BEGIN TEST LOOP for value '${v}'"
                             #  qss_tips_cell_trash
                             set cell_trashed_p [qss_tips_cell_trash $t_id_arr(${i}) $test_row_id $field_id]
                             aa_true "Test.CD${i} j '${j}' check qss_tips_cell_trash feedback succeeded" $cell_trashed_p
-                            if { $field_id eq $row1_vc1k_idx } {
+                            if { $j eq $row1_vc1k_idx } {
                                 # update search value for this cell to empty cell 
                                 set vc1k_search_val ""
                                 # But this won't work for many of the cases, because there are likely other empty cell cases.
