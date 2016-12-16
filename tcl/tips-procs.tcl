@@ -1295,14 +1295,16 @@ ad_proc -public qss_tips_cell_read {
     vc1k_search_label_val_list
     return_vals_labels_list
     {if_multiple "1"}
+    {row_id_var_name __row_id}
 } {
     Returns the values of the field labels in return_val_label_list in order in list.
     If more than one record matches search_value for search_label, if_multiple
     determines which one is chosen; 
-
+    Returns the row_id to the variable called row_id_var_name. 
     @see qss_tips_row_of_table_label_value 
 } {
     upvar 1 instance_id instance_id
+    upvar 1 $row_id_var_name row_id
     set return_val_list [list ]
     set return_val_label_list [qf_listify $return_vals_labels_list]
     set return_val_label_list_len [llength $return_val_label_list]

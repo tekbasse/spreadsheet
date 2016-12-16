@@ -679,9 +679,13 @@ BEGIN TEST LOOP for value '${v}'"
                             set field_id $field_id_of_label_arr(${label})
 
                             #  qss_tips_cell_read
+                            set val_case1 [qss_tips_cell_read $t_label_arr(${i}) [list $f_label_arr(${row1_vc1k_idx}) $vc1k_search_val] $label 1 returned_row_id ]
                             if { $okay_to_v1ck_search_p } {
-                                set val_case1 [qss_tips_cell_read $t_label_arr(${i}) [list $f_label_arr(${row1_vc1k_idx}) $vc1k_search_val] $label]
-                                aa_equals "Test.CA${i} j '${j}' check qss_tips_cell_read label label '${label}'s value by ref '$f_label_arr(${row1_vc1k_idx})' vc1k_search_val '${vc1k_search_val}'" $val_case1 $rowck_arr(${r},${label})
+                                if { $returned_row_id eq $test_row_id } {
+                                    aa_equals "Test.CA${i} j '${j}' check qss_tips_cell_read label label '${label}'s value by ref '$f_label_arr(${row1_vc1k_idx})' vc1k_search_val '${vc1k_search_val}'" $val_case1 $rowck_arr(${r},${label}) 
+                                } else {
+                                    aa_log "Test.CA not possible since vc1k field appears to have duplciates."
+                                }
                             } else {
                                 aa_log "Test.CA not possible since vc1k field trashed for this row."
                             }
@@ -721,9 +725,13 @@ BEGIN TEST LOOP for value '${v}'"
 
                             set value_by_id_ck [qss_tips_cell_read_by_id $t_id_arr(${i}) $test_row_id $field_id]
                             aa_equals "Test.CC${i} j '${j}' check qss_tips_cell_update using  qss_tips_cell_read_by_id field_id '${field_id}' label '${label}'s value" $value $value_by_id_ck
+                            set val_case1 [qss_tips_cell_read $t_label_arr(${i}) [list $f_label_arr(${row1_vc1k_idx}) $vc1k_search_val] $label 1 returned_row_id]
                             if { $okay_to_v1ck_search_p } {
-                                set val_case1 [qss_tips_cell_read $t_label_arr(${i}) [list $f_label_arr(${row1_vc1k_idx}) $vc1k_search_val] $label]
-                                aa_equals "Test.CC2${i} j '${j}' check qss_tips_cell_read label '${label}'s value by ref '$f_label_arr(${row1_vc1k_idx})' ${vc1k_search_val}" $val_case1 $rowck_arr(${r},${label})
+                                if { $returned_row_id eq $test_row_id } {
+                                    aa_equals "Test.CC2${i} j '${j}' check qss_tips_cell_read label '${label}'s value by ref '$f_label_arr(${row1_vc1k_idx})' ${vc1k_search_val}" $val_case1 $rowck_arr(${r},${label})
+                                } else {
+                                    aa_log "Test.CC2 not possible since vc1k field appears to have duplciates."
+                                }
                             } else {
                                 aa_log "Test.CC2 not possible since vc1k field trashed for this row."
                             }
