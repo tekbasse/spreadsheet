@@ -1311,7 +1311,6 @@ ad_proc -public qss_tips_cell_read {
         if { $table_id ne "" } {
             set label_value_list [qss_tips_row_of_table_label_value $table_id $vc1k_search_label_val_list $if_multiple row_id]
             set row_labels_list [dict keys $label_value_list]
-            ns_log Notice "qss_tips_cell_read.1314: row_labels_list '${row_labels_list}' return_val_label_list '${return_val_label_list}'"
             foreach label $return_val_label_list {
                 if { $label in $row_labels_list } {
                     set label_val [dict get $label_value_list $label]
@@ -1319,8 +1318,12 @@ ad_proc -public qss_tips_cell_read {
                     set label_val ""
                 }
                 lappend return_val_list $label_val
-            }
+            } 
+        } else {
+            ns_log Notice "qss_tips_cell_read.1327: table_label not found '${table_label}'"
         }
+    } else {
+        ns_log Notice "qss_tips_cell_read.1329: No cell labels requested; No cell values to return for table_label '${table_label}'."
     }
  
     # if label_val_label_list is one entry,  return a list element only
@@ -1372,23 +1375,29 @@ ad_proc -public qss_tips_cell_read_by_id {
         and instance_id=:instance_id
         and trashed_p!='1'
     and field_id in ([template::util::tcl_to_sql_list $field_id_list]) "]
+        ns_log Notice "qss_tips_cell_read_by_id field_id_values_lists '${field_id_values_lists}'"
         foreach row_list $field_id_values_lists {
             foreach {field_id f_vc1k f_nbr f_txt} $row_list {
                 # It's faster to assume one value, than query db for field_type
                 set field_value [qal_first_nonempty_in_list [list $f_vc1k $f_nbr $f_txt] ]
                 set v_arr(${field_id}) $field_value
+                ns_log Notice "qss_tips_cell_read_by_id.1384 field_id '$field_id' field_value '${field_value}'"
             }
         }
-   
+        ns_log Notice "qss_tips_cell_read_by_id.1387 field_id_list '${field_id_list}'"
         foreach field_id $field_id_list {
             set field_value ""
+            ns_log Notice "qss_tips_cell_read_by_id.1390: field_id '${field_id}'"
             if { [info exists v_arr(${field_id}) ] } {
-                lappend return_value_list $field_value
+                lappend return_value_list $v_arr(${field_id})
             } else {
+                ns_log Notice "qss_tips_cell_read_by_id.1394: field_id '${field_id}' not found for row '${row_id}'"
                 lappend return_value_list ""
             }
         }
+        ns_log Notice "qss_tips_cell_read_by_id.1396 return_value_list '${return_value_list}'"
     } else {
+        ns_log Notice "qss_tips_cell_read_by_id.1395 field_id_list did not validate '${field_id_list}' for table_id '${table_id}'"
         set field_id_list_len 0
     } 
     # if label_val_label_list is one entry,  return a list element only
