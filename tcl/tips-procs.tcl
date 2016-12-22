@@ -472,8 +472,6 @@ ad_proc -public qss_tips_table_read_as_array {
     Array indexes are name_array(row_id,field_label)
     where row_id are in a list in name_array(row_ids).
 <br>
-    Returns only untrashed rows and cells.
-<br>
     If row_id_list contains row_ids, only returns ids that are supplied in row_id_list.
 } {
     # Returns an array instead of list of lists in order to avoid sorting row_ids.
@@ -575,8 +573,6 @@ ad_proc -public qss_tips_table_read {
 } {
     Returns one or more records of table_label as a list of lists
     where field value pairs in vc1k_search_label_val_list match query.
-<br>
-    Returns only untrashed cells and rows.
 <br>
     If row_id_list contains row_ids, only returns ids that are supplied in row_id_list.
 <br>
