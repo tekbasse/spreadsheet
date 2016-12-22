@@ -766,12 +766,25 @@ BEGIN TEST LOOP for value '${v}'"
 
                         # table read, compare to existing
                         #  qss_tips_table_read
+                        # Let's not overcomplicate this.
+                        # Compare qss_tips_table_read to qss_tips_table_read_as_array
+                        set table1_lists [qss_tips_table_read $t_label_arr(${i}) ]
 
-                        # table read as array, compare to existing
+                        # table read as array
+                        qss_tips_table_read_as_array table2_arr $t_label_arr(${i}) 
                         #  qss_tips_table_read_as_array
 
+                        # compare table1 to table2
+                        # first, convert table2 to table1 format.
+                        # table2_arr(row_id,field_label)
+                        set table_fields_list [lindex $table_1_lists 0]
+                        set table_fields_list_len [llength $table_fields_list]
 
+                        set table_def_list [qss_tips_field_def_read $t_id_arr(${i})]
+                        set table_def_list_len [llength $table_def_list]
 
+                        aa_equal "Test.DA${i} qss_table_read label count '${table_fields_list_len}'" $table_fields_list_len $table_def_list_len 
+                           
                         
                         ns_log Notice "tcl/test/q-control-procs.tcl.429 test end"
                     } \
