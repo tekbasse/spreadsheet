@@ -27,10 +27,12 @@ ad_proc -public qss_tips_field_id_name_list {
     upvar 1 instance_id instance_id
     set id_name_list [list ]
     if {[qf_is_natural_number $table_id ]} {
-        set fields_lists [db_list_of_lists qss_tips_field_defs_id_name_r {select id,name from qss_tips_field_defs
+        set db_sql {
+            select id,name from qss_tips_field_defs
             where instance_id=:instance_id
             and table_id=:table_id
-            and trashed_p!='1'}]
+            and trashed_p!='1'}
+        set fields_lists [db_list_of_lists qss_tips_field_defs_id_name_r $db_sql]
         foreach row $fields_lsits {
             foreach {id name} {
                 lappend id_name_list $id $name
@@ -48,10 +50,11 @@ ad_proc -public qss_tips_field_label_name_list {
     upvar 1 instance_id instance_id
     set label_name_list [list ]
     if {[qf_is_natural_number $table_id ]} {
-        set fields_lists [db_list_of_lists qss_tips_field_defs_label_name_r {select label,name from qss_tips_field_defs
+        set db_sql {select label,name from qss_tips_field_defs
             where instance_id=:instance_id
             and table_id=:table_id
-            and trashed_p!='1'}]
+            and trashed_p!='1'}
+        set fields_lists [db_list_of_lists qss_tips_field_defs_label_name_r $db_sql]
         foreach row $fields_lsits {
             foreach {label name} {
                 lappend label_name_list $label $name
@@ -162,10 +165,12 @@ ad_proc -public qss_tips_table_id_of_label {
     # cannot check for trashed tables, because that could give multiple results.
     upvar 1 instance_id instance_id
     set table_id ""
-    db_0or1row qss_tips_table_defs_r_name_untrashed {select id as table_id from qss_tips_table_defs
+    set db_sql {
+        select id as table_id from qss_tips_table_defs
         where label=:table_label
         and instance_id=:instance_id
         and trashed_p!='1'}
+    db_0or1row qss_tips_table_defs_r_name_untrashed $db_sql
     return $table_id
 }
 
@@ -258,10 +263,11 @@ ad_proc -public qss_tips_table_def_read {
 } {
     upvar 1 instance_id instance_id
     set table_list [list ]
-    set exists_p [db_0or1row qss_tips_table_defs_r1_untrashed {select id,label,name,flags,trashed_p from qss_tips_table_defs
-            where label=:table_label
-            and instance_id=:instance_id
-            and trashed_p!='1'}]    
+    set db_sql {select id,label,name,flags,trashed_p from qss_tips_table_defs
+        where label=:table_label
+        and instance_id=:instance_id
+        and trashed_p!='1'}
+    set exists_p [db_0or1row qss_tips_table_defs_r1_untrashed $db_sql]
     if { $exists_p } {
         set table_list [list $id $label $name $flags $trashed_p]
     }
@@ -275,10 +281,11 @@ ad_proc -public qss_tips_table_def_read_by_id {
 } {
     upvar 1 instance_id instance_id
     set table_list [list ]
-    set exists_p [db_0or1row qss_tips_table_defs_r1_untrashed {select id,label,name,flags,trashed_p from qss_tips_table_defs
-            where id=:table_id
-            and instance_id=:instance_id
-            and trashed_p!='1'}]    
+    set db_sql {select id,label,name,flags,trashed_p from qss_tips_table_defs
+        where id=:table_id
+        and instance_id=:instance_id
+        and trashed_p!='1'}
+    set exists_p [db_0or1row qss_tips_table_defs_r1_untrashed $db_sql]
     if { $exists_p } {
         lappend table_list $id $label $name $flags $trashed_p
     }
@@ -488,14 +495,24 @@ ad_proc -public qss_tips_table_read_as_array {
                     if { [info exists field_id_arr(${label}) ] && $vc1k_search_sql ne "na" } {
                         set field_id $field_id_arr(${label})
                         if { $vc1k_search_val eq "" } {
-                            append vc1k_search_sql " and row_id in (select row_id from qss_tips_field_values where table_id=:table_id and trashed_p!='1' and row_id not in (select row_id from qss_tips_field_values where table_id=:table_id and f_vc1k is not null and field_id='" $field_id "' and trashed_p!='1') group by row_id)" 
+                            append vc1k_search_sql " and row_id in ("
+                            append vc1k_search_sql "select row_id from qss_tips_field_values
+    where table_id=:table_id 
+        and trashed_p!='1' 
+        and row_id not in ("
+                            append vc1k_search_sql "select row_id from qss_tips_field_values 
+    where table_id=:table_id 
+        and f_vc1k is not null 
+        and field_id='" 
+                            append vc1k_search_sql $field_id "' and trashed_p!='1') group by row_id)" 
                         } else {
                             #set field_id $field_id_arr(${label})
                             set vc1k_val_${vref} $vc1k_search_val
                             append vc1k_search_sql " and (field_id='" $field_id "' and f_vc1k=:vc1k_val_${vref})" 
                         }
                     } else {
-                        ns_log Warning "qss_tips_read.492: no field_id for search label '${label}' table_label '${table_label}' "
+                        ns_log Warning "qss_tips_read.492: no field_id for search label '${label}' \
+    table_label '${table_label}' "
                         set vc1k_search_sql "na"
                     }
                 }
@@ -504,10 +521,12 @@ ad_proc -public qss_tips_table_read_as_array {
             if { $row_ids_sql eq "na" || $vc1k_search_sql eq "na" } {
                 set n_arr(row_ids) [list ]
             } else {
-                set values_lists [db_list_of_lists qss_tips_field_values_r "select field_id, row_id, f_vc1k, f_nbr, f_txt from qss_tips_field_values 
-        where table_id=:table_id
-        and instance_id=:instance_id
-        and trashed_p!='1' ${vc1k_search_sql} ${row_ids_sql}"]
+                set db_sql "select field_id, row_id, f_vc1k, f_nbr, f_txt \
+                            from qss_tips_field_values 
+                            where table_id=:table_id
+                            and instance_id=:instance_id
+                            and trashed_p!='1' ${vc1k_search_sql} ${row_ids_sql}"
+                set values_lists [db_list_of_lists qss_tips_field_values_r $db_sql]
                 
                 # val_i = values initial
                 set row_ids_list [list ]
@@ -519,7 +538,8 @@ ad_proc -public qss_tips_table_read_as_array {
                         if { [info exists type_arr(${field_id}) ] } {
                             set v [qss_tips_value_of_field_type $field_type f_nbr f_txt f_vc1k]
                         } else {
-                            ns_log Warning "qss_tips_read.54: field_id does not have a field_type. table_label '${table_label}' field_id '${field_id}' row_id '${row_id}'"
+                            ns_log Warning "qss_tips_read.54: field_id does not have a field_type. \
+    table_label '${table_label}' field_id '${field_id}' row_id '${row_id}'"
                         }
                         set label $label_arr(${field_id})
                         set n_arr(${label},${row_id}) $v
@@ -544,6 +564,7 @@ ad_proc -public qss_tips_table_read {
     where field value pairs in vc1k_search_label_val_list match query.
     Returns only untrashed cells and rows.
     If row_id_list contains row_ids, only returns ids that are supplied in row_id_list.
+    First row contains table labels cooresponding to values in subsequent rows.
 } {
     upvar 1 instance_id instance_id
     set table_id [qss_tips_table_id_of_label $table_label]
@@ -576,13 +597,25 @@ ad_proc -public qss_tips_table_read {
 
                         if { $vc1k_search_val eq "" } {
                             # append vc1k_search_sql " and (field_id='" $field_id "' and f_vc1k is null)"
-                            append vc1k_search_sql " and row_id in (select row_id from qss_tips_field_values where table_id=:table_id and trashed_p!='1' and row_id not in (select row_id from qss_tips_field_values where table_id=:table_id and f_vc1k is not null and field_id='" $field_id "' and trashed_p!='1') group by row_id)" 
+                            append vc1k_search_sql " and row_id in ("
+                            append vc1k_search_sql "
+    select row_id from qss_tips_field_values 
+    where table_id=:table_id 
+        and trashed_p!='1' 
+        and row_id not in ("
+                            append vc1k_search_sql "
+    select row_id from qss_tips_field_values 
+    where table_id=:table_id 
+        and f_vc1k is not null 
+        and field_id='" 
+                            append vc1k_search_sql $field_id "' and trashed_p!='1') group by row_id)" 
                         } else {
                             set vc1k_val_${vref} $vc1k_search_val
                             append vc1k_search_sql " and (field_id='" $field_id "' and f_vc1k=:vc1k_val_${vref})" 
                         }
                     } else {
-                        ns_log Warning "qss_tips_read.571: no field_id for search label '${label}' table_label '${table_label}' "
+                        ns_log Warning "qss_tips_read.571: no field_id for search label '${label}' \
+ table_label '${table_label}' "
                         set vc1k_search_sql "na"
                     }
                 }
@@ -591,10 +624,12 @@ ad_proc -public qss_tips_table_read {
             if { $row_ids_sql eq "na" || $vc1k_search_sql eq "na" } {
                 # do nothing
             } else {
-                set values_lists [db_list_of_lists qss_tips_field_values_r_sorted "select row_id, field_id, f_vc1k, f_nbr, f_txt from qss_tips_field_values 
-        where table_id=:table_id
-        and instance_id=:instance_id
-        and trashed_p!='1' ${vc1k_search_sql} ${row_ids_sql} order by row_id, field_id asc"]
+                set db_sql "\
+    select row_id, field_id, f_vc1k, f_nbr, f_txt from qss_tips_field_values \
+    where table_id=:table_id \
+        and instance_id=:instance_id \
+        and trashed_p!='1' ${vc1k_search_sql} ${row_ids_sql} order by row_id, field_id asc"
+                set values_lists [db_list_of_lists qss_tips_field_values_r_sorted $db_sql]
                 
                 set current_cell_list [lindex $values_lists 0]
                 set current_row_id [lindex $current_cell_list 0]
@@ -618,7 +653,8 @@ ad_proc -public qss_tips_table_read {
                         if { [info exists type_arr(${field_id}) ] } {
                             set v [qss_tips_value_of_field_type $type_arr(${field_id}) $f_nbr $f_txt $f_vc1k]
                         } else {
-                            ns_log Warning "qss_tips_read.54: field_id does not have a field_type. table_label '${table_label}' field_id '${field_id}' row_id '${row_id}'"
+                            ns_log Warning "qss_tips_read.54: field_id does not have a field_type. \
+ table_label '${table_label}' field_id '${field_id}' row_id '${row_id}'"
                         }
                         # label $label_arr(${field_id})
                         # v is value
@@ -708,8 +744,10 @@ ad_proc -public qss_tips_field_def_create {
         if { [qf_is_natural_number $table_id] } {
             set new_id [db_nextval qss_tips_id_seq]
             db_dml qss_tips_field_def_cr {insert into qss_tips_field_defs
-                (instance_id,id,table_id,created,user_id,label,name,default_val,tdt_data_type,field_type,trashed_p)
-                values (:instance_id,:new_id,:table_id,now(),:user_id,:label,:name,:default_val,:tdt_data_type,:field_type,:trashed_p)
+                (instance_id,id,table_id,created,user_id,label,name,default_val,
+                 tdt_data_type,field_type,trashed_p)
+                values (:instance_id,:new_id,:table_id,now(),:user_id,:label,:name,:default_val,
+                        :tdt_data_type,:field_type,:trashed_p)
             }
         } 
     }
@@ -790,11 +828,12 @@ ad_proc -public qss_tips_field_def_update {
             set extra_ref_sql "and label=:field_label"
         }
 
-        
-        set exists_p [db_0or1row qss_tips_field_def_r_u1 "select id as field_id,label,name,default_val,tdt_data_type,field_type,created as c_date,user_id as c_user_id from qss_tips_field_defs
-        where instance_id=:instance_id
-        and table_id=:table_id
-        and trashed_p!='1' ${extra_ref_sql}" ]
+        set db_sql "select id as field_id,label,name,default_val,tdt_data_type,\
+                        field_type,created as c_date,user_id as c_user_id from qss_tips_field_defs \
+                    where instance_id=:instance_id \
+                        and table_id=:table_id \
+                        and trashed_p!='1' ${extra_ref_sql}" 
+        set exists_p [db_0or1row qss_tips_field_def_r_u1 $db_sql]
         if { $exists_p } {
             qss_tips_user_id_set
             if { ![info exists name_new] } {
@@ -814,8 +853,10 @@ ad_proc -public qss_tips_field_def_update {
                     and table_id=:table_id }
                 db_dml qss_tips_field_def_u1_cr {
                     insert into qss_tips_field_defs
-                    (instance_id,table_id,id,label,name,user_id,created,trashed_p,default_val,tdt_data_type,field_type)
-                    values (:instance_id,:table_id,:field_id,:label_new,:name_new,:user_id,now(),:trashed_p,:default_val,:tdt_data_type,:field_type)
+                    (instance_id,table_id,id,label,name,user_id,created,
+                     trashed_p,default_val,tdt_data_type,field_type)
+                    values (:instance_id,:table_id,:field_id,:label_new,:name_new,
+                            :user_id,now(),:trashed_p,:default_val,:tdt_data_type,:field_type)
                 }
             }
             set success_p 1
@@ -831,21 +872,26 @@ ad_proc -private qss_tips_field_def_read {
     {field_ids ""}
 } { 
     Reads definitions about fields in a table.
-    Returns list of lists, where colums are field_id,label,name,default_val,tdt_data_type,field_type or empty list if not found.
+    Returns list of lists, where colums are:
+    field_id,label,name,default_val,tdt_data_type,field_type
+    or empty list if not found.
     If field_labels or field_ids is nonempty (list or scalar), scopes to just these.
 } {
     upvar 1 instance_id instance_id
     set fields_lists [list ]
     if {[qf_is_natural_number $table_id ]} {
-        set fields_lists [db_list_of_lists qss_tips_field_defs_r {select id as field_id,label,name,default_val,tdt_data_type,field_type from qss_tips_field_defs
+        set db_sql {
+            select id as field_id,label,name,default_val,tdt_data_type,field_type from qss_tips_field_defs
             where instance_id=:instance_id
             and table_id=:table_id
-            and trashed_p!='1'}]
+            and trashed_p!='1'}
+        set fields_lists [db_list_of_lists qss_tips_field_defs_r $db_sql]
         # allow glob with field_labels
         set field_label_idx_list [list ]
         set field_label_list [qf_listify $field_labels]
         set field_label_list_len [llength $field_label_list]
-        #ns_log Notice "qss_tips_field_def_read.790 field_label_list '${field_label_list}' field_label_list_len '${field_label_list_len}'"
+        #ns_log Notice "qss_tips_field_def_read.790 field_label_list '${field_label_list}' 
+        # field_label_list_len '${field_label_list_len}'"
         if { $field_label_list_len > 0 } {
             # create a searchable list
             set label_search_list [list ]
@@ -862,7 +908,8 @@ ad_proc -private qss_tips_field_def_read {
         set field_id_idx_list [list ]
         set field_id_list [hf_list_filter_by_natural_number [qf_listify $field_ids]]       
         set field_id_list_len [llength $field_id_list]
-        #ns_log Notice "qss_tips_field_def_read.808 field_id_list '${field_id_list}' field_id_list_len '${field_id_list_len}'"
+        #ns_log Notice "qss_tips_field_def_read.808 field_id_list '${field_id_list}' 
+        # field_id_list_len '${field_id_list_len}'"
         if { $field_id_list_len > 0 } {
             # create a searchable list
             set id_search_list [list ]
@@ -924,11 +971,15 @@ ad_proc -public qss_tips_row_create {
                         set field_type $t_arr(${label})
                         set trashed_p 0
                         qss_tips_set_by_field_type $field_type $value f_nbr f_txt f_vc1k
-                        ns_log Notice "qss_tips_row_create.911: field_type '${field_type}' value '${value}' f_nbr '${f_nbr}' f_txt '${f_txt}' f_vc1k '${f_vc1k}'"
-                        db_dml qss_tips_field_values_row_cr_1f { insert into qss_tips_field_values
-                            (instance_id,table_id,row_id,trashed_p,created,user_id,field_id,f_vc1k,f_nbr,f_txt)
-                            values (:instance_id,:table_id,:new_id,:trashed_p,now(),:user_id,:field_id,:f_vc1k,:f_nbr,:f_txt)
-                        }
+                        ns_log Notice "qss_tips_row_create.911: field_type '${field_type}' \
+ value '${value}' f_nbr '${f_nbr}' f_txt '${f_txt}' f_vc1k '${f_vc1k}'"
+                        set db_sql {
+                            insert into qss_tips_field_values
+                            (instance_id,table_id,row_id,trashed_p,created,
+                             user_id,field_id,f_vc1k,f_nbr,f_txt)
+                            values (:instance_id,:table_id,:new_id,:trashed_p,now(),
+                                    :user_id,:field_id,:f_vc1k,:f_nbr,:f_txt) }
+                        db_dml qss_tips_field_values_row_cr_1f $db_sql
                     }
                 }
             }
@@ -955,7 +1006,8 @@ ad_proc -private qss_tips_value_of_field_type {
         txt  { set v $f_txt }
         default {
             set v [qal_first_nonempty_in_list [list $f_nbr $f_vc1k $f_txt]]
-            ns_log Warning "qss_tips_value_of_field_type.843: unknown field_type '${field_type}'. choosing first nonempty value: '${v}'"
+            ns_log Warning "qss_tips_value_of_field_type.843: unknown field_type '${field_type}'. \
+ Choosing first nonempty value: '${v}'"
         }
     }
     return $v
@@ -991,14 +1043,16 @@ ad_proc -private qss_tips_set_by_field_type {
             set f_vc1k ""
         }
         default {
-            ns_log Warning "qss_tips_set_by_field_type.783: field_type '${field_type}' not valid.  Defaulting to txt"
+            ns_log Warning "qss_tips_set_by_field_type.783: field_type '${field_type}' not valid. \
+ Defaulting to txt"
             set f_nbr ""
             set f_txt $value
             set f_vc1k ""
             set success_p 0
         }
     }
-    ns_log Notice "qss_tips_set_by_field_type.984: field_type '${field_type}' value '${value}' f_nbr '${f_nbr}' f_txt '${f_txt}' f_vc1k '${f_vc1k}'"
+    ns_log Notice "qss_tips_set_by_field_type.984: field_type '${field_type}' value '${value}' \
+ f_nbr '${f_nbr}' f_txt '${f_txt}' f_vc1k '${f_vc1k}'"
     return $success_p
 }
 
@@ -1024,18 +1078,21 @@ ad_proc -public qss_tips_row_update {
                         if { $label in $field_labels_list } {
                             #set field_id $l_arr(${label})
                             #set field_type $t_arr(${label})
-                            ns_log Notice "qss_tips_row_update.1027 table_id '${table_id}' row_id '${row_id}' label '${label}' t_arr(${label}) '$t_arr(${label})'"
+                            ns_log Notice "qss_tips_row_update.1027 table_id '${table_id}' \
+ row_id '${row_id}' label '${label}' t_arr(${label}) '$t_arr(${label})'"
                             qss_tips_set_by_field_type $t_arr(${label}) $value f_nbr f_txt f_vc1k
                             qss_tips_cell_update $table_id $row_id $l_arr(${label}) $value
                         } else {
-                            ns_log Notice "qss_tips_row_update.1031 label '${label}' not in table_id '${table_id}'. update to value '${value}' ignored."
+                            ns_log Notice "qss_tips_row_update.1031 label '${label}' \
+ not in table_id '${table_id}'. update to value '${value}' ignored."
                         }
                     }
                 }
             }
         }
     } else {
-        ns_log Warning "qss_tips_row_udpate.1035: table_id '${table_id}' or row_id '${row_id}' is not a number."
+        ns_log Warning "qss_tips_row_udpate.1035: table_id '${table_id}' \
+ or row_id '${row_id}' is not a number."
     }
     return $success_p
 }
@@ -1089,7 +1146,8 @@ ad_proc -public qss_tips_row_of_table_label_value {
             if { $vc1k_search_label_val_list ne "" } {
                 # search scope
                 set vc1k_search_lv_list [qf_listify $vc1k_search_label_val_list]
-                ns_log Notice "qss_tips_row_of_table_label_value.1056: vc1k_search_label_val_list '${vc1k_search_label_val_list}' vc1k_search_lv_list '${vc1k_search_lv_list}'"
+                ns_log Notice "qss_tips_row_of_table_label_value.1056: vc1k_search_label_val_list  \
+ '${vc1k_search_label_val_list}' vc1k_search_lv_list '${vc1k_search_lv_list}'"
                 set vref 0
                 foreach {label vc1k_search_val} $vc1k_search_lv_list {
                     incr vref
@@ -1098,14 +1156,26 @@ ad_proc -public qss_tips_row_of_table_label_value {
                             #change to add an expression that limits results to row_ids from a general query of
                             # row_ids less row_ids of field_id that have values.
                             # because null and empty values don't exist in table's db.
-                            append vc1k_search_sql " and row_id in (select row_id from qss_tips_field_values where table_id=:table_id and trashed_p!='1' and row_id not in (select row_id from qss_tips_field_values where table_id=:table_id and f_vc1k is not null and field_id='" $field_id_arr(${label}) "' and trashed_p!='1') group by row_id)" 
+                            append vc1k_search_sql " and row_id in ("
+                            append vc1k_search_sql "select row_id from qss_tips_field_values \
+    where table_id=:table_id \
+        and trashed_p!='1' \
+        and row_id not in ("
+                            append vc1k_search_sql "select row_id from qss_tips_field_values \
+    where table_id=:table_id \
+        and f_vc1k is not null \
+        and field_id='" 
+                            append vc1k_search_sql $field_id_arr(${label}) 
+                            append vc1k_search_sql "' and trashed_p!='1') group by row_id)" 
                         } else {
                             #set field_id $field_id_arr(${label})
                             set vc1k_val_${vref} $vc1k_search_val
-                            append vc1k_search_sql " and (field_id='" $field_id_arr(${label}) "' and f_vc1k=:vc1k_val_${vref})" 
+                            append vc1k_search_sql " and (field_id='" $field_id_arr(${label}) 
+                            append vc1k_search_sql "' and f_vc1k=:vc1k_val_${vref})" 
                         }
                     } else {
-                        ns_log Warning "qss_tips_row_of_table_label_value.1067: no field_id for search label '${label}' table_id '${table_id}' "
+                        ns_log Warning "qss_tips_row_of_table_label_value.1067: no field_id \
+ for search label '${label}' table_id '${table_id}' "
                         set vc1k_search_sql "na"
                     }
                 }
@@ -1117,9 +1187,14 @@ ad_proc -public qss_tips_row_of_table_label_value {
                 # do nothing
             } else {
                 # get row id, then row
-                ns_log Notice "qss_tips_row_of_table_label_value.1084: vc1k_search_sql '${vc1k_search_sql}' sort_sql '${sort_sql}'"
-                set row_ids_list [db_list qss_tips_field_values_row_id_search "select row_id from qss_tips_field_values 
-                    where instance_id=:instance_id and table_id=:table_id and trashed_p!='1' ${vc1k_search_sql} ${sort_sql}"]
+                ns_log Notice "qss_tips_row_of_table_label_value.1084: \
+ vc1k_search_sql '${vc1k_search_sql}' sort_sql '${sort_sql}'"
+                set db_sql "\
+    select row_id from qss_tips_field_values \
+    where instance_id=:instance_id \
+        and table_id=:table_id \
+        and trashed_p!='1' ${vc1k_search_sql} ${sort_sql}"
+                set row_ids_list [db_list qss_tips_field_values_row_id_search $db_sql]
                 set row_id [lindex $row_ids_list 0]
                 if { $row_id ne "" } {
                     set exists_p 1
@@ -1129,7 +1204,8 @@ ad_proc -public qss_tips_row_of_table_label_value {
                 if { $exists_p && $if_multiple eq "-1" } {
                     set row_ids_unique_list [qf_uniques_of $row_ids_list]
                     if { [llength $row_ids_unique_list] > 1 } {
-                        ns_log Notice "qss_tips_row_of_table_label_value.1094: Rejecting row_id, because if_multiple=-1: row_ids_list '${row_ids_list}' row_ids_unique_list '${row_ids_unique_list}'"
+                        ns_log Notice "qss_tips_row_of_table_label_value.1094: Rejecting row_id,\
+ because if_multiple=-1: row_ids_list '${row_ids_list}' row_ids_unique_list '${row_ids_unique_list}'"
                         #set return_row_id ""
                         set exists_p 0
                     }
@@ -1138,18 +1214,23 @@ ad_proc -public qss_tips_row_of_table_label_value {
                 if { $exists_p } {
                     # duplicate core of qss_tips_row_read
                     set return_row_id $row_id
-                    set values_lists [db_list_of_lists qss_tips_field_values_r1m {select field_id, row_id, f_vc1k, f_nbr, f_txt from qss_tips_field_values 
+                    set db_sql {
+                        select field_id, row_id, f_vc1k, f_nbr, f_txt 
+                        from qss_tips_field_values 
                         where table_id=:table_id
                         and row_id=:row_id
                         and instance_id=:instance_id
-                        and trashed_p!='1'}]
+                        and trashed_p!='1'}
+                    set values_lists [db_list_of_lists qss_tips_field_values_r1m $db_sql]
+
                     set used_fields_list [list ]
                     foreach row $values_lists {
                         foreach {field_id row_id f_vc1k f_nbr f_txt} $row {
                             if { [info exists type_arr(${field_id}) ] } {
                                 set v [qss_tips_value_of_field_type $type_arr(${field_id}) $f_nbr $f_txt $f_vc1k]
                             } else {
-                                ns_log Warning "qss_tips_row_of_table_label_value.1092: field_id does not have a field_type. table_id '${table_id}' field_id '${field_id}' row_id '${row_id}'"
+                                ns_log Warning "qss_tips_row_of_table_label_value.1092: field_id \
+ does not have a field_type. table_id '${table_id}' field_id '${field_id}' row_id '${row_id}'"
                             }
                             # label $label_arr(${field_id})
                             lappend row_list $label_arr(${field_id}) $v
@@ -1162,7 +1243,8 @@ ad_proc -public qss_tips_row_of_table_label_value {
                     }
 
                 } else {
-                    ns_log Notice "qss_tips_row_of_table_label_value.1099: row not found for search '${vc1k_search_label_val_list}'."
+                    ns_log Notice "qss_tips_row_of_table_label_value.1099: row not found \
+ for search '${vc1k_search_label_val_list}'."
                 }
             }
         } else {
@@ -1189,11 +1271,12 @@ ad_proc -public qss_tips_rows_read {
         set count [qss_tips_field_defs_maps_set $table_id "" "" type_arr label_arr "" labels_list]
         if { $count > 0  } {
             lappend rows_lists $labels_list
-            set values_lists [db_list_of_lists qss_tips_field_values_r_mult "select field_id, row_id, f_vc1k, f_nbr, f_txt from qss_tips_field_values 
-                where table_id=:table_id
-                and instance_id=:instance_id
-                and trashed_p!='1'
-                and row_id in ([template::util::tcl_to_sql_list $row_id_list])"]
+            set db_sql "select field_id, row_id, f_vc1k, f_nbr, f_txt from qss_tips_field_values \
+                where table_id=:table_id \
+                and instance_id=:instance_id \
+                and trashed_p!='1' \
+                and row_id in ([template::util::tcl_to_sql_list $row_id_list])"
+            set values_lists [db_list_of_lists qss_tips_field_values_r_mult $db_sql]
             set values_lists [lsort -integer -index 1 $values_lists]
             set row_id [lindex [lindex $values_lists 0] 1]
             set row_id_prev $row_id
@@ -1203,7 +1286,8 @@ ad_proc -public qss_tips_rows_read {
                     if { [info exists type_arr(${field_id}) ] } {
                         set v [qss_tips_value_of_field_type $type_arr(${field_id}) $f_nbr $f_txt $f_vc1k]
                     } else {
-                        ns_log Warning "qss_tips_read_from_id.848: field_id does not have a field_type. table_label '${table_label}' field_id '${field_id}' row_id '${row_id}'"
+                        ns_log Warning "qss_tips_read_from_id.848: field_id does not have a field_type. \
+ table_label '${table_label}' field_id '${field_id}' row_id '${row_id}'"
                     }
                     if { $row_id eq $row_id_prev } {
                         # label $label_arr(${field_id})
@@ -1242,18 +1326,21 @@ ad_proc -public qss_tips_row_read {
     if { [qf_is_natural_number $table_id ] } {
         set count [qss_tips_field_defs_maps_set $table_id "" "" type_arr label_arr field_ids_list ]
         if { $count > 0 } {
-            set values_lists [db_list_of_lists qss_tips_field_values_r {select field_id, row_id, f_vc1k, f_nbr, f_txt from qss_tips_field_values 
+            set db_sql {
+                select field_id, row_id, f_vc1k, f_nbr, f_txt from qss_tips_field_values 
                 where table_id=:table_id
                 and row_id=:row_id
                 and instance_id=:instance_id
-                and trashed_p!='1'}]
+                and trashed_p!='1'}
+            set values_lists [db_list_of_lists qss_tips_field_values_r $db_sql]
             set used_fields_list [list ]
             foreach row $values_lists {
                 foreach {field_id row_id f_vc1k f_nbr f_txt} $row {
                     if { [info exists type_arr(${field_id}) ] } {
                         set v [qss_tips_value_of_field_type $type_arr(${field_id}) $f_nbr $f_txt $f_vc1k]
                     } else {
-                        ns_log Warning "qss_tips_row_read.848: field_id does not have a field_type. table_label '${table_label}' field_id '${field_id}' row_id '${row_id}'"
+                        ns_log Warning "qss_tips_row_read.848: field_id does not have a field_type. \
+ table_label '${table_label}' field_id '${field_id}' row_id '${row_id}'"
                     }
                     # label $label_arr(${field_id})
                     lappend row_list $label_arr(${field_id}) $v
@@ -1325,9 +1412,10 @@ ad_proc -public qss_tips_cell_read {
             ns_log Notice "qss_tips_cell_read.1327: table_label not found '${table_label}'"
         }
     } else {
-        ns_log Notice "qss_tips_cell_read.1329: No cell labels requested; No cell values to return for table_label '${table_label}'."
+        ns_log Notice "qss_tips_cell_read.1329: No cell labels requested; \
+ No cell values to return for table_label '${table_label}'."
     }
- 
+    
     # if label_val_label_list is one entry,  return a list element only
     if { $return_val_label_list_len == 1 } {
         if { [llength $return_val_list] == 0 } {
@@ -1349,12 +1437,14 @@ ad_proc -private qss_tips_cell_id_exists_q {
     Returns 1 if cell exists, otherwise returns 0.
 } {
     upvar 1 instance_id instance_id
-    set exists_p [db_0or1row qss_tips_field_values_c1_by_id {select f_vc1k, f_nbr, f_txt from qss_tips_field_values
+    set db_sql {
+        select f_vc1k, f_nbr, f_txt from qss_tips_field_values
         where row_id=:row_id
         and field_id=:field_id
         and table_id=:table_id
         and instance_id=:instance_id
-        and trashed_p!='1'} ]
+        and trashed_p!='1'}
+    set exists_p [db_0or1row qss_tips_field_values_c1_by_id $db_sql]
     return $exists_p
 }
 
@@ -1371,12 +1461,14 @@ ad_proc -public qss_tips_cell_read_by_id {
     set return_value_list [list ]
     if { [hf_natural_number_list_validate $field_id_list] } {
         set field_id_list_len [llength $field_id_list]
-        set field_id_values_lists [db_list_of_lists qss_tips_cell_read_by_id "select field_id,f_vc1k,f_nbr,f_txt from qss_tips_field_values
-        where row_id=:row_id
-        and table_id=:table_id
-        and instance_id=:instance_id
-        and trashed_p!='1'
-    and field_id in ([template::util::tcl_to_sql_list $field_id_list]) "]
+        set db_sql "\
+    select field_id,f_vc1k,f_nbr,f_txt from qss_tips_field_values \
+    where row_id=:row_id \
+        and table_id=:table_id \
+        and instance_id=:instance_id \
+        and trashed_p!='1' \
+    and field_id in ([template::util::tcl_to_sql_list $field_id_list]) "
+        set field_id_values_lists [db_list_of_lists qss_tips_cell_read_by_id $db_sql]
         ns_log Notice "qss_tips_cell_read_by_id field_id_values_lists '${field_id_values_lists}'"
         foreach row_list $field_id_values_lists {
             foreach {field_id f_vc1k f_nbr f_txt} $row_list {
@@ -1393,13 +1485,15 @@ ad_proc -public qss_tips_cell_read_by_id {
             if { [info exists v_arr(${field_id}) ] } {
                 lappend return_value_list $v_arr(${field_id})
             } else {
-                ns_log Notice "qss_tips_cell_read_by_id.1394: field_id '${field_id}' not found for row '${row_id}'"
+                ns_log Notice "qss_tips_cell_read_by_id.1394: field_id '${field_id}' \
+ not found for row '${row_id}'"
                 lappend return_value_list ""
             }
         }
         ns_log Notice "qss_tips_cell_read_by_id.1396 return_value_list '${return_value_list}'"
     } else {
-        ns_log Notice "qss_tips_cell_read_by_id.1395 field_id_list did not validate '${field_id_list}' for table_id '${table_id}'"
+        ns_log Notice "qss_tips_cell_read_by_id.1395 field_id_list did not validate \
+ '${field_id_list}' for table_id '${table_id}'"
         set field_id_list_len 0
     } 
     # if label_val_label_list is one entry,  return a list element only
