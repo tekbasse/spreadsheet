@@ -372,7 +372,7 @@ ad_proc -public qss_tips_table_def_update {
 <br>
     <code>args</code> can be passed as name value list or parameters.
 <br>
-    Accepted names are: <code>label name flags</code>.
+    Accepted names are: <code>label</code>, <code>name</code>, and <code>flags</code>.
 <br>
     @return 1 if successful, otherwise 0.
 } {
@@ -901,7 +901,7 @@ ad_proc -private qss_tips_field_def_read {
 } { 
     Reads definitions about fields in a table.
 <br>
-    Returns list of lists, where colums are:
+    Returns an ordered list of lists, where colums are:
 <br>
     field_id,label,name,default_val,tdt_data_type,field_type
 <br>
