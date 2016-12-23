@@ -77,21 +77,21 @@ ad_proc -private qss_tips_field_defs_maps_set {
 } {
     Returns count of fields returned.
     If filter_by_label_list is nonempty, scopes to return info on only field definitions in filter_by_label_list.
-<br><br>
+    <br><br>
     If field_type_of_label_array_name is nonempty, returns an array in calling environment
     of that name in the form field_type_of(label) for example.
-<br><br>
+    <br><br>
     If field_id_of_label_array_name is nonempty, returns an array in calling environment
     of that name in the form field_id_of(label) for example.
-<br><br>
+    <br><br>
     If field_type_of_id_array_name is nonempty, returns an array in calling environment
     of that name in the form field_type_of(id) for example.
-<br><br>
+    <br><br>
     If field_label_of_id_array_name is nonempty, returns an array in calling environment
     of that name in the form field_label_of(id) for example.
-<br><br>
+    <br><br>
     If field_labels_list_name is nonempty, returns a list of field labels in calling environment.
-<br><br>
+    <br><br>
     If field_ids_list_name is nonempty, returns a list of field ids in calling environment.
 } {
     upvar 1 instance_id instance_id
@@ -179,9 +179,9 @@ ad_proc -private qss_tips_table_id_exists_q {
     {trashed_p "0"}
 } {
     Returns 1 if table_id exists.
-<br>
+    <br>
     Defaults to only check untrashed tables (trashed_p is 0). 
-<br>
+    <br>
     Set trashed_p to 1 to check all cases.
 } {
     upvar 1 instance_id instance_id
@@ -209,9 +209,9 @@ ad_proc -private qss_tips_field_def_id_exists_q {
     {trashed_p "0"}
 } {
     Returns 1 if field_id exists for table_id.
-<br>
+    <br>
     Defaults to only check untrashed fields (trashed_p is 0). 
-<br>
+    <br>
     Set trashed_p to 1 to check all cases.
 } {
     upvar 1 instance_id instance_id
@@ -369,11 +369,11 @@ ad_proc -public qss_tips_table_def_update {
     args
 } {
     Updates a table definition for table_id. 
-<br>
+    <br>
     <code>args</code> can be passed as name value list or parameters.
-<br>
+    <br>
     Accepted names are: <code>label</code>, <code>name</code>, and <code>flags</code>.
-<br>
+    <br>
     @return 1 if successful, otherwise 0.
 } {
     upvar 1 instance_id instance_id
@@ -442,7 +442,7 @@ ad_proc -public qss_tips_table_def_trash {
     table_id
 } {
     Trashes a tips table by table_id.
-<br>
+    <br>
     @return 1 if success, otherwise return 0.
 } {
     upvar 1 instance_id instance_id
@@ -468,10 +468,10 @@ ad_proc -public qss_tips_table_read_as_array {
 } {
     Returns one or more records of table_label as an array
     where field value pairs in vc1k_search_label_val_list match query.
-<br>
+    <br>
     Array indexes are name_array(row_id,field_label)
     where row_id are in a list in name_array(row_ids).
-<br>
+    <br>
     If row_id_list contains row_ids, only returns ids that are supplied in row_id_list.
 } {
     # Returns an array instead of list of lists in order to avoid sorting row_ids.
@@ -482,9 +482,9 @@ ad_proc -public qss_tips_table_read_as_array {
     upvar 1 $name_array n_arr
     set table_id [qss_tips_table_id_of_label $table_label]
     set success_p 0
-
+    
     if { [qf_is_natural_number $table_id] } {
-        set count [qss_tips_field_defs_maps_set $table_id "" field_id_arr type_arr label_arr ]
+        set count [qss_tips_field_defs_maps_set $table_id "" field_id_arr type_arr label_arr field_ids_list]
         if { $count > 0 } {
             set row_ids_sql ""
             if { $row_id_list ne "" } {
@@ -532,33 +532,66 @@ ad_proc -public qss_tips_table_read_as_array {
             if { $row_ids_sql eq "na" || $vc1k_search_sql eq "na" } {
                 set n_arr(row_ids) [list ]
             } else {
-                set db_sql "select field_id, row_id, f_vc1k, f_nbr, f_txt \
-                            from qss_tips_field_values 
-                            where table_id=:table_id
-                            and instance_id=:instance_id
-                            and trashed_p!='1' ${vc1k_search_sql} ${row_ids_sql}"
+                set db_sql "select row_id, field_id, f_vc1k, f_nbr, f_txt \
+                            from qss_tips_field_values \
+                            where table_id=:table_id \
+                            and instance_id=:instance_id \
+                            and trashed_p!='1' \
+                            and field_id in ([template::util::tcl_to_sql_list $field_ids_list]) \
+                            ${vc1k_search_sql} ${row_ids_sql}"
                 set values_lists [db_list_of_lists qss_tips_field_values_r $db_sql]
+                # How to set all values for a row_id without sorting?
+                # Answer: set all cases to empty string.. 
+                # And yet that may double the cases of setting vars.
+                # By sorting by row_id, loops can be combined, and scalar and list vars used.
+                set values_by_row_lists [lsort -integer -index 0 $values_lists]
+                # For missing cases that need to be set to empty string.
+                set es ""
                 
                 # val_i = values initial
                 set row_ids_list [list ]
-                foreach cell_list $values_lists {
+                set field_ids_used_list [list ]
+                set row_id_prev ""
+                foreach cell_list $values_by_row_lists {
                     foreach {row_id field_id f_vc1k f_nbr f_txt} $cell_list {
-                        lappend row_ids_list $row_id
-                        # since only one case of field value should be nonempty,
-                        # following logic could be sped up using qal_first_nonempty_in_list
-                        if { [info exists type_arr(${field_id}) ] } {
-                            set v [qss_tips_value_of_field_type $field_type f_nbr f_txt f_vc1k]
-                        } else {
-                            ns_log Warning "qss_tips_read.54: field_id does not have a field_type. \
+                        if { $row_id ne $row_id_prev } {
+                            # new row_id. 
+                            # Add any missing cells for previous row
+                            if { $row_id_prev ne "" } {
+                                set field_ids_blank_list [set_difference $field_ids_list $field_ids_used_list]
+                                if { [llength $field_ids_blank_list] > 0 } {
+                                    set v ""
+                                    set comma_row_id ","
+                                    append comma_row_id $row_id
+                                    foreach field_id $field_ids_blank_list {
+                                        set label_row_id $label_arr(${field_id})
+                                        append label_row_id $comma_row_id
+                                        set n_arr(${label_row_id}) $v
+                                    }
+                                }
+                                # Start new row processing
+                                lappend row_ids_list $row_id
+                                set row_id_prev $row_id
+                                set field_ids_used_list [list ]
+                            }
+
+                            if { [info exists type_arr(${field_id}) ] } {
+                                # set field_type $type_arr(${field_id})
+                                set v [qss_tips_value_of_field_type $type_arr(${field_id}) f_nbr f_txt f_vc1k]
+                            } else {
+                                ns_log Warning "qss_tips_read.54: field_id does not have a field_type. \
     table_label '${table_label}' field_id '${field_id}' row_id '${row_id}'"
+                            }
+                            lappend field_ids_used_list $field_id
+                            set label_row_id $label_arr(${field_id})
+                            append label_row_id "," $row_id
+                            set n_arr(${label_row_id}) $v
                         }
-                        set label $label_arr(${field_id})
-                        set n_arr(${label},${row_id}) $v
                     }
-                }
-                set n_arr(row_ids) [lsort -unqiue -integer $row_ids_list]
-                if { [llength $values_lists] > 0 } {
-                    set success_p 1
+                    set n_arr(row_ids) $row_ids_list
+                    if { [llength $row_ids_list] > 0 } {
+                        set success_p 1
+                    }
                 }
             }
         }
@@ -573,9 +606,9 @@ ad_proc -public qss_tips_table_read {
 } {
     Returns one or more records of table_label as a list of lists
     where field value pairs in vc1k_search_label_val_list match query.
-<br>
+    <br>
     If row_id_list contains row_ids, only returns ids that are supplied in row_id_list.
-<br>
+    <br>
     First row contains table labels cooresponding to values in subsequent rows.
 } {
     upvar 1 instance_id instance_id
@@ -688,30 +721,30 @@ ad_proc -public qss_tips_field_def_create {
     args
 } {
     Adds a field to an existing table. 
-<br>
+    <br>
     Each field is a column in a table.
-<br>
+    <br>
     <code>args</code> is passed in name value pairs. 
-<br>
+    <br>
     Requires table_label or table_id and field: <code>label name tdt_data_type field_type</code>.
-<br>
+    <br>
     <code>default_val</code> and <code>tdt_dat_type</code> are empty strings unless supplied.
-<br>
+    <br>
     <code>field_type</code> defaults to txt.
-<br>
+    <br>
     <code>field_type</code> is one of 'txt', 'vc1k', or 'nbr'; 
-<ul><li>
+    <ul><li>
     <code>txt</code> is of data type "text", 
-</li><li>
+    </li><li>
     <code>nbr</code> is of type numeric, and 
-</li><li>
+    </li><li>
     <code>vc1k</code> is of type varchar(1000).
-</li></ul>
-<p>
+    </li></ul>
+    <p>
     Searches are fastest on vc1k types as these entries are indexed in the data model.
-<br>
+    <br>
     <code>tdt_data_type</code> references an entry in qss_tips_data_types.
-<br>
+    <br>
     @return field_def_id or empty string if unsuccessful.
 } {
     upvar 1 instance_id instance_id
@@ -782,13 +815,13 @@ ad_proc -public qss_tips_field_def_trash {
     table_id
 } {
     Trashes one or more fields. 
-<br>
+    <br>
     Each field is a column in a table. 
-<br>
+    <br>
     Accepts list or scalar value.
-<br>
+    <br>
     If table_id is supplied, scopes to table_id.
-<br>
+    <br>
     @return 1 if all cases are success,  otherwise returns 0.
 } {
     upvar 1 instance_id instance_id
@@ -815,12 +848,12 @@ ad_proc -public qss_tips_field_def_update {
     args
 } {
     Given table_id and field_id or field_label, updates label and/or name.
-<br>
+    <br>
     <code>args</code> can be passed as list or list of args in name value pairs.
-<br>
+    <br>
     Acceptable names are <code>field_id</code> or <code>field_label</code> for referencing field;
     and <code>name_new</code> and/or <code>label_new</code> for setting new values for referenced names.
-<br>
+    <br>
     @return 1 if successful, otherwise return 0.
 } {
     upvar 1 instance_id instance_id
@@ -900,13 +933,13 @@ ad_proc -private qss_tips_field_def_read {
     {field_ids ""}
 } { 
     Reads definitions about fields in a table.
-<br>
+    <br>
     Returns an ordered list of lists, where colums are:
-<br>
+    <br>
     field_id,label,name,default_val,tdt_data_type,field_type
-<br>
+    <br>
     or empty list if not found.
-<br>
+    <br>
     If field_labels or field_ids is nonempty (list or scalar), scopes to just these.
 } {
     upvar 1 instance_id instance_id
@@ -976,11 +1009,11 @@ ad_proc -public qss_tips_row_create {
     args
 } {
     Writes a record into table_label. 
-<br>
+    <br>
     Returns row_id if successful, otherwise empty string.
-<br>
+    <br>
     <code>args</code> can be passed as name value list or parameters.
-<br>
+    <br>
     Missing field labels are left blank ie. no default_value subistituion is performed.
 } {
     upvar 1 instance_id instance_id
@@ -1057,7 +1090,7 @@ ad_proc -private qss_tips_set_by_field_type {
     vc1k_var_name
 } {
     Sets value to appropriate variable based on field_type. 
-<br>
+    <br>
     Others are set to empty string.
 } {
     upvar 1 $nbr_var_name f_nbr
@@ -1101,7 +1134,7 @@ ad_proc -public qss_tips_row_update {
     label_value_list
 } {
     Updates a record into table_label. 
-<br>
+    <br>
     @return 1 if successful, otherwise return 0.
 } {
     upvar 1 instance_id instance_id
@@ -1145,17 +1178,17 @@ ad_proc -public qss_tips_row_of_table_label_value {
     {row_id_var_name ""}
 } {
     Reads a row from table_id as a name_value_list.
-<br>
+    <br>
     If more than one row matches, returns 1 row based on value of choosen:
-<ul><li>
+    <ul><li>
     -1 = return empty row
-</li><li>
+    </li><li>
     0 = row based on earliest value of label
-</li><li>
+    </li><li>
     1 = row based on latest value of label
-</li></ul>
+    </li></ul>
     If row_id_var_name is not empty string, assigns the row_id to that variable name.
-<br>
+    <br>
     @return name_value_list
 } {
     upvar 1 instance_id instance_id
@@ -1306,11 +1339,11 @@ ad_proc -public qss_tips_rows_read {
     row_ids_list
 } {
     Reads rows from table_id as a list of lists. 
-<br>
+    <br>
     The first row consists of a list of ordered field (ie column) labels for subsequent lists.
-<br>
+    <br>
     <code>row_ids_list</code> is a list of row_ids of table_id.
-<br>
+    <br>
     Returns empty list if table not found.
 } {
     upvar 1 instance_id instance_id
@@ -1409,7 +1442,7 @@ ad_proc -public qss_tips_row_trash {
     row_id
 } {
     Trashes a record of table_id. 
-<br>
+    <br>
     Returns 1 if successful, otherwise 0.
 } {
     upvar 1 instance_id instance_id
@@ -1435,12 +1468,12 @@ ad_proc -public qss_tips_cell_read {
     {row_id_var_name __row_id}
 } {
     Returns the values of the field labels in return_val_label_list in order in list.
-<br><br>
+    <br><br>
     If more than one record matches search_value for search_label, if_multiple
     determines which one is chosen; 
-<br><br>
+    <br><br>
     If present, returns the row_id to the variable called row_id_var_name. 
-<br>
+    <br>
     @see qss_tips_row_of_table_label_value 
 } {
     upvar 1 instance_id instance_id
@@ -1507,9 +1540,9 @@ ad_proc -public qss_tips_cell_read_by_id {
     field_id_list
 } {
     Returns the values of fields in field_id_list in same order as field_id(s) in list.
-<br>
+    <br>
     Field_ids without values return empty string.
-<br>
+    <br>
     Returns the same number of elements in a list as there are in field_id_list.
 } {
     upvar 1 instance_id instance_id
