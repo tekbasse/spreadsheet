@@ -473,6 +473,10 @@ ad_proc -public qss_tips_table_read_as_array {
     where row_id are in a list in name_array(row_ids).
     <br>
     If row_id_list contains row_ids, only returns ids that are supplied in row_id_list.
+    <br>
+    name_array(row_ids) contains a list of row_ids used for array indexes.
+    <br>
+    name_array(labels) contains a list of table labels (ie columns)
 } {
     # Returns an array instead of list of lists in order to avoid sorting row_ids.
 
@@ -484,7 +488,7 @@ ad_proc -public qss_tips_table_read_as_array {
     set success_p 0
     
     if { [qf_is_natural_number $table_id] } {
-        set count [qss_tips_field_defs_maps_set $table_id "" field_id_arr type_arr label_arr field_ids_list]
+        set count [qss_tips_field_defs_maps_set $table_id "" field_id_arr type_arr label_arr field_ids_list field_labels_list]
         if { $count > 0 } {
             set row_ids_sql ""
             if { $row_id_list ne "" } {
@@ -531,6 +535,7 @@ ad_proc -public qss_tips_table_read_as_array {
 
             if { $row_ids_sql eq "na" || $vc1k_search_sql eq "na" } {
                 set n_arr(row_ids) [list ]
+                set n_arr(labels) [list ]
             } else {
                 set db_sql "select row_id, field_id, f_vc1k, f_nbr, f_txt \
                             from qss_tips_field_values \
@@ -589,6 +594,7 @@ ad_proc -public qss_tips_table_read_as_array {
                         }
                     }
                     set n_arr(row_ids) $row_ids_list
+                    set n_arr(labels) $field_labels_list
                     if { [llength $row_ids_list] > 0 } {
                         set success_p 1
                     }
