@@ -777,13 +777,13 @@ BEGIN TEST LOOP for value '${v}'"
                         # compare table1 to table2
                         # first, convert table2 to table1 format.
                         # table2_arr(row_id,field_label)
-                        set table_fields_list [lindex $table_1_lists 0]
+                        set table_fields_list [lindex $table1_lists 0]
                         set table_fields_list_len [llength $table_fields_list]
 
                         set table_def_list [qss_tips_field_def_read $t_id_arr(${i})]
                         set table_def_list_len [llength $table_def_list]
 
-                        aa_equal "Test.DA${i} qss_table_read label count '${table_fields_list_len}'" $table_fields_list_len $table_def_list_len 
+                        aa_equals "Test.DA${i} qss_table_read label count '${table_fields_list_len}'" $table_fields_list_len $table_def_list_len 
                            
                         
                         ns_log Notice "tcl/test/q-control-procs.tcl.429 test end"
