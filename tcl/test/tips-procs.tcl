@@ -779,11 +779,28 @@ BEGIN TEST LOOP for value '${v}'"
                         # table2_arr(row_id,field_label)
                         set table_fields_list [lindex $table1_lists 0]
                         set table_fields_list_len [llength $table_fields_list]
+                        set table1_wo_labels_list [lrange $table1_lists 1 end]
 
                         set table_labels_list $table2_arr(labels)
                         set table_labels_list_len [llength $table_labels_list]
-
                         aa_equals "Test.DA${i} qss_table_read label count '${table_fields_list_len}'" $table_fields_list_len $table_labels_list_len 
+                        set diff_labels_list [set_difference $table_labels_list $table_fields_list]
+                        aa_equals "Test.DB${i} set_difference table_fields table_labels" $diff_labels_list ""
+
+                        set t1_c 0
+                        # table_fields_list is ordered
+                        foreach label $table_fields_list {
+                            set t1_r 0
+                            foreach row_list $table1_wo_labels_lists {
+                                incr t1_r
+# what is row_id in table1? ref by vc1k value? no. Add option to qss_tips_table_read to append a label qss_tips_row_id
+
+                            }
+                            
+                            incr label_c
+                        }
+
+
                            
                         
                         ns_log Notice "tcl/test/q-control-procs.tcl.429 test end"
