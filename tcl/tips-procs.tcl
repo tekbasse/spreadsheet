@@ -609,13 +609,18 @@ ad_proc -public qss_tips_table_read {
     table_label
     {vc1k_search_label_val_list ""}
     {row_id_list ""}
+    {row_id_column_name ""}
 } {
     Returns one or more records of table_label as a list of lists
     where field value pairs in vc1k_search_label_val_list match query.
     <br>
+    First row contains table labels cooresponding to values in subsequent rows.
+    <br>
     If row_id_list contains row_ids, only returns ids that are supplied in row_id_list.
     <br>
-    First row contains table labels cooresponding to values in subsequent rows.
+    If row_id_column_name is supplied, 
+    a column containing row_id for each row will be appended to the table.
+    The label name will be the one supplied to row_id_column_name
 } {
     upvar 1 instance_id instance_id
     set table_id [qss_tips_table_id_of_label $table_label]
@@ -624,6 +629,12 @@ ad_proc -public qss_tips_table_read {
     if { [qf_is_natural_number $table_id] } {
         set label_ids_list_len [qss_tips_field_defs_maps_set $table_id "" field_id_arr type_arr label_arr label_ids_list titles_list]
         if { $label_ids_list_len > 0 } {
+            if { [hf_are_safe_and_printable_characters_q $row_id_column_name ] } {
+                set row_id_column_name_exists_p 1
+                lappend titles_list $row_id_column_name
+            } else {
+                set row_id_column_name_exists_p 0
+            }
             lappend table_lists $titles_list
 
             set row_ids_sql ""
@@ -687,9 +698,13 @@ ad_proc -public qss_tips_table_read {
                 set current_field_id [lindex $current_cell_list 0]
                 set row_list [list ]
                 set f_idx 0
+
                 foreach cell_list $values_lists {
                     foreach {row_id field_id f_vc1k f_nbr f_txt} $cell_list {
                         if { $row_id ne $current_row_id } {
+                            if { $row_id_column_name_exists_p } {
+                                lappend row_list $row_id
+                            }
                             lappend table_lists $row_list
                             set row_list [list ]
                             set current_row_id $row_id
@@ -712,6 +727,7 @@ ad_proc -public qss_tips_table_read {
                         lappend row_list $v
                     }
                 }
+
                 if { [llength $row_list] > 0 } {
                     lappend table_lists $row_list
                 }
