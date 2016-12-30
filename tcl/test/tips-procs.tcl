@@ -768,7 +768,7 @@ BEGIN TEST LOOP for value '${v}'"
                         #  qss_tips_table_read
                         # Let's not overcomplicate this.
                         # Compare qss_tips_table_read to qss_tips_table_read_as_array
-                        set table1_lists [qss_tips_table_read $t_label_arr(${i}) ]
+                        set table1_lists [qss_tips_table_read $t_label_arr(${i}) "" "" "row_id"]
 
                         # table read as array
                         qss_tips_table_read_as_array table2_arr $t_label_arr(${i}) 
@@ -778,7 +778,11 @@ BEGIN TEST LOOP for value '${v}'"
                         # first, convert table2 to table1 format.
                         # table2_arr(row_id,field_label)
                         set table_fields_list [lindex $table1_lists 0]
+                        aa_log "table_fields_list '${table_fields_list}'"
+                        # We added row_id to the end of table1, but we take it off here, for comparisons
+                        set table_fields_list [lrange $table_fields_list 0 end-1]
                         set table_fields_list_len [llength $table_fields_list]
+                        # We added row_id to table1_lists, so need to remove it from expected behavior
                         set table1_wo_labels_list [lrange $table1_lists 1 end]
 
                         set table_labels_list $table2_arr(labels)
@@ -787,19 +791,28 @@ BEGIN TEST LOOP for value '${v}'"
                         set diff_labels_list [set_difference $table_labels_list $table_fields_list]
                         aa_equals "Test.DB${i} set_difference table_fields table_labels" $diff_labels_list ""
 
-                        set t1_c 0
-                        # table_fields_list is ordered
-                        foreach label $table_fields_list {
-                            set t1_r 0
-                            foreach row_list $table1_wo_labels_lists {
-                                incr t1_r
-# what is row_id in table1? ref by vc1k value? no. Add option to qss_tips_table_read to append a label qss_tips_row_id
-
-                            }
-                            
-                            incr label_c
+                        set table1_wo_labels_list_len [llength $table1_wo_labels_list]
+                        if { $table1_wo_labels_list_len > 0 } {
+                            set table_read_returns_rows_p 1
+                        } else {
+                            set table_read_returns_rows_p 0
                         }
+                        aa_true "Test.DC${i} qss_tips_table_read returns rows" $table_read_returns_rows_p
 
+                        aa_log "test.DD${i} array names table2_arr '[array names table2_arr]'"
+                        # table_fields_list is ordered
+                        set t1_c 0
+                        foreach row_list $table1_wo_labels_list {
+                            set row_id [lindex $row_list end]
+                            aa_log "table1 row_list '${row_list}'"
+                            aa_log "table1 label '[lindex $table_fields_list $t1_c]'"
+                            foreach label $table_fields_list {
+                                set t1_val [lindex $row_list $t1_c]
+                                set t2_val $table2_arr(${row_id},${label})
+                                aa_equals "test.DE${i} table values same for row_id '${row_id}' label '${label}' t2_val '${t2_val}'" $t1_val $t2_val
+                                incr t1_c
+                            }
+                        }
 
                            
                         

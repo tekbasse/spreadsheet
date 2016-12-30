@@ -569,9 +569,9 @@ ad_proc -public qss_tips_table_read_as_array {
                                     set comma_row_id ","
                                     append comma_row_id $row_id
                                     foreach field_id $field_ids_blank_list {
-                                        set label_row_id $label_arr(${field_id})
-                                        append label_row_id $comma_row_id
-                                        set n_arr(${label_row_id}) $v
+                                        set row_id_label $label_arr(${field_id})
+                                        append row_id_label $comma_row_id
+                                        set n_arr(${row_id_label}) $v
                                     }
                                 }
                                 # Start new row processing
@@ -582,15 +582,16 @@ ad_proc -public qss_tips_table_read_as_array {
 
                             if { [info exists type_arr(${field_id}) ] } {
                                 # set field_type $type_arr(${field_id})
-                                set v [qss_tips_value_of_field_type $type_arr(${field_id}) f_nbr f_txt f_vc1k]
+                                set v [qss_tips_value_of_field_type $type_arr(${field_id}) $f_nbr $f_txt $f_vc1k]
                             } else {
                                 ns_log Warning "qss_tips_read.54: field_id does not have a field_type. \
     table_label '${table_label}' field_id '${field_id}' row_id '${row_id}'"
+                                set v [qal_first_nonempty_in_list [list $f_nbr $f_vc1k $f_txt]]
                             }
                             lappend field_ids_used_list $field_id
-                            set label_row_id $label_arr(${field_id})
-                            append label_row_id "," $row_id
-                            set n_arr(${label_row_id}) $v
+                            set row_id_label $row_id
+                            append row_id_label ","  $label_arr(${field_id})
+                            set n_arr(${row_id_label}) $v
                         }
                     }
                     set n_arr(row_ids) $row_ids_list
