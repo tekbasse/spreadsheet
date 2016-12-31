@@ -567,7 +567,7 @@ ad_proc -public qss_tips_table_read_as_array {
                                 if { [llength $field_ids_blank_list] > 0 } {
                                     set v ""
                                     set comma_row_id ","
-                                    append comma_row_id $row_id
+                                    append comma_row_id $row_id_prev
                                     foreach field_id $field_ids_blank_list {
                                         set row_id_label $label_arr(${field_id})
                                         append row_id_label $comma_row_id
@@ -710,8 +710,9 @@ ad_proc -public qss_tips_table_read {
                             set row_list [list ]
                             set current_row_id $row_id
                             set f_idx 0
-                            set current_field_id [lindex $label_ids_list $f_idx]
+                            #set current_field_id \[lindex $label_ids_list $f_idx\]
                         }
+                        set current_field_id [lindex $label_ids_list $f_idx]
                         while { $field_id > $current_field_id && $f_idx < $label_ids_list_len } {
                             lappend row_list ""
                             incr f_idx
@@ -726,6 +727,7 @@ ad_proc -public qss_tips_table_read {
                         # label $label_arr(${field_id})
                         # v is value
                         lappend row_list $v
+                        incr f_idx
                     }
                 }
 
