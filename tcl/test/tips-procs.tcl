@@ -576,7 +576,7 @@ BEGIN TEST LOOP for value '${v}'"
 
                             # if row_id exists and expected, perform some more tests
                             set ck_update_label_val_list [list ]
-                            if { $ck_row_id eq $row_id } {
+                            if { $ck_row_id eq $row_id && $row_id ne "" } {
                                 set j_list [list ]
                                 # for each label type, check a case. Shuffle list for diagnostics.
                                 for {set j 1} {$j < 4} {incr j} {
@@ -798,7 +798,7 @@ BEGIN TEST LOOP for value '${v}'"
                             set table_read_returns_rows_p 0
                         }
                         aa_true "Test.DC${i} qss_tips_table_read returns rows" $table_read_returns_rows_p
-
+                        aa_log "test.DD${i} table1_lists '${table1_lists}'"
                         aa_log "test.DD${i} array names table2_arr '[array names table2_arr]'"
                         # table_fields_list is ordered
                         set t1_c 0

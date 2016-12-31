@@ -628,8 +628,16 @@ ad_proc -public qss_tips_table_read {
     set success_p 0
     set table_lists [list ]
     if { [qf_is_natural_number $table_id] } {
-        set label_ids_list_len [qss_tips_field_defs_maps_set $table_id "" field_id_arr type_arr label_arr label_ids_list titles_list]
+        set label_ids_list_len [qss_tips_field_defs_maps_set $table_id "" field_id_arr type_arr label_arr label_ids_list labels_list]
         if { $label_ids_list_len > 0 } {
+
+            set label_ids_sorted_list [lsort -integer $label_ids_list]
+            set titles_list [list ]
+            foreach id $label_ids_sorted_list {
+                set ii [lsearch -exact -integer $label_ids_list $id]
+                set label [lindex $labels_list $ii]
+                lappend titles_list $label
+            }
             if { [hf_are_safe_and_printable_characters_q $row_id_column_name ] } {
                 set row_id_column_name_exists_p 1
                 lappend titles_list $row_id_column_name
@@ -711,8 +719,9 @@ ad_proc -public qss_tips_table_read {
                             set current_row_id $row_id
                             set f_idx 0
                             #set current_field_id \[lindex $label_ids_list $f_idx\]
+                            set current_field_id [lindex $label_ids_list $f_idx]
                         }
-                        set current_field_id [lindex $label_ids_list $f_idx]
+
                         while { $field_id > $current_field_id && $f_idx < $label_ids_list_len } {
                             lappend row_list ""
                             incr f_idx
