@@ -801,8 +801,9 @@ BEGIN TEST LOOP for value '${v}'"
                         aa_log "test.DD${i} table1_lists '${table1_lists}'"
                         aa_log "test.DD${i} array names table2_arr '[array names table2_arr]'"
                         # table_fields_list is ordered
-                        set t1_c 0
+
                         foreach row_list $table1_wo_labels_list {
+                            set t1_c 0
                             set row_id [lindex $row_list end]
                             aa_log "table1 row_list '${row_list}'"
                             aa_log "table1 label '[lindex $table_fields_list $t1_c]'"
