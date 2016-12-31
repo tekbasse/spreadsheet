@@ -579,20 +579,20 @@ ad_proc -public qss_tips_table_read_as_array {
                                 set row_id_prev $row_id
                                 set field_ids_used_list [list ]
                             }
-
-                            if { [info exists type_arr(${field_id}) ] } {
-                                # set field_type $type_arr(${field_id})
-                                set v [qss_tips_value_of_field_type $type_arr(${field_id}) $f_nbr $f_txt $f_vc1k]
-                            } else {
-                                ns_log Warning "qss_tips_read.54: field_id does not have a field_type. \
-    table_label '${table_label}' field_id '${field_id}' row_id '${row_id}'"
-                                set v [qal_first_nonempty_in_list [list $f_nbr $f_vc1k $f_txt]]
-                            }
-                            lappend field_ids_used_list $field_id
-                            set row_id_label $row_id
-                            append row_id_label ","  $label_arr(${field_id})
-                            set n_arr(${row_id_label}) $v
                         }
+                        if { [info exists type_arr(${field_id}) ] } {
+                            # set field_type $type_arr(${field_id})
+                            set v [qss_tips_value_of_field_type $type_arr(${field_id}) $f_nbr $f_txt $f_vc1k]
+                        } else {
+                            ns_log Warning "qss_tips_read.54: field_id does not have a field_type. \
+    table_label '${table_label}' field_id '${field_id}' row_id '${row_id}'"
+                            set v [qal_first_nonempty_in_list [list $f_nbr $f_vc1k $f_txt]]
+                        }
+                        lappend field_ids_used_list $field_id
+                        set row_id_label $row_id
+                        append row_id_label ","  $label_arr(${field_id})
+                        set n_arr(${row_id_label}) $v
+                        
                     }
                     set n_arr(row_ids) $row_ids_list
                     set n_arr(labels) $field_labels_list
@@ -702,12 +702,16 @@ ad_proc -public qss_tips_table_read {
         and trashed_p!='1' ${vc1k_search_sql} ${row_ids_sql} order by row_id, field_id asc"
                 set values_lists [db_list_of_lists qss_tips_field_values_r_sorted $db_sql]
                 
-                set start_cell_list [lindex $values_lists 0]
-                set f_idx 0
-                set current_row_id [lindex $start_cell_list $f_idx]
-                set current_field_id [lindex $start_cell_list $f_idx]
                 set row_list [list ]
+                set start_cell_list [lindex $values_lists 0]
+                set current_row_id [lindex $start_cell_list 0]
+                set f_idx 0
+                set current_field_id [lindex $label_ids_list $f_idx]
 
+                # diagnostics
+                set fid_list [list ]
+                set f_idx_list [list ]
+                ns_log Notice "qss_tips_table_read.714: table_ids_list '${table_ids_list}'"
 
                 foreach cell_list $values_lists {
                     foreach {row_id field_id f_vc1k f_nbr f_txt} $cell_list {
@@ -715,9 +719,18 @@ ad_proc -public qss_tips_table_read {
                             if { $row_id_column_name_exists_p } {
                                 lappend row_list $current_row_id
                             }
+
+                            # diagnostics
+                            ns_log Notice ""
+                            ns_log Notice "qss_tips_table_read.717: fid_list '${fid_list}'"
+                            ns_log Notice "qss_tips_table_read.718: f_idx_list '${f_idx_list}'"
+                            ns_log Notice "qss_tips_table_read.719: row_list '${row_list}'"
+
                             lappend table_lists $row_list
 
                             # new row
+                            set fid_list [list ]
+                            set f_idx_list [list ]
                             set row_list [list ]
                             set current_row_id $row_id
                             set f_idx 0
@@ -727,6 +740,11 @@ ad_proc -public qss_tips_table_read {
                         while { $field_id > $current_field_id && $f_idx < $label_ids_list_len } {
                             # add blank cell
                             lappend row_list ""
+
+                            # diagnostics
+                            lappend fid_list $field_id
+                            lappend f_idx_list $f_idx
+
                             incr f_idx
                             set current_field_id [lindex $label_ids_list $f_idx]
                         }
@@ -735,11 +753,18 @@ ad_proc -public qss_tips_table_read {
                         } else {
                             ns_log Warning "qss_tips_read.54: field_id does not have a field_type. \
  table_label '${table_label}' field_id '${field_id}' row_id '${row_id}'"
+                            set v [qal_first_nonempty_in_list [list $f_nbr $f_vc1k $f_txt]]
                         }
                         # label $label_arr(${field_id})
                         # v is value
                         lappend row_list $v
+
+                        # diagnostics
+                        lappend fid_list $field_id
+                        lappend f_idx_list $f_idx
+
                         incr f_idx
+                        set current_field_id [lindex $label_ids_list $f_idx]
                     }
                 }
 
