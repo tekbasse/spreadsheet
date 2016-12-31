@@ -566,11 +566,11 @@ ad_proc -public qss_tips_table_read_as_array {
                                 set field_ids_blank_list [set_difference $field_ids_list $field_ids_used_list]
                                 if { [llength $field_ids_blank_list] > 0 } {
                                     set v ""
-                                    set comma_row_id ","
-                                    append comma_row_id $row_id_prev
+                                    set row_id_comma $row_id_prev
+                                    append row_id_comma ","
                                     foreach field_id $field_ids_blank_list {
-                                        set row_id_label $label_arr(${field_id})
-                                        append row_id_label $comma_row_id
+                                        set row_id_label $row_id_comma
+                                        append row_id_label $label_arr(${field_id})
                                         set n_arr(${row_id_label}) $v
                                     }
                                 }
@@ -702,27 +702,30 @@ ad_proc -public qss_tips_table_read {
         and trashed_p!='1' ${vc1k_search_sql} ${row_ids_sql} order by row_id, field_id asc"
                 set values_lists [db_list_of_lists qss_tips_field_values_r_sorted $db_sql]
                 
-                set current_cell_list [lindex $values_lists 0]
-                set current_row_id [lindex $current_cell_list 0]
-                set current_field_id [lindex $current_cell_list 0]
-                set row_list [list ]
+                set start_cell_list [lindex $values_lists 0]
                 set f_idx 0
+                set current_row_id [lindex $start_cell_list $f_idx]
+                set current_field_id [lindex $start_cell_list $f_idx]
+                set row_list [list ]
+
 
                 foreach cell_list $values_lists {
                     foreach {row_id field_id f_vc1k f_nbr f_txt} $cell_list {
                         if { $row_id ne $current_row_id } {
                             if { $row_id_column_name_exists_p } {
-                                lappend row_list $row_id
+                                lappend row_list $current_row_id
                             }
                             lappend table_lists $row_list
+
+                            # new row
                             set row_list [list ]
                             set current_row_id $row_id
                             set f_idx 0
-                            #set current_field_id \[lindex $label_ids_list $f_idx\]
                             set current_field_id [lindex $label_ids_list $f_idx]
                         }
 
                         while { $field_id > $current_field_id && $f_idx < $label_ids_list_len } {
+                            # add blank cell
                             lappend row_list ""
                             incr f_idx
                             set current_field_id [lindex $label_ids_list $f_idx]
