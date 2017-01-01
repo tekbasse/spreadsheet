@@ -574,12 +574,13 @@ ad_proc -public qss_tips_table_read_as_array {
                                         set n_arr(${row_id_label}) $v
                                     }
                                 }
-                                # Start new row processing
-                                lappend row_ids_list $row_id
-                                set row_id_prev $row_id
-                                set field_ids_used_list [list ]
+                             
                             }
+                            # Start new row processing
+                            lappend row_ids_list $row_id
+                            set field_ids_used_list [list ]
                         }
+
                         if { [info exists type_arr(${field_id}) ] } {
                             # set field_type $type_arr(${field_id})
                             set v [qss_tips_value_of_field_type $type_arr(${field_id}) $f_nbr $f_txt $f_vc1k]
@@ -592,13 +593,13 @@ ad_proc -public qss_tips_table_read_as_array {
                         set row_id_label $row_id
                         append row_id_label ","  $label_arr(${field_id})
                         set n_arr(${row_id_label}) $v
-                        
+                        set row_id_prev $row_id
                     }
-                    set n_arr(row_ids) $row_ids_list
-                    set n_arr(labels) $field_labels_list
-                    if { [llength $row_ids_list] > 0 } {
-                        set success_p 1
-                    }
+                }
+                set n_arr(row_ids) $row_ids_list
+                set n_arr(labels) $field_labels_list
+                if { [llength $row_ids_list] > 0 } {
+                    set success_p 1
                 }
             }
         }
