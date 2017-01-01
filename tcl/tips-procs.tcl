@@ -633,9 +633,9 @@ ad_proc -public qss_tips_table_read {
 
             set label_ids_sorted_list [lsort -integer $label_ids_list]
             set titles_list [list ]
-            foreach id $label_ids_sorted_list {
-                set ii [lsearch -exact -integer $label_ids_list $id]
-                set label [lindex $labels_list $ii]
+
+            foreach id $label_ids_sorted_list { 
+                set label $label_arr(${id})
                 lappend titles_list $label
             }
             if { [hf_are_safe_and_printable_characters_q $row_id_column_name ] } {
@@ -706,25 +706,24 @@ ad_proc -public qss_tips_table_read {
                 set start_cell_list [lindex $values_lists 0]
                 set current_row_id [lindex $start_cell_list 0]
                 set f_idx 0
-                set current_field_id [lindex $label_ids_list $f_idx]
-
-                # diagnostics
-                set fid_list [list ]
-                set f_idx_list [list ]
-                ns_log Notice "qss_tips_table_read.714: table_ids_list '${table_ids_list}'"
+                set current_field_id [lindex $label_ids_sorted_list $f_idx]
 
                 foreach cell_list $values_lists {
                     foreach {row_id field_id f_vc1k f_nbr f_txt} $cell_list {
                         if { $row_id ne $current_row_id } {
+
+
+                            while { $f_idx < $label_ids_list_len } {
+                                # add blank cell
+                                lappend row_list ""
+                                
+                                incr f_idx
+                                set current_field_id [lindex $label_ids_sorted_list $f_idx]
+                            }
+
                             if { $row_id_column_name_exists_p } {
                                 lappend row_list $current_row_id
                             }
-
-                            # diagnostics
-                            ns_log Notice ""
-                            ns_log Notice "qss_tips_table_read.717: fid_list '${fid_list}'"
-                            ns_log Notice "qss_tips_table_read.718: f_idx_list '${f_idx_list}'"
-                            ns_log Notice "qss_tips_table_read.719: row_list '${row_list}'"
 
                             lappend table_lists $row_list
 
@@ -734,19 +733,17 @@ ad_proc -public qss_tips_table_read {
                             set row_list [list ]
                             set current_row_id $row_id
                             set f_idx 0
-                            set current_field_id [lindex $label_ids_list $f_idx]
+                            set current_field_id [lindex $label_ids_sorted_list $f_idx]
                         }
-
+                        if { ![qf_is_natural_number $field_id] || ![qf_is_natural_number $current_field_id] } {
+                            ns_log Warning "qss_tips_table_read.754: field_id '${field_id} current_field_id '${current_field_id}' This should not happen."
+                        }
                         while { $field_id > $current_field_id && $f_idx < $label_ids_list_len } {
                             # add blank cell
-                            lappend row_list ""
-
-                            # diagnostics
-                            lappend fid_list $field_id
-                            lappend f_idx_list $f_idx
+                            lappend row_list "x1"
 
                             incr f_idx
-                            set current_field_id [lindex $label_ids_list $f_idx]
+                            set current_field_id [lindex $label_ids_sorted_list $f_idx]
                         }
                         if { [info exists type_arr(${field_id}) ] } {
                             set v [qss_tips_value_of_field_type $type_arr(${field_id}) $f_nbr $f_txt $f_vc1k]
@@ -759,12 +756,8 @@ ad_proc -public qss_tips_table_read {
                         # v is value
                         lappend row_list $v
 
-                        # diagnostics
-                        lappend fid_list $field_id
-                        lappend f_idx_list $f_idx
-
                         incr f_idx
-                        set current_field_id [lindex $label_ids_list $f_idx]
+                        set current_field_id [lindex $label_ids_sorted_list $f_idx]
                     }
                 }
 
