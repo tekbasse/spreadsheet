@@ -806,8 +806,8 @@ BEGIN TEST LOOP for value '${v}'"
                             set t1_c 0
                             set row_id [lindex $row_list end]
                             aa_log "table1 row_list '${row_list}'"
-                            aa_log "table1 label '[lindex $table_fields_list $t1_c]'"
                             foreach label $table_fields_list {
+                                aa_log "table1 label '[lindex $table_fields_list $t1_c]'"
                                 set t1_val [lindex $row_list $t1_c]
                                 set t2_val $table2_arr(${row_id},${label})
                                 aa_equals "test.DE${i} table values same for row_id '${row_id}' label '${label}' t2_val '${t2_val}'" $t1_val $t2_val

@@ -568,9 +568,9 @@ ad_proc -public qss_tips_table_read_as_array {
                                     set v ""
                                     set row_id_comma $row_id_prev
                                     append row_id_comma ","
-                                    foreach field_id $field_ids_blank_list {
+                                    foreach f_id $field_ids_blank_list {
                                         set row_id_label $row_id_comma
-                                        append row_id_label $label_arr(${field_id})
+                                        append row_id_label $label_arr(${f_id})
                                         set n_arr(${row_id_label}) $v
                                     }
                                 }
@@ -596,6 +596,24 @@ ad_proc -public qss_tips_table_read_as_array {
                         set row_id_prev $row_id
                     }
                 }
+                # process last row blanks, if any
+                if { $row_id_prev ne "" } {
+                    set field_ids_blank_list [set_difference $field_ids_list $field_ids_used_list]
+                    if { [llength $field_ids_blank_list] > 0 } {
+                        set v ""
+                        set row_id_comma $row_id_prev
+                        append row_id_comma ","
+                        foreach f_id $field_ids_blank_list {
+                            set row_id_label $row_id_comma
+                            append row_id_label $label_arr(${f_id})
+                            set n_arr(${row_id_label}) $v
+                        }
+                    }
+                    
+                }
+
+
+
                 set n_arr(row_ids) $row_ids_list
                 set n_arr(labels) $field_labels_list
                 if { [llength $row_ids_list] > 0 } {
@@ -763,6 +781,20 @@ ad_proc -public qss_tips_table_read {
                 }
 
                 if { [llength $row_list] > 0 } {
+
+                    while { $f_idx < $label_ids_list_len } {
+                        # add blank cell
+                        lappend row_list ""
+                        
+                        incr f_idx
+                        # following not needed for these cases.
+                        #set current_field_id \[lindex $label_ids_sorted_list $f_idx\]
+                    }
+                    
+                    if { $row_id_column_name_exists_p } {
+                        lappend row_list $current_row_id
+                    }
+
                     lappend table_lists $row_list
                 }
             }
