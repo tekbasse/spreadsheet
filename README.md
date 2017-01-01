@@ -42,11 +42,42 @@ features
 
 Integrates well with Q-Forms or any web-based form processing.
 
-Tables can be represented as text, where each line is a row, and 
-each cell is separated by a common or specified delimiter.
-
 Can manipulate Tcl list of lists for easy generation of reports.
 
 There are procedures for importing, rotating, and exporting tables
- in various formats.
+in various formats, including changing Tcl lists to arrays 
+and lists to scalar variables.
+
+Simple Table API is for tables represented as text, where each line is a row, and 
+each cell is separated by a common or specified delimiter.
+
+One key feature is Simple Table's ability to guess at most likely common field delimiter 
+of text input based on a statistical analysis.
+
+
+TIPS "Table Integrated Publishing System" API is a database
+paradigm first developed in the 1990's and used extensively for
+developing data models in flux and importing or converting
+databases from one format to another.
+
+TIPS API is based on the flexibility of spreadsheets, where:
+
+There is no difference between a cell with null or empty string value.
+
+There are only 3 "formula" types, numeric, text and vc1k (varchar(1025)).
+
+Any type can have an empty value.
+
+A vc1k declared column can be referenced by first or most recent, 
+   or all cases of search-string. Foreign Keys are not constrained.
+
+A missing key returns an empty row/cell. In essence code level errors are avoided.
+
+Data updates can be by row or cell or column.
+
+Unreferenced columns are ignored. 
+
+All columns are assumed if none referenced.
+
+Revisioning is trackable per cell and timestamp, for implementing an "undo" or revisioning capability.
 
