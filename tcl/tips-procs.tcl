@@ -740,7 +740,7 @@ ad_proc -public qss_tips_table_read {
                         }
                         while { $field_id > $current_field_id && $f_idx < $label_ids_list_len } {
                             # add blank cell
-                            lappend row_list "x1"
+                            lappend row_list ""
 
                             incr f_idx
                             set current_field_id [lindex $label_ids_sorted_list $f_idx]
