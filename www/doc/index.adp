@@ -5,7 +5,7 @@
 <h2>Spreadsheet Package @title@</h2>
 
 <p>The lastest release version of the code is available at:
- http://github.com/dcpm/spreadsheet
+ http://github.com/xdcpm/spreadsheet
 </p>
 <h3>
 introduction
