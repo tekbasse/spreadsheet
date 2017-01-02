@@ -62,3 +62,14 @@ Can manipulate Tcl list of lists for easy generation of reports.
 There are procedures for importing, rotating, and exporting tables
  in various formats for easy use in tcl.
 </li></ul>
+
+<p>For a more complete list, see spreadsheet/README.md</p>
+
+<p>Feature requests:</p>
+<ul><li>
+Make a one page app for uploading a table.
+</li><li>
+Make an app for combing columns from two tables.
+</li><li>
+Make an app for editing a table row, rows, or column
+</li></ul>
