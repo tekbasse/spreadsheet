@@ -5,7 +5,7 @@ ad_library {
     @Copyright (c) 2016 Benjamin Brink
     @license GNU General Public License 2, see project home
     @project home: http://github.com/tekbasse/spreadsheet
-    @address: po box 20, Marylhurst, OR 97036-0020 usa
+    @address: po box 193, Marylhurst, OR 97036-0193 usa
     @email: tekbasse@yahoo.com
 
     see: http://wiki.tcl.tk/39012 for interval_*ymdhms procs discussion
