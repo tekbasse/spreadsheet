@@ -787,8 +787,8 @@ ad_proc -public qss_tips_table_read {
                         lappend row_list ""
                         
                         incr f_idx
-                        # following not needed for these cases.
-                        #set current_field_id \[lindex $label_ids_sorted_list $f_idx\]
+                        # current_field_id not needed for these cases.
+                        # otherwise it would be lindex $label_ids_sorted_list $f_idx
                     }
                     
                     if { $row_id_column_name_exists_p } {
@@ -1695,9 +1695,7 @@ ad_proc -public qss_tips_cell_update {
 } {
     upvar 1 instance_id instance_id
     set success_p 0
-    #set field_info_list \[qss_tips_field_def_read $table_id "" $field_id\]
-    #ns_log Notice "qss_tips_cell_update.1373: field_info_list '${field_info_list}'"
-    #if llength $field_info_list > 0 
+
     set exists_p [db_0or1row qss_tips_field_def_read_ft {
         select field_type from qss_tips_field_defs
         where instance_id=:instance_id
@@ -1705,7 +1703,7 @@ ad_proc -public qss_tips_cell_update {
         and id=:field_id
         and trashed_p!='1'}]
     if { $exists_p } {
-        #set field_type \[lindex \[lindex $field_info_list 0\] 5\]
+
         qss_tips_set_by_field_type $field_type $new_value f_nbr f_txt f_vc1k
         qss_tips_user_id_set
         set trashed_p 0
