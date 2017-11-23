@@ -225,22 +225,31 @@ CREATE TABLE qss_tips_data_types (
        -- Validation does not necessarily consider empty case.
        -- validation procedure name (referenced by tcl switch)
        valida_proc varchar(40),
-       -- If abbreviation required for display etc, use this proc
-       -- for text format
+       -- If abbreviation of data required for display etc, use this proc
+       -- to abbreviate into a text-only format
        abbrev_proc varchar(40),
-       -- for text format
+       -- If a proc is required to create a formal format
+       -- use this proc to generate the text portion.
        format_proc varchar(40),
-       -- for html/css formatting
-       -- if not div, then span. Block=div
-       css_block_p varchar(1),
-       -- if not for element class, then element style
-       -- as in <div class="css_format">
-       -- or maybe both. varchar allows for this.
-       css_class_p varchar(1),
+       -- If an abbrev format is displayed, use this inside an html SPAN tag. 
        css_abbrev varchar(120),
+       -- Regarding how to use qss_tips_data_types.css_format value.
+
+       -- When including html/css formatting with text for this data type.
+       -- Treat datatype as a block (DIV) or in-line text (SPAN).
+       -- Answers question: Does this data type require DIV?
+       -- If not div, then SPAN is assumed.
+       css_block_p varchar(1),
        css_format varchar(120),
-       -- mainly for any saas requirements
-       xml_format varchar(120)
+       -- If XML or other SAAS interchange is specified, 
+       -- This value is passed as attibute value pairs within the value's 
+       -- wrapper. 
+       -- Value is expected to be split by & and = similar to web CGI format.
+       xml_format varchar(120),
+       -- If not empty, use qss_tips_data_types.style_format value in an html 
+       -- STYLE tag as in <style = "style_format.value">
+       -- This may be used with a css tag if need be.
+       style_format varchar(120)
 );
 
 create index qss_tips_data_types_instance_id_idx on qss_tips_data_types (instance_id);
