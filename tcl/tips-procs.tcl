@@ -33,7 +33,7 @@ ad_proc -public qss_tips_field_id_name_list {
             and table_id=:table_id
             and trashed_p!='1'}
         set fields_lists [db_list_of_lists qss_tips_field_defs_id_name_r $db_sql]
-        foreach row $fields_lsits {
+        foreach row $fields_lists {
             foreach {id name} {
                 lappend id_name_list $id $name
             }
@@ -55,7 +55,7 @@ ad_proc -public qss_tips_field_label_name_list {
             and table_id=:table_id
             and trashed_p!='1'}
         set fields_lists [db_list_of_lists qss_tips_field_defs_label_name_r $db_sql]
-        foreach row $fields_lsits {
+        foreach row $fields_lists {
             foreach {label name} {
                 lappend label_name_list $label $name
             }
