@@ -5,28 +5,6 @@
 -- @for OpenACS.org
 -- @cvs-id
 
-drop index qss_tips_field_values_trashed_p_idx;
-drop index qss_tips_field_values_field_f_vc1k_idx;
-drop index qss_tips_field_values_row_nbr_idx;
-drop index qss_tips_field_values_table_id_idx;
-drop index qss_tips_field_values_instance_id_idx;
-DROP TABLE qss_tips_field_values;
-
-drop index qss_tips_field_defs_trashed_p;
-drop index qss_tips_field_defs_table_id;
-drop index qss_tips_field_defs_id_idx;
-drop index qss_tips_field_defs_instance_id_idx;
-DROP TABLE qss_tips_field_defs;
-drop index qss_tips_table_defs_trashed_p_idx;
-drop index qss_tips_table_defs_label_idx;
-drop index qss_tips_table_defs_id_idx;
-drop index qss_tips_table_defs_instance_id_idx;
-DROP TABLE qss_tips_table_defs;
-drop index qss_tips_data_types_type_name_idx;
-drop index qss_tips_data_types_instance_id_idx;
-DROP TABLE qss_tips_data_types;       
-
-drop SEQUENCE qss_tips_id_seq;
 
 drop index qss_cells_sheet_id_idx;
 drop index qss_cells_id_idx;
