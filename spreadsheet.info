@@ -21,6 +21,7 @@
         <package_instance_name>Spreadsheet</package_instance_name>
 
         <provides url="spreadsheet" version="0.216"/>
+        <requires url="q-data-types" version="0.011"/>
 
         <callbacks>
         </callbacks>
